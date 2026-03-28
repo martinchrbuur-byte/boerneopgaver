@@ -1,0 +1,13 @@
+{
+  "name": "kids-chore-tracker-mvp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "test:regression": "node --test tests/regression/*.test.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^29.0.1"
+  }
+}
