@@ -1,11 +1,18 @@
 // Supabase configuration
-// Get your API key from: https://app.supabase.com/project/mfydufcizonxjmgyrwkj/settings/api
+// For local testing, replace __SUPABASE_ANON_KEY__ with your anon key.
+// For GitHub Pages, the deploy workflow injects the secret automatically.
+
+const SUPABASE_ANON_KEY_PLACEHOLDER = '__SUPABASE_ANON_KEY__';
 
 export const SUPABASE_CONFIG = {
   url: 'https://mfydufcizonxjmgyrwkj.supabase.co',
-  anonKey: process.env.SUPABASE_ANON_KEY || ''
+  anonKey: SUPABASE_ANON_KEY_PLACEHOLDER
 };
 
 export function isSupabaseConfigured() {
-  return SUPABASE_CONFIG.anonKey.length > 0;
+  return (
+    typeof SUPABASE_CONFIG.anonKey === 'string' &&
+    SUPABASE_CONFIG.anonKey.length > 0 &&
+    SUPABASE_CONFIG.anonKey !== SUPABASE_ANON_KEY_PLACEHOLDER
+  );
 }

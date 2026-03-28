@@ -3,6 +3,24 @@ import { SUPABASE_CONFIG, isSupabaseConfigured } from '../config/supabaseConfig.
 
 let supabaseClient = null;
 
+function toAppChore(chore) {
+  return {
+    id: chore.id,
+    name: chore.name,
+    createdAt: chore.created_at,
+    assignedTo: chore.assigned_to
+  };
+}
+
+function toAppRecord(record) {
+  return {
+    id: record.id,
+    choreId: record.chore_id,
+    completedAt: record.completed_at,
+    undoneAt: record.undone_at
+  };
+}
+
 export function getSupabaseClient() {
   if (!isSupabaseConfigured()) {
     throw new Error('Supabase is not configured. Please set SUPABASE_ANON_KEY.');
@@ -22,37 +40,41 @@ export async function initializeSupabaseData() {
 
   try {
     const client = getSupabaseClient();
-    
+
     // Get the authenticated user (for multi-user support)
     const { data: { user } } = await client.auth.getUser();
-    
+    const userId = user?.id || 'anonymous';
+
     // Load chores
     const { data: chores, error: choresError } = await client
       .from('chores')
-      .select('*');
-    
+      .select('*')
+      .eq('user_id', userId);
+
     if (choresError) throw choresError;
 
     // Load records
     const { data: records, error: recordsError } = await client
       .from('records')
-      .select('*');
-    
+      .select('*')
+      .eq('user_id', userId);
+
     if (recordsError) throw recordsError;
 
     // Load UI state
     const { data: uiStateData, error: uiError } = await client
       .from('ui_state')
       .select('*')
+      .eq('user_id', userId)
       .single();
-    
+
     if (uiError && uiError.code !== 'PGRST116') throw uiError; // 404 is not an error
 
     return {
-      chores: chores || [],
-      records: records || [],
+      chores: (chores || []).map(toAppChore),
+      records: (records || []).map(toAppRecord),
       ui: uiStateData ? { activeRole: uiStateData.active_role } : { activeRole: 'parent' },
-      userId: user?.id || 'anonymous'
+      userId
     };
   } catch (error) {
     console.error('Error loading data from Supabase:', error);
@@ -65,7 +87,7 @@ export async function saveChores(chores, userId) {
 
   try {
     // Delete existing chores and insert new ones
-    await client.from('chores').delete().neq('user_id', '');
+    await client.from('chores').delete().eq('user_id', userId);
     
     const { error } = await client.from('chores').insert(
       chores.map(chore => ({
@@ -89,7 +111,7 @@ export async function saveRecords(records, userId) {
 
   try {
     // Delete existing records and insert new ones
-    await client.from('records').delete().neq('user_id', '');
+    await client.from('records').delete().eq('user_id', userId);
     
     const { error } = await client.from('records').insert(
       records.map(record => ({

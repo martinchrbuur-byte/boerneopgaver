@@ -1,5 +1,6 @@
 import { isOnOrAfter, isValidIsoTimestamp } from '../shared/dateTime.js';
-import { isSupabaseConfigured, saveChores, saveRecords, saveUiState } from './supabaseService.js';
+import { isSupabaseConfigured } from '../config/supabaseConfig.js';
+import { saveChores, saveRecords, saveUiState } from './supabaseService.js';
 
 export const STORAGE_KEY = 'kids_chore_tracker_v1';
 

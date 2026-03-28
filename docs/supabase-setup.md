@@ -51,15 +51,71 @@ ALTER TABLE chores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ui_state ENABLE ROW LEVEL SECURITY;
 
--- Create policies (optional - for authenticated users only)
-CREATE POLICY "Users can see their own chores" ON chores
-  FOR SELECT USING (user_id = auth.uid()::TEXT);
+-- Public client policies for this static app.
+-- The app does not authenticate users yet, so it needs anon access.
+CREATE POLICY "Public can read chores" ON chores
+  FOR SELECT USING (true);
+CREATE POLICY "Public can insert chores" ON chores
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public can update chores" ON chores
+  FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Public can delete chores" ON chores
+  FOR DELETE USING (true);
 
-CREATE POLICY "Users can see their own records" ON records
-  FOR SELECT USING (user_id = auth.uid()::TEXT);
+CREATE POLICY "Public can read records" ON records
+  FOR SELECT USING (true);
+CREATE POLICY "Public can insert records" ON records
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public can update records" ON records
+  FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Public can delete records" ON records
+  FOR DELETE USING (true);
 
-CREATE POLICY "Users can see their own ui_state" ON ui_state
-  FOR SELECT USING (user_id = auth.uid()::TEXT);
+CREATE POLICY "Public can read ui_state" ON ui_state
+  FOR SELECT USING (true);
+CREATE POLICY "Public can insert ui_state" ON ui_state
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public can update ui_state" ON ui_state
+  FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Public can delete ui_state" ON ui_state
+  FOR DELETE USING (true);
+```
+
+## Important if you already ran the old SQL script:
+
+If you already enabled RLS with the old auth-based policies, your static app will not be able to write data yet. Run this extra SQL once:
+
+```sql
+DROP POLICY IF EXISTS "Users can see their own chores" ON chores;
+DROP POLICY IF EXISTS "Users can see their own records" ON records;
+DROP POLICY IF EXISTS "Users can see their own ui_state" ON ui_state;
+
+CREATE POLICY "Public can read chores" ON chores
+  FOR SELECT USING (true);
+CREATE POLICY "Public can insert chores" ON chores
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public can update chores" ON chores
+  FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Public can delete chores" ON chores
+  FOR DELETE USING (true);
+
+CREATE POLICY "Public can read records" ON records
+  FOR SELECT USING (true);
+CREATE POLICY "Public can insert records" ON records
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public can update records" ON records
+  FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Public can delete records" ON records
+  FOR DELETE USING (true);
+
+CREATE POLICY "Public can read ui_state" ON ui_state
+  FOR SELECT USING (true);
+CREATE POLICY "Public can insert ui_state" ON ui_state
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public can update ui_state" ON ui_state
+  FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Public can delete ui_state" ON ui_state
+  FOR DELETE USING (true);
 ```
 
 ## Get Your API Key:

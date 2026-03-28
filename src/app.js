@@ -1,7 +1,8 @@
 import { resolveAppConfig } from './config/appConfig.js';
+import { isSupabaseConfigured } from './config/supabaseConfig.js';
 import { createChoreService } from './services/choreService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
-import { isSupabaseConfigured, initializeSupabaseData } from './services/supabaseService.js';
+import { initializeSupabaseData } from './services/supabaseService.js';
 import { createMainView } from './ui/mainView.js';
 import { renderFeedback, renderState } from './ui/choreView.js';
 
@@ -35,7 +36,7 @@ function resolveInitialRole(storedRole, configuredDefaultRole) {
   return isRole(configuredDefaultRole) ? configuredDefaultRole : 'parent';
 }
 
-function init() {
+async function init() {
   const appConfig = resolveAppConfig();
 
   const root = document.querySelector('#app');
@@ -44,16 +45,23 @@ function init() {
 
   // Initialize Supabase if configured
   if (isSupabaseConfigured()) {
-    initializeSupabaseData()
-      .then((supabaseData) => {
-        if (supabaseData && supabaseData.userId) {
-          storageService.setUserId(supabaseData.userId);
-          console.log('Connected to Supabase');
+    try {
+      const supabaseData = await initializeSupabaseData();
+      if (supabaseData) {
+        storageService.setUserId(supabaseData.userId);
+        const hasRemoteData = supabaseData.chores.length > 0 || supabaseData.records.length > 0;
+        if (hasRemoteData) {
+          storageService.saveData({
+            chores: supabaseData.chores,
+            records: supabaseData.records,
+            ui: supabaseData.ui
+          });
         }
-      })
-      .catch((error) => {
-        console.warn('Failed to initialize Supabase, using localStorage:', error);
-      });
+        console.log('Connected to Supabase');
+      }
+    } catch (error) {
+      console.warn('Failed to initialize Supabase, using localStorage:', error);
+    }
   }
 
   const choreService = createChoreService({ storageService });

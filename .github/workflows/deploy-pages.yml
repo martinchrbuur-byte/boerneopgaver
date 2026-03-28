@@ -29,11 +29,28 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Prepare static files
+        env:
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           mkdir -p dist/src
           cp index.html dist/
           cp -r src/* dist/src/
           cp .nojekyll dist/
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          path = Path('dist/src/config/supabaseConfig.js')
+          content = path.read_text(encoding='utf-8')
+          anon_key = os.environ.get('SUPABASE_ANON_KEY', '')
+
+          if anon_key:
+              content = content.replace('__SUPABASE_ANON_KEY__', anon_key)
+              path.write_text(content, encoding='utf-8')
+              print('Injected Supabase anon key into deploy artifact.')
+          else:
+              print('SUPABASE_ANON_KEY secret is not set; leaving placeholder in config.')
+          PY
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
