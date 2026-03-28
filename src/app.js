@@ -1,6 +1,7 @@
 import { resolveAppConfig } from './config/appConfig.js';
 import { createChoreService } from './services/choreService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
+import { isSupabaseConfigured, initializeSupabaseData } from './services/supabaseService.js';
 import { createMainView } from './ui/mainView.js';
 import { renderFeedback, renderState } from './ui/choreView.js';
 
@@ -40,6 +41,21 @@ function init() {
   const root = document.querySelector('#app');
   const viewRefs = createMainView(root);
   const storageService = createStorageService();
+
+  // Initialize Supabase if configured
+  if (isSupabaseConfigured()) {
+    initializeSupabaseData()
+      .then((supabaseData) => {
+        if (supabaseData && supabaseData.userId) {
+          storageService.setUserId(supabaseData.userId);
+          console.log('Connected to Supabase');
+        }
+      })
+      .catch((error) => {
+        console.warn('Failed to initialize Supabase, using localStorage:', error);
+      });
+  }
+
   const choreService = createChoreService({ storageService });
   const storedRole = storageService.loadData().ui.activeRole;
   let activeRole = resolveInitialRole(storedRole, appConfig.defaultRole);

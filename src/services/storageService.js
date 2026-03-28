@@ -1,4 +1,5 @@
 import { isOnOrAfter, isValidIsoTimestamp } from '../shared/dateTime.js';
+import { isSupabaseConfigured, saveChores, saveRecords, saveUiState } from './supabaseService.js';
 
 export const STORAGE_KEY = 'kids_chore_tracker_v1';
 
@@ -111,6 +112,8 @@ function normalizePayload(value) {
 }
 
 export function createStorageService({ storage = globalThis.localStorage, storageKey = STORAGE_KEY } = {}) {
+  let userId = 'anonymous';
+
   function loadData() {
     if (!storage) {
       return createEmptyPayload();
@@ -138,7 +141,21 @@ export function createStorageService({ storage = globalThis.localStorage, storag
       return;
     }
 
+    // Save to localStorage
     storage.setItem(storageKey, JSON.stringify(nextData));
+
+    // Also save to Supabase if configured
+    if (isSupabaseConfigured()) {
+      saveChores(nextData.chores, userId).catch(error => {
+        console.warn('Failed to sync chores to Supabase:', error);
+      });
+      saveRecords(nextData.records, userId).catch(error => {
+        console.warn('Failed to sync records to Supabase:', error);
+      });
+      saveUiState(nextData.ui.activeRole, userId).catch(error => {
+        console.warn('Failed to sync UI state to Supabase:', error);
+      });
+    }
   }
 
   function updateData(updater) {
@@ -148,9 +165,14 @@ export function createStorageService({ storage = globalThis.localStorage, storag
     return nextData;
   }
 
+  function setUserId(newUserId) {
+    userId = newUserId;
+  }
+
   return {
     loadData,
     saveData,
-    updateData
+    updateData,
+    setUserId
   };
 }
