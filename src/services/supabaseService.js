@@ -23,11 +23,11 @@ function toAppRecord(record) {
 
 export function getSupabaseClient() {
   if (!isSupabaseConfigured()) {
-    throw new Error('Supabase is not configured. Please set SUPABASE_ANON_KEY.');
+    throw new Error('Supabase is not configured. Please set a publishable key.');
   }
 
   if (!supabaseClient) {
-    supabaseClient = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    supabaseClient = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
   }
 
   return supabaseClient;

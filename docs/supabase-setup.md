@@ -121,10 +121,10 @@ CREATE POLICY "Public can delete ui_state" ON ui_state
 ## Get Your API Key:
 
 1. Go to Project Settings (gear icon) → API
-2. Copy the "anon public" key under Project API keys
+2. Copy the publishable key under Project API keys
 3. Set it in your `.env` file:
    ```
-   SUPABASE_ANON_KEY=your_copied_key_here
+  SUPABASE_PUBLISHABLE_KEY=your_copied_key_here
    ```
 
 ## Using with Environment Variables:
@@ -132,7 +132,7 @@ CREATE POLICY "Public can delete ui_state" ON ui_state
 ### For Node.js/Testing:
 ```bash
 # Create .env file in project root
-SUPABASE_ANON_KEY=your_key_here
+SUPABASE_PUBLISHABLE_KEY=your_key_here
 
 # Install dotenv
 npm install dotenv
@@ -152,7 +152,7 @@ You have two options:
 - Use a build process to inject it during deployment
 
 **Option 2: Direct API Key in code**
-- For development/learning: Replace the empty string in [supabaseConfig.js](src/config/supabaseConfig.js)
+- For development/learning: Replace the placeholder in [src/config/supabaseConfig.js](src/config/supabaseConfig.js)
 - WARNING: Never commit API keys to version control in production!
 
 ## Development Setup:
@@ -167,7 +167,7 @@ You have two options:
    cp .env.example .env
    ```
 
-3. Add your Supabase anon key to `.env`
+3. Add your Supabase publishable key to `.env`
 
 4. Load environment variables in your app or import dotenv
 
@@ -183,6 +183,12 @@ You have two options:
 ## Troubleshooting:
 
 - Check the browser console for any Supabase errors
-- Make sure your API key is valid and hasn't expired
+- Make sure your publishable key is valid
 - Verify the database tables exist in your Supabase project
 - Check Row Level Security (RLS) policies if data doesn't sync
+
+## Key types
+
+- Use a **publishable key** in this app because it runs in the browser.
+- Do **not** use a **secret key** in a static site or client-side JavaScript.
+- Secret keys are server-only.

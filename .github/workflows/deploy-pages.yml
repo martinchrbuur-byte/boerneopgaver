@@ -30,7 +30,8 @@ jobs:
 
       - name: Prepare static files
         env:
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          LEGACY_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           mkdir -p dist/src
           cp index.html dist/
@@ -42,14 +43,14 @@ jobs:
 
           path = Path('dist/src/config/supabaseConfig.js')
           content = path.read_text(encoding='utf-8')
-          anon_key = os.environ.get('SUPABASE_ANON_KEY', '')
+            publishable_key = os.environ.get('SUPABASE_PUBLISHABLE_KEY', '') or os.environ.get('LEGACY_SUPABASE_ANON_KEY', '')
 
-          if anon_key:
-              content = content.replace('__SUPABASE_ANON_KEY__', anon_key)
+            if publishable_key:
+              content = content.replace('__SUPABASE_PUBLISHABLE_KEY__', publishable_key)
               path.write_text(content, encoding='utf-8')
-              print('Injected Supabase anon key into deploy artifact.')
+              print('Injected Supabase publishable key into deploy artifact.')
           else:
-              print('SUPABASE_ANON_KEY secret is not set; leaving placeholder in config.')
+              print('No Supabase publishable key secret is set; leaving placeholder in config.')
           PY
 
       - name: Upload artifact

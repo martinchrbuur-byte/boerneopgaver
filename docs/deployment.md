@@ -22,15 +22,15 @@ Since this is a static HTML/JavaScript app (no build step), there are a few appr
 
    const __dirname = path.dirname(fileURLToPath(import.meta.url));
    const srcPath = path.join(__dirname, '..', 'src', 'config', 'supabaseConfig.js');
-   const anonKey = process.env.SUPABASE_ANON_KEY || '';
+  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 
    const configContent = `export const SUPABASE_CONFIG = {
      url: 'https://mfydufcizonxjmgyrwkj.supabase.co',
-     anonKey: '${anonKey}'
+     publishableKey: '${publishableKey}'
    };
 
    export function isSupabaseConfigured() {
-     return SUPABASE_CONFIG.anonKey.length > 0;
+     return SUPABASE_CONFIG.publishableKey.length > 0;
    }
    `;
 
@@ -61,7 +61,7 @@ Since this is a static HTML/JavaScript app (no build step), there are a few appr
          
          - name: Generate Supabase config
            env:
-             SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+             SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
            run: node scripts/build.js
          
          - name: Commit and push
@@ -75,17 +75,17 @@ Since this is a static HTML/JavaScript app (no build step), there are a few appr
 
 4. **Add the secret to GitHub:**
    - Go to your repo → Settings → Secrets and variables → Actions
-   - Create `SUPABASE_ANON_KEY` with your API key
+  - Create `SUPABASE_PUBLISHABLE_KEY` with your client key
 
 ## Option 2: Manual Configuration (Simple)
 
-1. Get your anon key from: https://app.supabase.com/project/mfydufcizonxjmgyrwkj/settings/api
+1. Get your publishable key from: https://app.supabase.com/project/mfydufcizonxjmgyrwkj/settings/api
 
 2. Edit `src/config/supabaseConfig.js` directly:
    ```javascript
    export const SUPABASE_CONFIG = {
      url: 'https://mfydufcizonxjmgyrwkj.supabase.co',
-     anonKey: 'your_actual_key_here'
+     publishableKey: 'your_actual_key_here'
    };
    ```
 
@@ -99,7 +99,7 @@ Create a configuration endpoint or load from a separate config file:
 // Load config from config.json
 const response = await fetch('/config.json');
 const config = await response.json();
-SUPABASE_CONFIG.anonKey = config.supabase_anon_key;
+SUPABASE_CONFIG.publishableKey = config.supabase_publishable_key;
 ```
 
 Then host `config.json` separately, only on deployed environments.
@@ -132,7 +132,7 @@ For local development without committing API keys:
 
    app.get('/api/config', (req, res) => {
      res.json({
-       supabase_anon_key: process.env.SUPABASE_ANON_KEY || ''
+       supabase_publishable_key: process.env.SUPABASE_PUBLISHABLE_KEY || ''
      });
    });
 
@@ -143,7 +143,7 @@ For local development without committing API keys:
    ```javascript
    if (typeof window !== 'undefined' && location.hostname === 'localhost') {
      const config = await fetch('/api/config').then(r => r.json());
-     SUPABASE_CONFIG.anonKey = config.supabase_anon_key;
+     SUPABASE_CONFIG.publishableKey = config.supabase_publishable_key;
    }
    ```
 

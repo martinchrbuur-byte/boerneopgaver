@@ -21,9 +21,9 @@ This app integrates with Supabase for cloud data persistence while maintaining o
    cp .env.example .env
    ```
 
-3. **Add your API key to `.env`:**
+3. **Add your publishable key to `.env`:**
    ```
-   SUPABASE_ANON_KEY=your_copied_key_here
+   SUPABASE_PUBLISHABLE_KEY=your_copied_key_here
    ```
 
 4. **Set up the database:**
@@ -49,6 +49,6 @@ This app integrates with Supabase for cloud data persistence while maintaining o
 
 ### Environment Variables
 
-- `SUPABASE_ANON_KEY` - Your Supabase anonymous API key (never commit this!)
+- `SUPABASE_PUBLISHABLE_KEY` - Your Supabase publishable key for the client app
 
 See [docs/supabase-setup.md](docs/supabase-setup.md) for complete setup instructions.

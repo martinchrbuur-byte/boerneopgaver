@@ -4,7 +4,7 @@ Follow these steps to get data persistence working with Supabase:
 
 ## 1. Get Your API Key ✓
 - [ ] Open: https://app.supabase.com/project/mfydufcizonxjmgyrwkj/settings/api
-- [ ] Copy the "anon public" key under "Project API keys"
+- [ ] Copy the publishable key under "Project API keys"
 
 ## 2. Set Up Environment Variable
 Choose one option:
@@ -54,7 +54,7 @@ dotenv.config();
 
 ### "Supabase is not configured" Error
 - [ ] Check API key is set correctly
-- [ ] Check environment variable name: `SUPABASE_ANON_KEY`
+- [ ] Check environment variable name: `SUPABASE_PUBLISHABLE_KEY`
 - [ ] Verify no typos in the key
 
 ### No data in Supabase
