@@ -325,12 +325,162 @@ body {
   font-weight: 600;
 }
 
+.tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  min-height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab-active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.tab-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-row-3 {
+  grid-template-columns: 1fr 120px auto;
+}
+
+.value-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.value-unit {
+  color: #334155;
+  font-weight: 600;
+}
+
+.input-narrow {
+  width: 100%;
+  min-width: 90px;
+}
+
+.button-danger {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.button-danger:hover {
+  background: #b91c1c;
+}
+
+.sprint-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.sprint-dates {
+  margin: 0;
+  color: #334155;
+}
+
+.sprint-days-badge {
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 0.3rem 0.7rem;
+  font-weight: 600;
+}
+
+.sprint-earnings {
+  margin-top: 0.6rem;
+}
+
+.earnings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 0.6rem;
+}
+
+.earning-card {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.earning-card h3 {
+  margin: 0 0 0.35rem;
+}
+
+.earning-card p {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.divider {
+  margin: 1rem 0;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.sprint-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.sprint-parent-actions {
+  margin-top: 0.4rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.history-item {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.7rem;
+  margin-bottom: 0.6rem;
+}
+
+.history-item h3 {
+  margin: 0 0 0.3rem;
+}
+
+.history-earnings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 0.4rem;
+}
+
+.history-earnings p {
+  margin: 0;
+}
+
 @media (max-width: 640px) {
   .app-shell {
     padding: 0.75rem;
   }
 
   .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .earnings-grid,
+  .history-earnings {
     grid-template-columns: 1fr;
   }
 }

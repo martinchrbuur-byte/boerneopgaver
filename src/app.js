@@ -1,6 +1,7 @@
 import { resolveAppConfig } from './config/appConfig.js';
 import { isSupabaseConfigured } from './config/supabaseConfig.js';
 import { createChoreService } from './services/choreService.js';
+import { createSprintService } from './services/sprintService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
 import { initializeSupabaseData } from './services/supabaseService.js';
 import { createMainView } from './ui/mainView.js';
@@ -36,12 +37,21 @@ function resolveInitialRole(storedRole, configuredDefaultRole) {
   return isRole(configuredDefaultRole) ? configuredDefaultRole : 'parent';
 }
 
+function calculateDaysLeft(endDate) {
+  const now = new Date();
+  const end = new Date(endDate);
+  const diffMs = end.setHours(23, 59, 59, 999) - now.getTime();
+  return Math.max(0, Math.ceil(diffMs / (24 * 60 * 60 * 1000)));
+}
+
 async function init() {
   const appConfig = resolveAppConfig();
 
   const root = document.querySelector('#app');
   const viewRefs = createMainView(root);
   const storageService = createStorageService();
+  const sprintService = createSprintService({ storageService });
+  let activeTab = 'opgaver';
 
   // Initialize Supabase if configured
   if (isSupabaseConfigured()) {
@@ -49,12 +59,18 @@ async function init() {
       const supabaseData = await initializeSupabaseData();
       if (supabaseData) {
         storageService.setUserId(supabaseData.userId);
-        const hasRemoteData = supabaseData.chores.length > 0 || supabaseData.records.length > 0;
+        const hasRemoteData =
+          supabaseData.chores.length > 0 ||
+          supabaseData.records.length > 0 ||
+          supabaseData.sprints.length > 0 ||
+          supabaseData.settings.sprintLengthDays !== 7;
         if (hasRemoteData) {
           storageService.saveData({
             chores: supabaseData.chores,
             records: supabaseData.records,
-            ui: supabaseData.ui
+            ui: supabaseData.ui,
+            sprints: supabaseData.sprints,
+            settings: supabaseData.settings
           });
         }
         console.log('Connected to Supabase');
@@ -65,6 +81,7 @@ async function init() {
   }
 
   const choreService = createChoreService({ storageService });
+  sprintService.ensureActiveSprint();
   const storedRole = storageService.loadData().ui.activeRole;
   let activeRole = resolveInitialRole(storedRole, appConfig.defaultRole);
 
@@ -76,6 +93,8 @@ async function init() {
     storageService.updateData((data) => ({
       chores: data.chores,
       records: data.records,
+      sprints: data.sprints,
+      settings: data.settings,
       ui: {
         ...data.ui,
         activeRole
@@ -84,7 +103,16 @@ async function init() {
   }
 
   function refresh(message = '') {
-    renderState(viewRefs, choreService.getState(), { activeRole });
+    const activeSprint = sprintService.getActiveSprint();
+    const sprintUi = {
+      activeSprint,
+      settings: sprintService.getSettings(),
+      earnings: activeSprint ? sprintService.getSprintEarnings(activeSprint.id) : {},
+      history: sprintService.getSprintHistory(),
+      daysLeft: activeSprint ? calculateDaysLeft(activeSprint.endDate) : 0
+    };
+
+    renderState(viewRefs, choreService.getState(), { activeRole, activeTab, sprintUi });
     renderFeedback(viewRefs, message);
   }
 
@@ -105,8 +133,26 @@ async function init() {
 
     activeRole = nextRole;
     persistActiveRole();
+    if (activeRole !== 'parent' && activeTab === 'historik') {
+      activeTab = 'opgaver';
+    }
     const message = activeRole === 'parent' ? 'Skiftet til forældrevisning.' : `Skiftet til ${activeRole}s visning.`;
     refresh(message);
+  });
+
+  viewRefs.tabNav.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-tab]');
+    if (!button) {
+      return;
+    }
+
+    const nextTab = button.getAttribute('data-tab');
+    if (nextTab === 'historik' && activeRole !== 'parent') {
+      return;
+    }
+
+    activeTab = nextTab;
+    refresh();
   });
 
   viewRefs.addChoreForm.addEventListener('submit', (event) => {
@@ -114,10 +160,12 @@ async function init() {
 
     const formData = new FormData(viewRefs.addChoreForm);
     const choreName = formData.get('choreName');
+    const choreValue = formData.get('choreValue');
     const assignedTo = formData.getAll('assignedTo');
-    const result = choreService.addChore(choreName, { actorRole: activeRole, assignedTo });
+    const result = choreService.addChore(choreName, { actorRole: activeRole, assignedTo, value: choreValue });
     if (result.ok) {
       viewRefs.addChoreForm.reset();
+      viewRefs.choreValueInput.value = '0';
       viewRefs.choreNameInput.focus();
     }
 
@@ -137,11 +185,22 @@ async function init() {
     if (action === 'delete') {
       result = choreService.deleteChore(choreId, { actorRole: activeRole });
     } else if (action === 'complete') {
-      result = choreService.completeChore(choreId, { actorRole: activeRole });
+      const activeSprint = sprintService.getActiveSprint() || sprintService.ensureActiveSprint();
+      result = choreService.completeChore(choreId, { actorRole: activeRole, sprintId: activeSprint.id });
     } else if (action === 'undo') {
       result = choreService.undoChore(choreId, { actorRole: activeRole });
     }
 
+    refresh(result.message);
+  });
+
+  viewRefs.sprintLengthSave.addEventListener('click', () => {
+    const result = sprintService.setSprintLength(viewRefs.sprintLengthInput.value, activeRole);
+    refresh(result.message);
+  });
+
+  viewRefs.closeSprintBtn.addEventListener('click', () => {
+    const result = sprintService.closeSprint(activeRole);
     refresh(result.message);
   });
 }

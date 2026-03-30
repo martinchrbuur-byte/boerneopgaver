@@ -7,7 +7,7 @@ export function createMainView(rootElement) {
     <section class="app-shell" aria-label="Børnenes opgaveskema">
       <header class="card">
         <h1 class="app-title">🌟 Opgavehelte</h1>
-        <p class="app-subtitle">Fuldfør opgaver, saml sejre, og gør samarbejdet derhjemme sjovt.</p>
+        <p class="app-subtitle">Fuldfør opgaver, optjen lommepenge, og gør samarbejdet sjovt.</p>
       </header>
 
       <section class="card" aria-label="Rolleskift">
@@ -39,44 +39,95 @@ export function createMainView(rootElement) {
         <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
       </section>
 
-      <section id="add-chore-section" class="card" aria-label="Tilføj opgave">
-        <h2 class="section-title">Tilføj en opgave</h2>
-        <form id="add-chore-form">
-          <div class="form-row">
-            <input
-              id="chore-name-input"
-              class="input"
-              name="choreName"
-              type="text"
-              placeholder="f.eks. Giv katten mad"
-              maxlength="80"
-              required
-            />
-            <button type="submit" class="button button-primary">Tilføj</button>
-          </div>
-          <div id="assign-to-section" class="assign-to-section">
-            <label class="assign-label">Tildel til:</label>
-            <div class="assign-checkboxes">
-              <label class="checkbox-label">
-                <input type="checkbox" name="assignedTo" value="Hans Jørgen" checked /> Hans Jørgen
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" name="assignedTo" value="Andrea" checked /> Andrea
-              </label>
+      <nav class="tab-nav" role="tablist" aria-label="Sektioner">
+        <button class="tab-btn tab-active" role="tab" data-tab="opgaver" aria-selected="true">📋 Opgaver</button>
+        <button class="tab-btn" role="tab" data-tab="sprint" aria-selected="false">🏃 Sprint</button>
+        <button class="tab-btn tab-parent-only" role="tab" data-tab="historik" aria-selected="false">📜 Historik</button>
+      </nav>
+
+      <div id="tab-opgaver" class="tab-panel" role="tabpanel">
+        <section id="add-chore-section" class="card" aria-label="Tilføj opgave">
+          <h2 class="section-title">Tilføj en opgave</h2>
+          <form id="add-chore-form">
+            <div class="form-row form-row-3">
+              <input
+                id="chore-name-input"
+                class="input"
+                name="choreName"
+                type="text"
+                placeholder="f.eks. Giv katten mad"
+                maxlength="80"
+                required
+              />
+              <div class="value-input-wrapper">
+                <input
+                  id="chore-value-input"
+                  class="input input-narrow"
+                  name="choreValue"
+                  type="number"
+                  placeholder="kr"
+                  min="0"
+                  step="0.5"
+                  value="0"
+                />
+                <span class="value-unit">kr</span>
+              </div>
+              <button type="submit" class="button button-primary">Tilføj</button>
             </div>
+            <div id="assign-to-section" class="assign-to-section">
+              <label class="assign-label">Tildel til:</label>
+              <div class="assign-checkboxes">
+                <label class="checkbox-label">
+                  <input type="checkbox" name="assignedTo" value="Hans Jørgen" checked /> Hans Jørgen
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" name="assignedTo" value="Andrea" checked /> Andrea
+                </label>
+              </div>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" aria-label="Opgaveliste">
+          <h2 class="section-title">Opgaver</h2>
+          <ul id="chore-list" class="list"></ul>
+        </section>
+
+        <section class="card" aria-label="Seneste fuldføringer">
+          <h2 class="section-title">Seneste fuldføringer</h2>
+          <ul id="recent-completions" class="list"></ul>
+        </section>
+      </div>
+
+      <div id="tab-sprint" class="tab-panel" role="tabpanel" hidden>
+        <section class="card" aria-label="Aktuel sprint">
+          <div class="sprint-header">
+            <div>
+              <h2 class="section-title" id="sprint-title">Aktuel sprint</h2>
+              <p id="sprint-dates" class="sprint-dates"></p>
+            </div>
+            <span id="sprint-days-left" class="sprint-days-badge"></span>
           </div>
-        </form>
-      </section>
+          <div id="sprint-earnings" class="sprint-earnings"></div>
+          <div id="sprint-parent-actions" class="sprint-parent-actions" hidden>
+            <hr class="divider" />
+            <div class="sprint-settings-row">
+              <label class="assign-label" for="sprint-length-input">Sprint-længde (dage):</label>
+              <input id="sprint-length-input" class="input input-narrow" type="number" min="1" max="365" value="7" />
+              <button id="sprint-length-save" class="button button-secondary" type="button">Gem</button>
+            </div>
+            <button id="close-sprint-btn" class="button button-danger" type="button">✅ Luk sprint og marker som betalt</button>
+          </div>
+        </section>
+      </div>
 
-      <section class="card" aria-label="Opgaveliste">
-        <h2 class="section-title">Opgaver</h2>
-        <ul id="chore-list" class="list"></ul>
-      </section>
+      <div id="tab-historik" class="tab-panel" role="tabpanel" hidden>
+        <section class="card" aria-label="Sprint-historik">
+          <h2 class="section-title">📜 Sprint-historik</h2>
+          <div id="sprint-history"></div>
+        </section>
+      </div>
 
-      <section class="card" aria-label="Seneste fuldføringer">
-        <h2 class="section-title">Seneste fuldføringer</h2>
-        <ul id="recent-completions" class="list"></ul>
-      </section>
     </section>
   `;
 
@@ -85,8 +136,23 @@ export function createMainView(rootElement) {
     addChoreForm: rootElement.querySelector('#add-chore-form'),
     addChoreSection: rootElement.querySelector('#add-chore-section'),
     choreNameInput: rootElement.querySelector('#chore-name-input'),
+    choreValueInput: rootElement.querySelector('#chore-value-input'),
     choreList: rootElement.querySelector('#chore-list'),
     recentCompletions: rootElement.querySelector('#recent-completions'),
-    feedback: rootElement.querySelector('#feedback')
+    feedback: rootElement.querySelector('#feedback'),
+    tabNav: rootElement.querySelector('.tab-nav'),
+    tabOpgaver: rootElement.querySelector('#tab-opgaver'),
+    tabSprint: rootElement.querySelector('#tab-sprint'),
+    tabHistorik: rootElement.querySelector('#tab-historik'),
+    sprintTitle: rootElement.querySelector('#sprint-title'),
+    sprintDates: rootElement.querySelector('#sprint-dates'),
+    sprintDaysLeft: rootElement.querySelector('#sprint-days-left'),
+    sprintEarnings: rootElement.querySelector('#sprint-earnings'),
+    sprintParentActions: rootElement.querySelector('#sprint-parent-actions'),
+    sprintLengthInput: rootElement.querySelector('#sprint-length-input'),
+    sprintLengthSave: rootElement.querySelector('#sprint-length-save'),
+    closeSprintBtn: rootElement.querySelector('#close-sprint-btn'),
+    sprintHistory: rootElement.querySelector('#sprint-history'),
+    tabParentOnlyBtns: rootElement.querySelectorAll('.tab-parent-only')
   };
 }

@@ -8,7 +8,8 @@ function toAppChore(chore) {
     id: chore.id,
     name: chore.name,
     createdAt: chore.created_at,
-    assignedTo: chore.assigned_to
+    assignedTo: chore.assigned_to,
+    value: typeof chore.value === 'number' ? chore.value : 0
   };
 }
 
@@ -17,10 +18,21 @@ function toAppRecord(record) {
     id: record.id,
     choreId: record.chore_id,
     completedAt: record.completed_at,
-    undoneAt: record.undone_at
+    undoneAt: record.undone_at,
+    sprintId: record.sprint_id || null
   };
 }
 
+function toAppSprint(sprint) {
+  return {
+    id: sprint.id,
+    startDate: sprint.start_date,
+    endDate: sprint.end_date,
+    status: sprint.status,
+    paidAt: sprint.paid_at || null,
+    createdAt: sprint.created_at
+  };
+}
 export function getSupabaseClient() {
   if (!isSupabaseConfigured()) {
     throw new Error('Supabase is not configured. Please set a publishable key.');
@@ -70,10 +82,32 @@ export async function initializeSupabaseData() {
 
     if (uiError && uiError.code !== 'PGRST116') throw uiError; // 404 is not an error
 
+    // Load sprints
+    const { data: sprints, error: sprintsError } = await client
+      .from('sprints')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (sprintsError) throw sprintsError;
+
+    // Load settings
+    const { data: settingsData, error: settingsError } = await client
+      .from('app_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (settingsError && settingsError.code !== 'PGRST116') throw settingsError;
+
     return {
       chores: (chores || []).map(toAppChore),
       records: (records || []).map(toAppRecord),
       ui: uiStateData ? { activeRole: uiStateData.active_role } : { activeRole: 'parent' },
+      sprints: (sprints || []).map(toAppSprint),
+      settings: settingsData
+        ? { sprintLengthDays: settingsData.sprint_length_days }
+        : { sprintLengthDays: 7 },
       userId
     };
   } catch (error) {
@@ -95,7 +129,8 @@ export async function saveChores(chores, userId) {
         name: chore.name,
         created_at: chore.createdAt,
         assigned_to: chore.assignedTo,
-        user_id: userId
+        user_id: userId,
+        value: chore.value ?? 0
       }))
     );
 
@@ -119,7 +154,8 @@ export async function saveRecords(records, userId) {
         chore_id: record.choreId,
         completed_at: record.completedAt,
         undone_at: record.undoneAt,
-        user_id: userId
+        user_id: userId,
+        sprint_id: record.sprintId || null
       }))
     );
 
@@ -141,6 +177,50 @@ export async function saveUiState(activeRole, userId) {
     if (error) throw error;
   } catch (error) {
     console.error('Error saving UI state to Supabase:', error);
+    throw error;
+  }
+}
+
+export async function saveSprints(sprints, userId) {
+  const client = getSupabaseClient();
+
+  try {
+    await client.from('sprints').delete().eq('user_id', userId);
+
+    if (sprints.length === 0) return;
+
+    const { error } = await client.from('sprints').insert(
+      sprints.map(sprint => ({
+        id: sprint.id,
+        user_id: userId,
+        start_date: sprint.startDate,
+        end_date: sprint.endDate,
+        status: sprint.status,
+        paid_at: sprint.paidAt || null,
+        created_at: sprint.createdAt
+      }))
+    );
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error saving sprints to Supabase:', error);
+    throw error;
+  }
+}
+
+export async function saveSettings(settings, userId) {
+  const client = getSupabaseClient();
+
+  try {
+    const { error } = await client.from('app_settings').upsert({
+      user_id: userId,
+      sprint_length_days: settings.sprintLengthDays,
+      updated_at: new Date().toISOString()
+    });
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error saving settings to Supabase:', error);
     throw error;
   }
 }

@@ -1,9 +1,12 @@
 import { isSameLocalDay, toDateTimeLabel } from '../shared/dateTime.js';
 
+function formatMoney(value) {
+  return `${value.toFixed(2)} kr`;
+}
+
 function renderChoreList(chores, activeRole) {
-  // Filter chores based on active role (kids only see their own chores)
-  const filteredChores = activeRole === 'parent' 
-    ? chores 
+  const filteredChores = activeRole === 'parent'
+    ? chores
     : chores.filter(chore => chore.assignedTo?.includes(activeRole));
 
   if (filteredChores.length === 0) {
@@ -33,6 +36,7 @@ function renderChoreList(chores, activeRole) {
             <div class="actions">${actionButton}</div>
           </div>
           <p class="chore-meta">${meta}</p>
+          <p class="chore-meta">Værdi: ${formatMoney(chore.value ?? 0)}</p>
         </li>
       `;
     })
@@ -67,26 +71,98 @@ function renderRoleSwitch(viewRefs, activeRole) {
   }
 }
 
-export function renderState(viewRefs, state, { activeRole }) {
+function renderTabs(viewRefs, activeTab, activeRole) {
+  const isParent = activeRole === 'parent';
+
+  for (const button of viewRefs.tabNav.querySelectorAll('.tab-btn')) {
+    const tabName = button.getAttribute('data-tab');
+    const isActive = tabName === activeTab;
+    button.classList.toggle('tab-active', isActive);
+    button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+
+    if (button.classList.contains('tab-parent-only')) {
+      button.hidden = !isParent;
+    }
+  }
+
+  viewRefs.tabOpgaver.hidden = activeTab !== 'opgaver';
+  viewRefs.tabSprint.hidden = activeTab !== 'sprint';
+  viewRefs.tabHistorik.hidden = activeTab !== 'historik' || !isParent;
+}
+
+function renderSprint(viewRefs, sprintUi, activeRole) {
+  const isParent = activeRole === 'parent';
+
+  if (!sprintUi?.activeSprint) {
+    viewRefs.sprintTitle.textContent = 'Ingen aktiv sprint';
+    viewRefs.sprintDates.textContent = '';
+    viewRefs.sprintDaysLeft.textContent = '';
+    viewRefs.sprintEarnings.innerHTML = '<p class="chore-meta">Ingen aktiv sprint fundet.</p>';
+    viewRefs.sprintParentActions.hidden = true;
+    return;
+  }
+
+  const { activeSprint, earnings, settings, daysLeft } = sprintUi;
+
+  viewRefs.sprintTitle.textContent = 'Aktuel sprint';
+  viewRefs.sprintDates.textContent = `${activeSprint.startDate} → ${activeSprint.endDate}`;
+  viewRefs.sprintDaysLeft.textContent = `${daysLeft} dage tilbage`;
+
+  viewRefs.sprintEarnings.innerHTML = `
+    <div class="earnings-grid">
+      <div class="earning-card">
+        <h3>👦 Hans Jørgen</h3>
+        <p>${formatMoney(earnings['Hans Jørgen'] ?? 0)}</p>
+      </div>
+      <div class="earning-card">
+        <h3>👱‍♀️ Andrea</h3>
+        <p>${formatMoney(earnings.Andrea ?? 0)}</p>
+      </div>
+    </div>
+  `;
+
+  viewRefs.sprintParentActions.hidden = !isParent;
+  if (isParent) {
+    viewRefs.sprintLengthInput.value = String(settings.sprintLengthDays ?? 7);
+  }
+}
+
+function renderHistory(viewRefs, history) {
+  if (!history || history.length === 0) {
+    viewRefs.sprintHistory.innerHTML = '<p class="chore-meta">Ingen afsluttede sprints endnu.</p>';
+    return;
+  }
+
+  viewRefs.sprintHistory.innerHTML = history.map(sprint => `
+    <article class="history-item">
+      <h3>${sprint.startDate} → ${sprint.endDate}</h3>
+      <p class="chore-meta">Betalt: ${sprint.paidAt ? toDateTimeLabel(sprint.paidAt) : 'Ukendt'}</p>
+      <div class="history-earnings">
+        <p>👦 Hans Jørgen: <strong>${formatMoney(sprint.earnings['Hans Jørgen'] ?? 0)}</strong></p>
+        <p>👱‍♀️ Andrea: <strong>${formatMoney(sprint.earnings.Andrea ?? 0)}</strong></p>
+      </div>
+    </article>
+  `).join('');
+}
+
+export function renderState(viewRefs, state, { activeRole, activeTab, sprintUi }) {
   const roleLabel = activeRole === 'parent' ? 'Forældretilstand' : `${activeRole}s visning`;
   const statusText = document.querySelector('#status-text');
   const progressSlider = document.querySelector('#progress-slider');
   const sliderCount = document.querySelector('#slider-count');
   const coinIcon = document.querySelector('#coin-icon');
-  
-  // Calculate counts based on active role
+
   let totalChores = state.totalChores;
   let doneTodayCount = state.doneTodayCount;
-  
+
   if (activeRole !== 'parent') {
-    // Filter chores for specific kid
     const kidChores = state.chores.filter(chore => chore.assignedTo?.includes(activeRole));
     totalChores = kidChores.length;
     doneTodayCount = kidChores.filter(
       chore => chore.isCompleted && chore.activeCompletedAt && isSameLocalDay(chore.activeCompletedAt)
     ).length;
   }
-  
+
   if (statusText) statusText.textContent = `${roleLabel} • I dag:`;
   if (progressSlider) {
     progressSlider.max = totalChores;
@@ -95,17 +171,14 @@ export function renderState(viewRefs, state, { activeRole }) {
     progressSlider.style.setProperty('--slider-fill', `${fillPercent}%`);
   }
   if (sliderCount) sliderCount.textContent = `${doneTodayCount} ud af ${totalChores}`;
-  
-  // Show coin with animation when all tasks are done
+
   if (coinIcon) {
     const allTasksDone = totalChores > 0 && doneTodayCount === totalChores;
-    
+
     if (allTasksDone) {
-      // Only remove and re-add animation if it wasn't already showing
       if (coinIcon.hidden) {
         coinIcon.hidden = false;
         coinIcon.classList.remove('celebrate');
-        // Trigger reflow to restart animation
         void coinIcon.offsetWidth;
         coinIcon.classList.add('celebrate');
       }
@@ -114,11 +187,14 @@ export function renderState(viewRefs, state, { activeRole }) {
       coinIcon.classList.remove('celebrate');
     }
   }
-  
+
   viewRefs.addChoreSection.hidden = activeRole !== 'parent';
   viewRefs.choreList.innerHTML = renderChoreList(state.chores, activeRole);
   viewRefs.recentCompletions.innerHTML = renderRecentCompletions(state.recentCompletions);
   renderRoleSwitch(viewRefs, activeRole);
+  renderTabs(viewRefs, activeTab, activeRole);
+  renderSprint(viewRefs, sprintUi, activeRole);
+  renderHistory(viewRefs, sprintUi?.history || []);
 }
 
 export function renderFeedback(viewRefs, message) {

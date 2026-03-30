@@ -1,6 +1,6 @@
 import { isOnOrAfter, isValidIsoTimestamp } from '../shared/dateTime.js';
 import { isSupabaseConfigured } from '../config/supabaseConfig.js';
-import { saveChores, saveRecords, saveUiState } from './supabaseService.js';
+import { saveChores, saveRecords, saveUiState, saveSprints, saveSettings } from './supabaseService.js';
 
 export const STORAGE_KEY = 'kids_chore_tracker_v1';
 
@@ -41,7 +41,8 @@ function isChoreItem(value) {
     isValidIsoTimestamp(value.createdAt) &&
     Array.isArray(value.assignedTo) &&
     value.assignedTo.every(kid => KIDS.includes(kid)) &&
-    value.assignedTo.length > 0
+    value.assignedTo.length > 0 &&
+    typeof value.value === 'number'
   );
 }
 
@@ -60,12 +61,29 @@ function createDefaultUiState() {
   };
 }
 
+function createDefaultSettings() {
+  return { sprintLengthDays: 7 };
+}
+
 function createEmptyPayload() {
   return {
     chores: [],
     records: [],
-    ui: createDefaultUiState()
+    ui: createDefaultUiState(),
+    sprints: [],
+    settings: createDefaultSettings()
   };
+}
+
+function isSprintItem(value) {
+  return (
+    value &&
+    typeof value === 'object' &&
+    isNonEmptyString(value.id) &&
+    isNonEmptyString(value.startDate) &&
+    isNonEmptyString(value.endDate) &&
+    (value.status === 'active' || value.status === 'paid')
+  );
 }
 
 function isPayload(value) {
@@ -75,6 +93,11 @@ function isPayload(value) {
     Array.isArray(value.chores) &&
     Array.isArray(value.records) &&
     isUiState(value.ui) &&
+    Array.isArray(value.sprints) &&
+    value.sprints.every(isSprintItem) &&
+    value.settings &&
+    typeof value.settings === 'object' &&
+    Number.isInteger(value.settings.sprintLengthDays) &&
     value.chores.every(isChoreItem) &&
     value.records.every(isChoreRecord)
   );
@@ -100,12 +123,15 @@ function normalizePayload(value) {
     // Migrate legacy chores to include assignedTo field
     const migratedChores = value.chores.map(chore => ({
       ...chore,
-      assignedTo: chore.assignedTo || KIDS
+      assignedTo: chore.assignedTo || KIDS,
+      value: typeof chore.value === 'number' ? chore.value : 0
     }));
     return {
       chores: migratedChores,
       records: value.records,
-      ui: createDefaultUiState()
+      ui: createDefaultUiState(),
+      sprints: value.sprints || [],
+      settings: value.settings || createDefaultSettings()
     };
   }
 
@@ -155,6 +181,12 @@ export function createStorageService({ storage = globalThis.localStorage, storag
       });
       saveUiState(nextData.ui.activeRole, userId).catch(error => {
         console.warn('Failed to sync UI state to Supabase:', error);
+      });
+      saveSprints(nextData.sprints, userId).catch(error => {
+        console.warn('Failed to sync sprints to Supabase:', error);
+      });
+      saveSettings(nextData.settings, userId).catch(error => {
+        console.warn('Failed to sync settings to Supabase:', error);
       });
     }
   }

@@ -1,22 +1,25 @@
 # Chore Champions — Application Documentation
 
 ## Purpose
-Chore Champions is a lightweight, kid-friendly chore tracking MVP.
+Chore Champions is a chore and pocket-money tracker for a family with sprint-based payout.
 
 It allows:
-- Children to view chores and mark them complete.
-- Children to undo a completion.
-- Parents to add chores and review recent completion activity.
-- Users to switch between separate Parent and Kid views.
+- Parents to add chores and set a value (`kr`) for each chore.
+- Kids to complete and undo chores.
+- Everyone (Parent, Andrea, Hans Jørgen) to see current sprint earnings.
+- Parents to close a sprint and mark it as paid.
+- Parents to review historic paid sprints.
 
-## MVP Features
-- Chore list display.
+## Core Features
 - Role switcher (Parent View / Kid View).
-- Complete / Undo actions per chore (Kid view only).
-- Add chore form (Parent view only).
-- Recent completions feed.
+- Chore list with complete/undo (kids) and delete (parent).
+- Per-chore value in DKK.
+- Sprint tab with current totals per kid.
+- Parent controls for sprint length and sprint close/payout.
+- History tab (parent-only) showing prior paid sprints.
+- Recent completion feed.
 - Daily status summary (`Today: X of Y chores done`).
-- Local persistence via `localStorage`.
+- Persistence via `localStorage` with optional Supabase sync.
 
 ## Tech Stack
 - Vanilla JavaScript (ES modules)
@@ -82,10 +85,9 @@ Do not duplicate date logic in services or UI.
 ### 6) Config Layer
 `src/config/appConfig.js` resolves runtime app config.
 
-Current provider:
-- `localStorage`
-
-Designed to allow future provider expansion (e.g., Supabase) with minimal orchestration changes.
+Current providers:
+- `localStorage` (always)
+- Supabase (when configured)
 
 ## Domain Invariants
 The app enforces these rules:
@@ -96,18 +98,34 @@ The app enforces these rules:
 - Persisted record shape remains compatible with storage guards.
 - Parent role is required for adding chores.
 - Kid role is required for complete/undo actions.
+- Undo removes earnings from sprint totals.
+- History tab is parent-only.
 
 ## Data Model (MVP)
 ### Chore
 - `id: string`
 - `name: string`
 - `createdAt: ISO timestamp`
+- `assignedTo: string[]`
+- `value: number` (kr per completion)
 
 ### Completion Record
 - `id: string`
 - `choreId: string`
 - `completedAt: ISO timestamp`
 - `undoneAt: ISO timestamp | null`
+- `sprintId: string | null`
+
+### Sprint
+- `id: string`
+- `startDate: YYYY-MM-DD`
+- `endDate: YYYY-MM-DD`
+- `status: 'active' | 'paid'`
+- `paidAt: ISO timestamp | null`
+- `createdAt: ISO timestamp`
+
+### Settings
+- `sprintLengthDays: number`
 
 ### Persisted Payload
 ```json
@@ -116,6 +134,10 @@ The app enforces these rules:
    "records": [],
    "ui": {
       "activeRole": "parent"
+   },
+   "sprints": [],
+   "settings": {
+      "sprintLengthDays": 7
    }
 }
 ```
@@ -137,19 +159,25 @@ Legacy payloads without `ui` are automatically normalized at load time.
 3. **Complete chore (child action)**
    - Kid view is active.
    - Service validates no active completion exists for chore.
-   - New completion record is stored.
+   - New completion record is stored and tied to active sprint.
    - UI updates status + history.
 
 4. **Undo chore (child action)**
    - Kid view is active.
    - Service validates active completion exists.
    - Active record receives `undoneAt` timestamp.
-   - UI updates status + history.
+   - Sprint earnings update (undone completions no longer count).
 
-5. **Switch role view**
+5. **Sprint close + payout (parent action)**
+   - Parent clicks “Luk sprint og marker som betalt”.
+   - Active sprint is marked as `paid`.
+   - A new active sprint is created automatically.
+   - Closed sprint appears in Historik.
+
+6. **Switch role view**
    - User toggles between Parent and Kid mode in-app.
    - Selected role is persisted in local storage for reload continuity.
-   - Future Supabase versions can map this UI state to profile/session storage.
+   - History tab is only visible for parent role.
 
 ## Running the App
 Because this uses ES modules, use a local static server (recommended) instead of opening the HTML file directly.

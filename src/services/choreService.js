@@ -7,6 +7,7 @@ export const CHORE_MESSAGES = Object.freeze({
   parentOnlyAdd: 'Kun forældrevisning kan tilføje opgaver.',
   kidOnlyActions: 'Kun børnevisning kan fuldføre eller fortryde opgaver.',
   invalidName: 'Indtast venligst et opgavenavn.',
+  invalidValue: 'Opgaveværdien skal være et tal (0 eller mere).',
   missingChore: 'Den opgave kunne ikke findes.',
   alreadyCompleted: 'Opgaven er allerede fuldført. Fortryd først for at fuldføre igen.',
   missingActiveCompletion: 'Opgaven er ikke markeret som fuldført lige nu.',
@@ -62,6 +63,7 @@ function buildViewState(data) {
       name: chore.name,
       createdAt: chore.createdAt,
       assignedTo: chore.assignedTo,
+      value: chore.value ?? 0,
       isCompleted: activeRecord !== null,
       activeCompletedAt: activeRecord?.completedAt ?? null,
       lastCompletedAt: lastRecord?.completedAt ?? null
@@ -119,7 +121,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     return buildViewState(data);
   }
 
-  function addChore(name, { nowIso = nowProvider(), actorRole, assignedTo } = {}) {
+  function addChore(name, { nowIso = nowProvider(), actorRole, assignedTo, value = 0 } = {}) {
     if (!isRoleAllowed(actorRole, ['parent'])) {
       return asResult(false, CHORE_MESSAGES.parentOnlyAdd, getState());
     }
@@ -127,6 +129,11 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     const nextName = normalizeName(name);
     if (!nextName) {
       return asResult(false, CHORE_MESSAGES.invalidName, getState());
+    }
+
+    const parsedValue = parseFloat(value);
+    if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+      return asResult(false, CHORE_MESSAGES.invalidValue, getState());
     }
 
     const validAssignedTo = Array.isArray(assignedTo) ? assignedTo.filter(k => typeof k === 'string') : [];
@@ -141,17 +148,20 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
           id: createId('chore'),
           name: nextName,
           createdAt: nowIso,
-          assignedTo: validAssignedTo
+          assignedTo: validAssignedTo,
+          value: parsedValue
         }
       ],
       records: data.records,
-      ui: data.ui
+      ui: data.ui,
+      sprints: data.sprints,
+      settings: data.settings
     }));
 
     return asResult(true, CHORE_MESSAGES.choreAdded, getState());
   }
 
-  function completeChore(choreId, { nowIso = nowProvider(), actorRole } = {}) {
+  function completeChore(choreId, { nowIso = nowProvider(), actorRole, sprintId = null } = {}) {
     if (!isKidRole(actorRole)) {
       return asResult(false, CHORE_MESSAGES.kidOnlyActions, getState());
     }
@@ -172,7 +182,8 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       id: createId('record'),
       choreId,
       completedAt: nowIso,
-      undoneAt: null
+      undoneAt: null,
+      sprintId
     };
 
     const withNewRecord = [...records, nextRecord];
@@ -184,7 +195,9 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     storageService.saveData({
       chores: data.chores,
       records: [...data.records, nextRecord],
-      ui: data.ui
+      ui: data.ui,
+      sprints: data.sprints,
+      settings: data.settings
     });
 
     return asResult(true, CHORE_MESSAGES.choreCompleted, getState());
@@ -228,7 +241,9 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     storageService.saveData({
       chores: data.chores,
       records: nextRecords,
-      ui: data.ui
+      ui: data.ui,
+      sprints: data.sprints,
+      settings: data.settings
     });
 
     return asResult(true, CHORE_MESSAGES.choreUndone, getState());
@@ -248,7 +263,9 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     storageService.saveData({
       chores: data.chores.filter((item) => item.id !== choreId),
       records: data.records.filter((record) => record.choreId !== choreId),
-      ui: data.ui
+      ui: data.ui,
+      sprints: data.sprints,
+      settings: data.settings
     });
 
     return asResult(true, `Opgaven "${chore.name}" er slettet.`, getState());

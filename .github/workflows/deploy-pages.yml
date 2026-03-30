@@ -31,7 +31,6 @@ jobs:
       - name: Prepare static files
         env:
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          LEGACY_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           mkdir -p dist/src
           cp index.html dist/
@@ -43,7 +42,7 @@ jobs:
 
           path = Path('dist/src/config/supabaseConfig.js')
           content = path.read_text(encoding='utf-8')
-          publishable_key = os.environ.get('SUPABASE_PUBLISHABLE_KEY', '') or os.environ.get('LEGACY_SUPABASE_ANON_KEY', '')
+          publishable_key = os.environ.get('SUPABASE_PUBLISHABLE_KEY', '')
 
           if publishable_key:
               content = content.replace('__SUPABASE_PUBLISHABLE_KEY__', publishable_key)
