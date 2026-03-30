@@ -1,10 +1,18 @@
 import { isSameLocalDay, toDateTimeLabel } from '../shared/dateTime.js';
 
+const MASCOT_MAP = Object.freeze({
+  'Hans Jørgen': '🦕',
+  'Andrea': '🦄',
+  'parent': '🎉'
+});
+
+const BOTH_KIDS = ['Hans Jørgen', 'Andrea'];
+
 function formatMoney(value) {
   return `${value.toFixed(2)} kr`;
 }
 
-function renderChoreList(chores, activeRole) {
+function renderChoreList(chores, activeRole, pendingCollaborations = []) {
   const filteredChores = activeRole === 'parent'
     ? chores
     : chores.filter(chore => chore.assignedTo?.includes(activeRole));
@@ -16,12 +24,52 @@ function renderChoreList(chores, activeRole) {
   return filteredChores
     .map((chore) => {
       const isKidView = activeRole !== 'parent';
-      const actionButton =
-        isKidView
-          ? chore.isCompleted
-            ? `<button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">↩️ Fortryd</button>`
-            : `<button class="button button-success" data-action="complete" data-chore-id="${chore.id}">✅ Fuldfør</button>`
-          : `<button class="button button-secondary" data-action="delete" data-chore-id="${chore.id}">🗑️ Slet</button>`;
+      const maxPerSprint = chore.maxPerSprint ?? 1;
+      const sprintCount = chore.sprintCompletionCount ?? 0;
+      const isFullyDone = chore.isFullyDone ?? false;
+
+      // Repeat badge: only show when maxPerSprint > 1 or when limit reached
+      const repeatBadge = maxPerSprint > 1
+        ? `<span class="repeat-badge">${sprintCount}/${maxPerSprint} gange</span>`
+        : (maxPerSprint === 0 && sprintCount > 0 ? `<span class="repeat-badge">${sprintCount}× gjort</span>` : '');
+
+      // Collab logic
+      const isBothKidsChore = BOTH_KIDS.every(k => chore.assignedTo?.includes(k));
+      const pendingCollab = pendingCollaborations.find(c => c.choreId === chore.id);
+      const isProposer = pendingCollab?.proposedBy === activeRole;
+
+      let actionButtons = '';
+      if (isKidView) {
+        if (isFullyDone) {
+          actionButtons = `<button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">↩️ Fortryd</button>`;
+        } else {
+          actionButtons = `<button class="button button-success" data-action="complete" data-chore-id="${chore.id}">✅ Fuldfør</button>`;
+
+          // Collab button: show for chores assigned to both kids, no pending collab, not done
+          if (isBothKidsChore && !pendingCollab) {
+            actionButtons += ` <button class="button button-collab" data-action="propose-collab" data-chore-id="${chore.id}">🤝 Gør det sammen</button>`;
+          }
+
+          // Undo button when partial completions exist
+          if (sprintCount > 0) {
+            actionButtons += ` <button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">↩️ Fortryd</button>`;
+          }
+        }
+
+        // Show pending collab state
+        if (pendingCollab) {
+          if (isProposer) {
+            actionButtons += ` <span class="collab-pending-badge">⏳ Venter på den anden…</span>`;
+          } else {
+            actionButtons = `
+              <button class="button button-success" data-action="accept-collab" data-collab-id="${pendingCollab.id}">✅ Acceptér samarbejde</button>
+              <button class="button button-secondary" data-action="decline-collab" data-collab-id="${pendingCollab.id}">❌ Afvis</button>
+            `;
+          }
+        }
+      } else {
+        actionButtons = `<button class="button button-secondary" data-action="delete" data-chore-id="${chore.id}">🗑️ Slet</button>`;
+      }
 
       const meta = chore.isCompleted
         ? `Fuldført kl. ${toDateTimeLabel(chore.activeCompletedAt)}`
@@ -29,11 +77,18 @@ function renderChoreList(chores, activeRole) {
           ? `Sidst udført kl. ${toDateTimeLabel(chore.lastCompletedAt)}`
           : 'Ikke fuldført endnu';
 
+      const valueText = maxPerSprint > 0
+        ? `${formatMoney(chore.value ?? 0)} × op til ${maxPerSprint === 0 ? '∞' : maxPerSprint} gange`
+        : `${formatMoney(chore.value ?? 0)} pr. gang`;
+
       return `
-        <li class="chore-item">
+        <li class="chore-item${isFullyDone ? ' chore-fully-done' : ''}">
           <div class="chore-main">
-            <h3 class="chore-title">${chore.name}</h3>
-            <div class="actions">${actionButton}</div>
+            <div class="chore-title-row">
+              <h3 class="chore-title">${chore.name}</h3>
+              ${repeatBadge}
+            </div>
+            <div class="actions">${actionButtons}</div>
           </div>
           <p class="chore-meta">${meta}</p>
           <p class="chore-meta">Værdi: ${formatMoney(chore.value ?? 0)}</p>
@@ -69,6 +124,68 @@ function renderRoleSwitch(viewRefs, activeRole) {
     button.setAttribute('aria-pressed', buttonRole === activeRole ? 'true' : 'false');
     button.classList.toggle('role-selected', buttonRole === activeRole);
   }
+}
+
+export function renderCollabInbox(viewRefs, pendingCollaborations, activeRole, chores) {
+  if (!viewRefs.collabInbox) return;
+
+  // Show incoming proposals for the current kid (proposed by someone else)
+  const incoming = pendingCollaborations.filter(
+    c => c.proposedBy !== activeRole && activeRole !== 'parent'
+  );
+
+  if (incoming.length === 0) {
+    viewRefs.collabInbox.hidden = true;
+    viewRefs.collabInbox.innerHTML = '';
+    return;
+  }
+
+  const choreMap = new Map((chores ?? []).map(c => [c.id, c]));
+  viewRefs.collabInbox.hidden = false;
+  viewRefs.collabInbox.innerHTML = `
+    <div class="collab-inbox-card">
+      <h3 class="collab-inbox-title">🤝 Samarbejdsforslag</h3>
+      ${incoming.map(collab => {
+        const chore = choreMap.get(collab.choreId);
+        const choreName = chore ? chore.name : 'Ukendt opgave';
+        const proposerEmoji = MASCOT_MAP[collab.proposedBy] ?? '👤';
+        return `
+          <div class="collab-proposal">
+            <p>${proposerEmoji} <strong>${collab.proposedBy}</strong> vil gøre <strong>${choreName}</strong> sammen med dig!</p>
+            <div class="actions">
+              <button class="button button-success" data-action="accept-collab" data-collab-id="${collab.id}">✅ Gør det sammen!</button>
+              <button class="button button-secondary" data-action="decline-collab" data-collab-id="${collab.id}">❌ Nej tak</button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+let mascotTimer = null;
+
+export function showMascot(mascotOverlay, activeRole, message, { type = 'pop', duration = 2500 } = {}) {
+  if (!mascotOverlay) return;
+
+  const emoji = MASCOT_MAP[activeRole] ?? '⭐';
+  const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
+  const messageEl = mascotOverlay.querySelector('.mascot-message');
+
+  if (emojiEl) emojiEl.textContent = emoji;
+  if (messageEl) messageEl.textContent = message;
+
+  // Remove all animation classes
+  mascotOverlay.classList.remove('mascot-pop', 'mascot-celebrate', 'mascot-collab', 'mascot-confetti');
+  void mascotOverlay.offsetWidth; // reflow to restart animation
+  mascotOverlay.classList.add(`mascot-${type}`);
+  mascotOverlay.hidden = false;
+
+  if (mascotTimer) clearTimeout(mascotTimer);
+  mascotTimer = setTimeout(() => {
+    mascotOverlay.hidden = true;
+    mascotTimer = null;
+  }, duration);
 }
 
 function renderTabs(viewRefs, activeTab, activeRole) {
@@ -189,12 +306,13 @@ export function renderState(viewRefs, state, { activeRole, activeTab, sprintUi }
   }
 
   viewRefs.addChoreSection.hidden = activeRole !== 'parent';
-  viewRefs.choreList.innerHTML = renderChoreList(state.chores, activeRole);
+  viewRefs.choreList.innerHTML = renderChoreList(state.chores, activeRole, state.pendingCollaborations ?? []);
   viewRefs.recentCompletions.innerHTML = renderRecentCompletions(state.recentCompletions);
   renderRoleSwitch(viewRefs, activeRole);
   renderTabs(viewRefs, activeTab, activeRole);
   renderSprint(viewRefs, sprintUi, activeRole);
   renderHistory(viewRefs, sprintUi?.history || []);
+  renderCollabInbox(viewRefs, state.pendingCollaborations ?? [], activeRole, state.chores);
 }
 
 export function renderFeedback(viewRefs, message) {

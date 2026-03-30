@@ -1,8 +1,9 @@
 -- Sprint migration — run this in the Supabase SQL editor
 -- Adds: value column on chores, sprints table, sprint_id on records, app_settings table
 
--- 1. Add price value to chores (kr per completion)
+-- 1. Add price value and repetition limit to chores
 ALTER TABLE chores ADD COLUMN IF NOT EXISTS value numeric NOT NULL DEFAULT 0;
+ALTER TABLE chores ADD COLUMN IF NOT EXISTS max_per_sprint int NOT NULL DEFAULT 1;
 
 -- 2. Sprints table
 CREATE TABLE IF NOT EXISTS sprints (

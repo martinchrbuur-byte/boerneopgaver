@@ -117,14 +117,20 @@ export function createSprintService({ storageService } = {}) {
 
     for (const record of data.records) {
       if (record.sprintId !== sprintId) continue;
-      if (record.undoneAt !== null) continue; // undone = not earned
+      if (record.undoneAt !== null) continue;
 
       const chore = choreMap.get(record.choreId);
       if (!chore) continue;
 
+      // earnedValue is set on collaborative completions (split value)
+      // If absent, fall back to the chore's full value
+      const perKidValue = typeof record.earnedValue === 'number'
+        ? record.earnedValue
+        : (chore.value ?? 0);
+
       for (const kid of chore.assignedTo) {
         if (kid in earnings) {
-          earnings[kid] += chore.value ?? 0;
+          earnings[kid] += perKidValue;
         }
       }
     }

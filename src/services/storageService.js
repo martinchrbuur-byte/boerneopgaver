@@ -42,7 +42,18 @@ function isChoreItem(value) {
     Array.isArray(value.assignedTo) &&
     value.assignedTo.every(kid => KIDS.includes(kid)) &&
     value.assignedTo.length > 0 &&
-    typeof value.value === 'number'
+    typeof value.value === 'number' &&
+    typeof value.maxPerSprint === 'number'
+  );
+}
+
+function isCollabItem(value) {
+  return (
+    value &&
+    typeof value === 'object' &&
+    isNonEmptyString(value.id) &&
+    isNonEmptyString(value.choreId) &&
+    isNonEmptyString(value.proposedBy)
   );
 }
 
@@ -71,7 +82,8 @@ function createEmptyPayload() {
     records: [],
     ui: createDefaultUiState(),
     sprints: [],
-    settings: createDefaultSettings()
+    settings: createDefaultSettings(),
+    pendingCollaborations: []
   };
 }
 
@@ -98,19 +110,20 @@ function isPayload(value) {
     value.settings &&
     typeof value.settings === 'object' &&
     Number.isInteger(value.settings.sprintLengthDays) &&
+    Array.isArray(value.pendingCollaborations) &&
+    value.pendingCollaborations.every(isCollabItem) &&
     value.chores.every(isChoreItem) &&
     value.records.every(isChoreRecord)
   );
 }
 
 function isLegacyPayload(value) {
+  // Lenient check — individual items are migrated in normalizePayload
   return (
     value &&
     typeof value === 'object' &&
     Array.isArray(value.chores) &&
-    Array.isArray(value.records) &&
-    value.chores.every(isChoreItem) &&
-    value.records.every(isChoreRecord)
+    Array.isArray(value.records)
   );
 }
 
@@ -120,18 +133,30 @@ function normalizePayload(value) {
   }
 
   if (isLegacyPayload(value)) {
-    // Migrate legacy chores to include assignedTo field
-    const migratedChores = value.chores.map(chore => ({
-      ...chore,
-      assignedTo: chore.assignedTo || KIDS,
-      value: typeof chore.value === 'number' ? chore.value : 0
-    }));
+    const migratedChores = value.chores
+      .filter(c => c && isNonEmptyString(c.id) && isNonEmptyString(c.name))
+      .map(chore => ({
+        id: chore.id,
+        name: chore.name,
+        createdAt: isValidIsoTimestamp(chore.createdAt) ? chore.createdAt : new Date().toISOString(),
+        assignedTo: Array.isArray(chore.assignedTo) && chore.assignedTo.length > 0 ? chore.assignedTo : KIDS,
+        value: typeof chore.value === 'number' ? chore.value : 0,
+        maxPerSprint: typeof chore.maxPerSprint === 'number' ? chore.maxPerSprint : 1
+      }));
+
+    const migratedRecords = value.records.filter(r => isChoreRecord(r));
+
     return {
       chores: migratedChores,
-      records: value.records,
-      ui: createDefaultUiState(),
-      sprints: value.sprints || [],
-      settings: value.settings || createDefaultSettings()
+      records: migratedRecords,
+      ui: isUiState(value.ui) ? value.ui : createDefaultUiState(),
+      sprints: Array.isArray(value.sprints) ? value.sprints.filter(isSprintItem) : [],
+      settings: value.settings && Number.isInteger(value.settings.sprintLengthDays)
+        ? value.settings
+        : createDefaultSettings(),
+      pendingCollaborations: Array.isArray(value.pendingCollaborations)
+        ? value.pendingCollaborations.filter(isCollabItem)
+        : []
     };
   }
 

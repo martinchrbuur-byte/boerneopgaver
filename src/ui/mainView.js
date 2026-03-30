@@ -85,8 +85,22 @@ export function createMainView(rootElement) {
                 </label>
               </div>
             </div>
+            <div class="form-row form-row-max">
+              <label class="assign-label" for="chore-max-input">Maks gange pr. sprint (0&nbsp;=&nbsp;ubegrænset):</label>
+              <input
+                id="chore-max-input"
+                class="input input-narrow"
+                name="choreMax"
+                type="number"
+                min="0"
+                step="1"
+                value="1"
+              />
+            </div>
           </form>
         </section>
+
+        <div id="collab-inbox" class="collab-inbox" hidden></div>
 
         <section class="card" aria-label="Opgaveliste">
           <h2 class="section-title">Opgaver</h2>
@@ -128,6 +142,11 @@ export function createMainView(rootElement) {
         </section>
       </div>
 
+      <div id="mascot-overlay" class="mascot-overlay" hidden>
+        <span class="mascot-emoji" aria-hidden="true"></span>
+        <span class="mascot-message"></span>
+      </div>
+
     </section>
   `;
 
@@ -153,6 +172,9 @@ export function createMainView(rootElement) {
     sprintLengthSave: rootElement.querySelector('#sprint-length-save'),
     closeSprintBtn: rootElement.querySelector('#close-sprint-btn'),
     sprintHistory: rootElement.querySelector('#sprint-history'),
-    tabParentOnlyBtns: rootElement.querySelectorAll('.tab-parent-only')
+    tabParentOnlyBtns: rootElement.querySelectorAll('.tab-parent-only'),
+    choreMaxInput: rootElement.querySelector('#chore-max-input'),
+    collabInbox: rootElement.querySelector('#collab-inbox'),
+    mascotOverlay: rootElement.querySelector('#mascot-overlay')
   };
 }

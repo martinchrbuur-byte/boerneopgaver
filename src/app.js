@@ -5,7 +5,7 @@ import { createSprintService } from './services/sprintService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
 import { initializeSupabaseData } from './services/supabaseService.js';
 import { createMainView } from './ui/mainView.js';
-import { renderFeedback, renderState } from './ui/choreView.js';
+import { renderFeedback, renderState, showMascot } from './ui/choreView.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
@@ -65,7 +65,9 @@ async function init() {
           supabaseData.sprints.length > 0 ||
           supabaseData.settings.sprintLengthDays !== 7;
         if (hasRemoteData) {
+          const localData = storageService.loadData();
           storageService.saveData({
+            ...localData,
             chores: supabaseData.chores,
             records: supabaseData.records,
             ui: supabaseData.ui,
@@ -91,10 +93,7 @@ async function init() {
     }
 
     storageService.updateData((data) => ({
-      chores: data.chores,
-      records: data.records,
-      sprints: data.sprints,
-      settings: data.settings,
+      ...data,
       ui: {
         ...data.ui,
         activeRole
@@ -104,6 +103,7 @@ async function init() {
 
   function refresh(message = '') {
     const activeSprint = sprintService.getActiveSprint();
+    const activeSprintId = activeSprint?.id ?? null;
     const sprintUi = {
       activeSprint,
       settings: sprintService.getSettings(),
@@ -112,7 +112,7 @@ async function init() {
       daysLeft: activeSprint ? calculateDaysLeft(activeSprint.endDate) : 0
     };
 
-    renderState(viewRefs, choreService.getState(), { activeRole, activeTab, sprintUi });
+    renderState(viewRefs, choreService.getState({ activeSprintId }), { activeRole, activeTab, sprintUi });
     renderFeedback(viewRefs, message);
   }
 
@@ -161,11 +161,13 @@ async function init() {
     const formData = new FormData(viewRefs.addChoreForm);
     const choreName = formData.get('choreName');
     const choreValue = formData.get('choreValue');
+    const choreMax = formData.get('choreMax') ?? '1';
     const assignedTo = formData.getAll('assignedTo');
-    const result = choreService.addChore(choreName, { actorRole: activeRole, assignedTo, value: choreValue });
+    const result = choreService.addChore(choreName, { actorRole: activeRole, assignedTo, value: choreValue, maxPerSprint: choreMax });
     if (result.ok) {
       viewRefs.addChoreForm.reset();
       viewRefs.choreValueInput.value = '0';
+      if (viewRefs.choreMaxInput) viewRefs.choreMaxInput.value = '1';
       viewRefs.choreNameInput.focus();
     }
 
@@ -173,13 +175,14 @@ async function init() {
   });
 
   viewRefs.choreList.addEventListener('click', (event) => {
-    const actionButton = event.target.closest('button[data-action][data-chore-id]');
+    const actionButton = event.target.closest('button[data-action][data-chore-id], button[data-action][data-collab-id]');
     if (!actionButton) {
       return;
     }
 
     const action = actionButton.getAttribute('data-action');
     const choreId = actionButton.getAttribute('data-chore-id');
+    const collabId = actionButton.getAttribute('data-collab-id');
     let result;
 
     if (action === 'delete') {
@@ -187,12 +190,57 @@ async function init() {
     } else if (action === 'complete') {
       const activeSprint = sprintService.getActiveSprint() || sprintService.ensureActiveSprint();
       result = choreService.completeChore(choreId, { actorRole: activeRole, sprintId: activeSprint.id });
+      if (result.ok) {
+        // Check if all chores for this kid are fully done
+        const kidChores = result.state.chores.filter(c => c.assignedTo?.includes(activeRole));
+        const allDone = kidChores.length > 0 && kidChores.every(c => c.isFullyDone || c.isCompleted);
+        if (allDone) {
+          showMascot(viewRefs.mascotOverlay, activeRole, 'Alle opgaver klaret! 🎉', { type: 'celebrate', duration: 4000 });
+        } else {
+          showMascot(viewRefs.mascotOverlay, activeRole, 'Flot klaret!');
+        }
+      }
     } else if (action === 'undo') {
-      result = choreService.undoChore(choreId, { actorRole: activeRole });
+      const activeSprint = sprintService.getActiveSprint();
+      result = choreService.undoChore(choreId, { actorRole: activeRole, sprintId: activeSprint?.id ?? null });
+    } else if (action === 'propose-collab') {
+      result = choreService.proposeCollaboration(choreId, { actorRole: activeRole });
+    } else if (action === 'accept-collab') {
+      const activeSprint = sprintService.getActiveSprint() || sprintService.ensureActiveSprint();
+      result = choreService.acceptCollaboration(collabId, { actorRole: activeRole, sprintId: activeSprint.id });
+      if (result.ok) {
+        showMascot(viewRefs.mascotOverlay, activeRole, 'Godt samarbejde! 🤝', { type: 'collab', duration: 3000 });
+      }
+    } else if (action === 'decline-collab') {
+      result = choreService.declineCollaboration(collabId, { actorRole: activeRole });
     }
 
-    refresh(result.message);
+    if (result) refresh(result.message);
   });
+
+  // Collab inbox delegation (collab proposals shown above the chore list)
+  if (viewRefs.collabInbox) {
+    viewRefs.collabInbox.addEventListener('click', (event) => {
+      const actionButton = event.target.closest('button[data-action][data-collab-id]');
+      if (!actionButton) return;
+
+      const action = actionButton.getAttribute('data-action');
+      const collabId = actionButton.getAttribute('data-collab-id');
+      let result;
+
+      if (action === 'accept-collab') {
+        const activeSprint = sprintService.getActiveSprint() || sprintService.ensureActiveSprint();
+        result = choreService.acceptCollaboration(collabId, { actorRole: activeRole, sprintId: activeSprint.id });
+        if (result.ok) {
+          showMascot(viewRefs.mascotOverlay, activeRole, 'Godt samarbejde! 🤝', { type: 'collab', duration: 3000 });
+        }
+      } else if (action === 'decline-collab') {
+        result = choreService.declineCollaboration(collabId, { actorRole: activeRole });
+      }
+
+      if (result) refresh(result.message);
+    });
+  }
 
   viewRefs.sprintLengthSave.addEventListener('click', () => {
     const result = sprintService.setSprintLength(viewRefs.sprintLengthInput.value, activeRole);
@@ -201,6 +249,9 @@ async function init() {
 
   viewRefs.closeSprintBtn.addEventListener('click', () => {
     const result = sprintService.closeSprint(activeRole);
+    if (result.ok) {
+      showMascot(viewRefs.mascotOverlay, 'parent', 'Sprint betalt! 🎉', { type: 'confetti', duration: 4000 });
+    }
     refresh(result.message);
   });
 }
