@@ -25,6 +25,26 @@ export function isChoreRecord(value) {
     return false;
   }
 
+  const hasValidCompletedBy =
+    value.completedBy === undefined ||
+    (typeof value.completedBy === 'string' && KIDS.includes(value.completedBy));
+  if (!hasValidCompletedBy) {
+    return false;
+  }
+
+  const hasValidEarnedValue =
+    value.earnedValue === undefined ||
+    (typeof value.earnedValue === 'number' && Number.isFinite(value.earnedValue) && value.earnedValue >= 0);
+  if (!hasValidEarnedValue) {
+    return false;
+  }
+
+  const hasValidSprintId =
+    value.sprintId === undefined || value.sprintId === null || isNonEmptyString(value.sprintId);
+  if (!hasValidSprintId) {
+    return false;
+  }
+
   if (value.undoneAt === null) {
     return true;
   }

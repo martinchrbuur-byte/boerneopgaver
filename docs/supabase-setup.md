@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS records (
   completed_at TEXT NOT NULL,
   undone_at TEXT,
   user_id TEXT NOT NULL,
+  sprint_id TEXT,
+  completed_by TEXT,
+  earned_value NUMERIC,
   created_at_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (chore_id) REFERENCES chores(id)
 );

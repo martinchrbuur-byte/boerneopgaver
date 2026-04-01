@@ -186,3 +186,43 @@ test('kid cannot add chores', () => {
   assert.equal(addAsKid.ok, false);
   assert.equal(addAsKid.state.totalChores, 0);
 });
+
+test('unassigned child cannot complete chore', () => {
+  const { choreService } = buildService();
+
+  const addResult = choreService.addChore('Only Andrea task', {
+    nowIso: '2026-01-01T08:00:00.000Z',
+    actorRole: 'parent',
+    assignedTo: ['Andrea']
+  });
+  const choreId = addResult.state.chores[0].id;
+
+  const completeAsUnassigned = choreService.completeChore(choreId, {
+    nowIso: '2026-01-01T09:00:00.000Z',
+    actorRole: 'Hans Jørgen'
+  });
+
+  assert.equal(completeAsUnassigned.ok, false);
+  assert.match(completeAsUnassigned.message, /tildelt/i);
+});
+
+test('completion record stores completedBy actor', () => {
+  const { choreService, storageService } = buildService();
+
+  const addResult = choreService.addChore('Fold laundry', {
+    nowIso: '2026-01-01T08:00:00.000Z',
+    actorRole: 'parent',
+    assignedTo: ['Andrea']
+  });
+  const choreId = addResult.state.chores[0].id;
+
+  const completeResult = choreService.completeChore(choreId, {
+    nowIso: '2026-01-01T09:00:00.000Z',
+    actorRole: 'Andrea'
+  });
+
+  assert.equal(completeResult.ok, true);
+
+  const data = storageService.loadData();
+  assert.equal(data.records[0].completedBy, 'Andrea');
+});

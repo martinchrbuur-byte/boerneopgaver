@@ -19,7 +19,8 @@ export const CHORE_MESSAGES = Object.freeze({
   collabAccepted: 'Godt samarbejde! Opgaven er klaret sammen.',
   collabDeclined: 'Forslaget er afvist.',
   collabMissing: 'Samarbejdsforslaget kunne ikke findes.',
-  notCollab: 'Kun samarbejdsopgaver kan accepteres/afvises via dette flow.'
+  notCollab: 'Kun samarbejdsopgaver kan accepteres/afvises via dette flow.',
+  notAssigned: 'Du kan kun fuldføre opgaver, du er tildelt.'
 });
 
 function normalizeName(name) {
@@ -201,6 +202,10 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       return asResult(false, CHORE_MESSAGES.missingChore, buildViewState(data));
     }
 
+    if (!Array.isArray(chore.assignedTo) || !chore.assignedTo.includes(actorRole)) {
+      return asResult(false, CHORE_MESSAGES.notAssigned, buildViewState(data, { activeSprintId: sprintId }));
+    }
+
     const maxPerSprint = chore.maxPerSprint ?? 1;
     const records = getChoreRecords(data, choreId);
 
@@ -221,7 +226,8 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       choreId,
       completedAt: nowIso,
       undoneAt: null,
-      sprintId
+      sprintId,
+      completedBy: actorRole
     };
 
     const withNewRecord = [...records, nextRecord];
@@ -317,6 +323,10 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       return asResult(false, CHORE_MESSAGES.missingChore, buildViewState(data));
     }
 
+    if (!Array.isArray(chore.assignedTo) || !chore.assignedTo.includes(actorRole)) {
+      return asResult(false, CHORE_MESSAGES.notAssigned, buildViewState(data));
+    }
+
     const pending = data.pendingCollaborations ?? [];
     const alreadyPending = pending.some((c) => c.choreId === choreId);
     if (alreadyPending) {
@@ -358,6 +368,12 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     const chore = data.chores.find((item) => item.id === collab.choreId);
     if (!chore) {
       return asResult(false, CHORE_MESSAGES.missingChore, buildViewState(data));
+    }
+
+    const assignedKids = Array.isArray(chore.assignedTo) ? chore.assignedTo : [];
+    const bothAssigned = assignedKids.includes(collab.proposedBy) && assignedKids.includes(actorRole);
+    if (!bothAssigned) {
+      return asResult(false, CHORE_MESSAGES.notAssigned, buildViewState(data));
     }
 
     const splitValue = (chore.value ?? 0) / 2;

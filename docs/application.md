@@ -98,6 +98,9 @@ The app enforces these rules:
 - Persisted record shape remains compatible with storage guards.
 - Parent role is required for adding chores.
 - Kid role is required for complete/undo actions.
+- A child can only complete chores they are assigned to.
+- Allowance is credited to the child who actually completed the chore.
+- Collaboration splits one chore value across participants (sum equals chore value).
 - Undo removes earnings from sprint totals.
 - History tab is parent-only.
 
@@ -115,6 +118,8 @@ The app enforces these rules:
 - `completedAt: ISO timestamp`
 - `undoneAt: ISO timestamp | null`
 - `sprintId: string | null`
+- `completedBy?: string`
+- `earnedValue?: number`
 
 ### Sprint
 - `id: string`

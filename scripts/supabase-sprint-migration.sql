@@ -22,6 +22,8 @@ CREATE POLICY "public read/write sprints" ON sprints USING (true) WITH CHECK (tr
 
 -- 3. Add sprint_id to records
 ALTER TABLE records ADD COLUMN IF NOT EXISTS sprint_id uuid REFERENCES sprints(id);
+ALTER TABLE records ADD COLUMN IF NOT EXISTS completed_by text;
+ALTER TABLE records ADD COLUMN IF NOT EXISTS earned_value numeric;
 
 -- 4. App settings (one row per household / user_id)
 CREATE TABLE IF NOT EXISTS app_settings (

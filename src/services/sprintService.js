@@ -128,9 +128,24 @@ export function createSprintService({ storageService } = {}) {
         ? record.earnedValue
         : (chore.value ?? 0);
 
-      for (const kid of chore.assignedTo) {
-        if (kid in earnings) {
-          earnings[kid] += perKidValue;
+      if (typeof record.completedBy === 'string' && record.completedBy in earnings) {
+        earnings[record.completedBy] += perKidValue;
+        continue;
+      }
+
+      const validAssignedKids = Array.isArray(chore.assignedTo)
+        ? chore.assignedTo.filter(kid => kid in earnings)
+        : [];
+
+      if (validAssignedKids.length === 1) {
+        earnings[validAssignedKids[0]] += perKidValue;
+        continue;
+      }
+
+      if (validAssignedKids.length > 1) {
+        const splitValue = perKidValue / validAssignedKids.length;
+        for (const kid of validAssignedKids) {
+          earnings[kid] += splitValue;
         }
       }
     }

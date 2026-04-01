@@ -20,7 +20,9 @@ function toAppRecord(record) {
     choreId: record.chore_id,
     completedAt: record.completed_at,
     undoneAt: record.undone_at,
-    sprintId: record.sprint_id || null
+    sprintId: record.sprint_id || null,
+    completedBy: record.completed_by || undefined,
+    earnedValue: typeof record.earned_value === 'number' ? record.earned_value : undefined
   };
 }
 
@@ -157,7 +159,9 @@ export async function saveRecords(records, userId) {
         completed_at: record.completedAt,
         undone_at: record.undoneAt,
         user_id: userId,
-        sprint_id: record.sprintId || null
+        sprint_id: record.sprintId || null,
+        completed_by: record.completedBy || null,
+        earned_value: typeof record.earnedValue === 'number' ? record.earnedValue : null
       }))
     );
 
