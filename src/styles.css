@@ -66,6 +66,23 @@ body {
   gap: 0.5rem;
 }
 
+.money-slider-group {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.money-slider-item {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.money-slider-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
 .progress-slider {
   flex: 1;
   height: 12px;

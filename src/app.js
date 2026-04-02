@@ -108,6 +108,12 @@ async function init() {
       activeSprint,
       settings: sprintService.getSettings(),
       earnings: activeSprint ? sprintService.getSprintEarnings(activeSprint.id) : {},
+      moneyProgress: activeSprint
+        ? sprintService.getSprintMoneyProgress(activeSprint.id)
+        : {
+          total: { earned: 0, target: 0 },
+          byKid: Object.fromEntries(KIDS.map(kid => [kid, { earned: 0, target: 0 }]))
+        },
       history: sprintService.getSprintHistory(),
       daysLeft: activeSprint ? calculateDaysLeft(activeSprint.endDate) : 0
     };
@@ -162,12 +168,20 @@ async function init() {
     const choreName = formData.get('choreName');
     const choreValue = formData.get('choreValue');
     const choreMax = formData.get('choreMax') ?? '1';
+    const choreUnlimitedCap = formData.get('choreUnlimitedCap') ?? '1';
     const assignedTo = formData.getAll('assignedTo');
-    const result = choreService.addChore(choreName, { actorRole: activeRole, assignedTo, value: choreValue, maxPerSprint: choreMax });
+    const result = choreService.addChore(choreName, {
+      actorRole: activeRole,
+      assignedTo,
+      value: choreValue,
+      maxPerSprint: choreMax,
+      unlimitedDailyCap: choreUnlimitedCap
+    });
     if (result.ok) {
       viewRefs.addChoreForm.reset();
       viewRefs.choreValueInput.value = '0';
       if (viewRefs.choreMaxInput) viewRefs.choreMaxInput.value = '1';
+      if (viewRefs.choreUnlimitedCapInput) viewRefs.choreUnlimitedCapInput.value = '1';
       viewRefs.choreNameInput.focus();
     }
 

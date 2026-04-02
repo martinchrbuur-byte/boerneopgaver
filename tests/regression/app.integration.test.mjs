@@ -36,25 +36,28 @@ async function withBootstrappedApp(run) {
     const roleSwitch = document.querySelector('#role-switch');
     const addChoreForm = document.querySelector('#add-chore-form');
     const choreNameInput = document.querySelector('#chore-name-input');
+    const choreValueInput = document.querySelector('#chore-value-input');
     const choreList = document.querySelector('#chore-list');
     const feedback = document.querySelector('#feedback');
-    const sliderCount = document.querySelector('#slider-count');
+    const moneySliderCount = document.querySelector('.money-slider-count');
 
     assert.ok(roleSwitch);
     assert.ok(addChoreForm);
     assert.ok(choreNameInput);
     assert.ok(choreList);
     assert.ok(feedback);
-    assert.ok(sliderCount);
+    assert.ok(choreValueInput);
+    assert.ok(moneySliderCount);
 
     await run({
       window,
       roleSwitch,
       addChoreForm,
       choreNameInput,
+      choreValueInput,
       choreList,
       feedback,
-      sliderCount
+      moneySliderCount
     });
   } finally {
     dom.window.close();
@@ -71,14 +74,16 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     roleSwitch,
     addChoreForm,
     choreNameInput,
+    choreValueInput,
     choreList,
     feedback,
-    sliderCount
+    moneySliderCount
   }) => {
     const initialChoreCount = choreList.querySelectorAll('.chore-item').length;
     assert.equal(initialChoreCount, 3);
 
     choreNameInput.value = 'Feed fish';
+    choreValueInput.value = '12';
     submit(window, addChoreForm);
     assert.match(feedback.textContent, /Opgave tilføjet/i);
 
@@ -89,12 +94,16 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     assert.ok(andreaButton);
     click(window, andreaButton);
 
-    const completeButton = choreList.querySelector('button[data-action="complete"]');
+    const feedFishItem = Array.from(choreList.querySelectorAll('.chore-item'))
+      .find(item => item.textContent.includes('Feed fish'));
+    const completeButton = feedFishItem?.querySelector('button[data-action="complete"]');
     assert.ok(completeButton);
     click(window, completeButton);
 
     assert.match(feedback.textContent, /fuldført/i);
-    assert.match(sliderCount.textContent, /^1 ud af /);
+    const refreshedMoneySliderCount = document.querySelector('.money-slider-count');
+    assert.ok(refreshedMoneySliderCount);
+    assert.match(refreshedMoneySliderCount.textContent, /kr/);
   });
 });
 

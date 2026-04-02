@@ -28,6 +28,19 @@ function todayString() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function getDaysInclusive(startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+    return 0;
+  }
+
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const startUtc = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+  const endUtc = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+  return Math.floor((endUtc - startUtc) / msPerDay) + 1;
+}
+
 export function createSprintService({ storageService } = {}) {
   if (!storageService) {
     throw new Error('createSprintService requires storageService.');
@@ -154,6 +167,63 @@ export function createSprintService({ storageService } = {}) {
   }
 
   /**
+   * Compute sprint money progress targets for sliders.
+   * Target for repeat-limited chores: value * maxPerSprint.
+   * Target for unlimited chores: value * unlimitedDailyCap * number of sprint days.
+   * @param {string} sprintId
+   * @returns {{ total: { earned: number, target: number }, byKid: { [kid: string]: { earned: number, target: number } } }}
+   */
+  function getSprintMoneyProgress(sprintId) {
+    const data = storageService.loadData();
+    const sprint = data.sprints.find(item => item.id === sprintId) ?? null;
+    const earnings = getSprintEarnings(sprintId);
+
+    const byKid = Object.fromEntries(KIDS.map(kid => [
+      kid,
+      {
+        earned: earnings[kid] ?? 0,
+        target: 0
+      }
+    ]));
+
+    const sprintDays = sprint
+      ? getDaysInclusive(sprint.startDate, sprint.endDate)
+      : 0;
+
+    for (const chore of data.chores) {
+      const value = typeof chore.value === 'number' && Number.isFinite(chore.value)
+        ? chore.value
+        : 0;
+      const maxPerSprint = typeof chore.maxPerSprint === 'number' ? chore.maxPerSprint : 1;
+      const unlimitedDailyCap = Number.isInteger(chore.unlimitedDailyCap) && chore.unlimitedDailyCap >= 1
+        ? chore.unlimitedDailyCap
+        : 1;
+      const completionTarget = maxPerSprint === 0
+        ? sprintDays * unlimitedDailyCap
+        : Math.max(0, Math.floor(maxPerSprint));
+      const choreTargetValue = value * completionTarget;
+
+      const assignedKids = Array.isArray(chore.assignedTo)
+        ? chore.assignedTo.filter(kid => kid in byKid)
+        : [];
+
+      for (const kid of assignedKids) {
+        byKid[kid].target += choreTargetValue;
+      }
+    }
+
+    const total = KIDS.reduce(
+      (acc, kid) => ({
+        earned: acc.earned + (byKid[kid]?.earned ?? 0),
+        target: acc.target + (byKid[kid]?.target ?? 0)
+      }),
+      { earned: 0, target: 0 }
+    );
+
+    return { total, byKid };
+  }
+
+  /**
    * Returns all closed (paid) sprints, newest first.
    */
   function getSprintHistory() {
@@ -194,6 +264,7 @@ export function createSprintService({ storageService } = {}) {
     ensureActiveSprint,
     closeSprint,
     getSprintEarnings,
+    getSprintMoneyProgress,
     getSprintHistory,
     setSprintLength
   };

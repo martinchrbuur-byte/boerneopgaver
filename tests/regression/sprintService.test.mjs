@@ -91,3 +91,49 @@ test('collaboration split totals equal chore value', () => {
   assert.equal(earnings['Hans Jørgen'], 15);
   assert.equal(earnings.Andrea + earnings['Hans Jørgen'], 30);
 });
+
+test('money progress returns per-kid and total sprint targets', () => {
+  const { choreService, sprintService, sprintId } = buildServices();
+
+  const limited = choreService.addChore('Limited task', {
+    nowIso: '2026-01-01T08:00:00.000Z',
+    actorRole: 'parent',
+    assignedTo: ['Andrea'],
+    value: 10,
+    maxPerSprint: 2
+  });
+  assert.equal(limited.ok, true);
+
+  const unlimited = choreService.addChore('Unlimited task', {
+    nowIso: '2026-01-01T08:00:00.000Z',
+    actorRole: 'parent',
+    assignedTo: ['Hans Jørgen'],
+    value: 5,
+    maxPerSprint: 0,
+    unlimitedDailyCap: 3
+  });
+  assert.equal(unlimited.ok, true);
+
+  const limitedId = limited.state.chores.find(chore => chore.name === 'Limited task').id;
+  const unlimitedId = unlimited.state.chores.find(chore => chore.name === 'Unlimited task').id;
+
+  choreService.completeChore(limitedId, {
+    nowIso: '2026-01-01T09:00:00.000Z',
+    actorRole: 'Andrea',
+    sprintId
+  });
+  choreService.completeChore(unlimitedId, {
+    nowIso: '2026-01-01T09:30:00.000Z',
+    actorRole: 'Hans Jørgen',
+    sprintId
+  });
+
+  const progress = sprintService.getSprintMoneyProgress(sprintId);
+
+  assert.equal(progress.byKid.Andrea.earned, 10);
+  assert.equal(progress.byKid.Andrea.target, 20);
+  assert.equal(progress.byKid['Hans Jørgen'].earned, 5);
+  assert.equal(progress.byKid['Hans Jørgen'].target, 105);
+  assert.equal(progress.total.earned, 15);
+  assert.equal(progress.total.target, 125);
+});

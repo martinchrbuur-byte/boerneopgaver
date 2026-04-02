@@ -30,7 +30,7 @@ jobs:
 
       - name: Prepare static files
         env:
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY || '' }}
         run: |
           mkdir -p dist/src
           cp index.html dist/

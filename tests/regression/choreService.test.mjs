@@ -226,3 +226,32 @@ test('completion record stores completedBy actor', () => {
   const data = storageService.loadData();
   assert.equal(data.records[0].completedBy, 'Andrea');
 });
+
+test('unlimited chore stores custom unlimitedDailyCap', () => {
+  const { choreService } = buildService();
+
+  const result = choreService.addChore('Unlimited repeat task', {
+    nowIso: '2026-01-01T08:00:00.000Z',
+    actorRole: 'parent',
+    maxPerSprint: 0,
+    unlimitedDailyCap: 4
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.state.chores[0].maxPerSprint, 0);
+  assert.equal(result.state.chores[0].unlimitedDailyCap, 4);
+});
+
+test('invalid unlimitedDailyCap is rejected', () => {
+  const { choreService } = buildService();
+
+  const result = choreService.addChore('Invalid unlimited cap', {
+    nowIso: '2026-01-01T08:00:00.000Z',
+    actorRole: 'parent',
+    maxPerSprint: 0,
+    unlimitedDailyCap: 0
+  });
+
+  assert.equal(result.ok, false);
+  assert.match(result.message, /Dagligt loft/i);
+});

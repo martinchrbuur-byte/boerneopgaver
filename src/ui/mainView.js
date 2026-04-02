@@ -29,9 +29,11 @@ export function createMainView(rootElement) {
         <div class="status-row">
           <div class="status-container">
             <p id="status-text" class="status-text">Forældretilstand</p>
-            <div class="slider-wrapper">
-              <input id="progress-slider" type="range" class="progress-slider" min="0" max="0" value="0" disabled />
-              <span class="slider-label"><span id="slider-count">0 ud af 0</span> færdige</span>
+            <div id="money-slider-group" class="money-slider-group" aria-live="polite">
+              <div class="slider-wrapper">
+                <input type="range" class="progress-slider" min="0" max="0" value="0" disabled />
+                <span class="slider-label"><span class="money-slider-count">0,00 kr / 0,00 kr</span></span>
+              </div>
             </div>
           </div>
           <span id="coin-icon" class="coin-icon" title="Optjente lommepenge" hidden>🪙</span>
@@ -93,6 +95,18 @@ export function createMainView(rootElement) {
                 name="choreMax"
                 type="number"
                 min="0"
+                step="1"
+                value="1"
+              />
+            </div>
+            <div class="form-row form-row-max">
+              <label class="assign-label" for="chore-unlimited-cap-input">Dagligt loft ved ubegrænset (min 1):</label>
+              <input
+                id="chore-unlimited-cap-input"
+                class="input input-narrow"
+                name="choreUnlimitedCap"
+                type="number"
+                min="1"
                 step="1"
                 value="1"
               />
@@ -174,7 +188,11 @@ export function createMainView(rootElement) {
     sprintHistory: rootElement.querySelector('#sprint-history'),
     tabParentOnlyBtns: rootElement.querySelectorAll('.tab-parent-only'),
     choreMaxInput: rootElement.querySelector('#chore-max-input'),
+    choreUnlimitedCapInput: rootElement.querySelector('#chore-unlimited-cap-input'),
     collabInbox: rootElement.querySelector('#collab-inbox'),
-    mascotOverlay: rootElement.querySelector('#mascot-overlay')
+    mascotOverlay: rootElement.querySelector('#mascot-overlay'),
+    statusText: rootElement.querySelector('#status-text'),
+    moneySliderGroup: rootElement.querySelector('#money-slider-group'),
+    coinIcon: rootElement.querySelector('#coin-icon')
   };
 }

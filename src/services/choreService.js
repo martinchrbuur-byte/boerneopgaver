@@ -9,6 +9,7 @@ export const CHORE_MESSAGES = Object.freeze({
   invalidName: 'Indtast venligst et opgavenavn.',
   invalidValue: 'Opgaveværdien skal være et tal (0 eller mere).',
   invalidMax: 'Maks antal gange skal være et helt tal (0 eller mere).',
+  invalidUnlimitedDailyCap: 'Dagligt loft for ubegrænset opgave skal være et helt tal (1 eller mere).',
   missingChore: 'Den opgave kunne ikke findes.',
   alreadyCompleted: 'Opgaven er allerede fuldført. Fortryd først for at fuldføre igen.',
   atRepeatLimit: 'Opgaven er nået sit maksimum antal gange i dette sprint.',
@@ -87,6 +88,9 @@ function buildViewState(data, { activeSprintId = null } = {}) {
       assignedTo: chore.assignedTo,
       value: chore.value ?? 0,
       maxPerSprint,
+      unlimitedDailyCap: Number.isInteger(chore.unlimitedDailyCap) && chore.unlimitedDailyCap >= 1
+        ? chore.unlimitedDailyCap
+        : 1,
       sprintCompletionCount,
       isFullyDone,
       // Legacy compat: isCompleted = has any active record
@@ -148,7 +152,14 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     return buildViewState(data, { activeSprintId });
   }
 
-  function addChore(name, { nowIso = nowProvider(), actorRole, assignedTo, value = 0, maxPerSprint = 1 } = {}) {
+  function addChore(name, {
+    nowIso = nowProvider(),
+    actorRole,
+    assignedTo,
+    value = 0,
+    maxPerSprint = 1,
+    unlimitedDailyCap = 1
+  } = {}) {
     if (!isRoleAllowed(actorRole, ['parent'])) {
       return asResult(false, CHORE_MESSAGES.parentOnlyAdd, getState());
     }
@@ -168,6 +179,11 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       return asResult(false, CHORE_MESSAGES.invalidMax, getState());
     }
 
+    const parsedUnlimitedDailyCap = parseInt(unlimitedDailyCap, 10);
+    if (!Number.isInteger(parsedUnlimitedDailyCap) || parsedUnlimitedDailyCap < 1) {
+      return asResult(false, CHORE_MESSAGES.invalidUnlimitedDailyCap, getState());
+    }
+
     const validAssignedTo = Array.isArray(assignedTo) ? assignedTo.filter(k => typeof k === 'string') : [];
     if (validAssignedTo.length === 0) {
       validAssignedTo.push('Hans Jørgen', 'Andrea');
@@ -183,7 +199,8 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
           createdAt: nowIso,
           assignedTo: validAssignedTo,
           value: parsedValue,
-          maxPerSprint: parsedMax
+          maxPerSprint: parsedMax,
+          unlimitedDailyCap: parsedUnlimitedDailyCap
         }
       ]
     }));

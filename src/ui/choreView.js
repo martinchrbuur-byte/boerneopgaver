@@ -1,4 +1,4 @@
-import { isSameLocalDay, toDateTimeLabel } from '../shared/dateTime.js';
+import { toDateTimeLabel } from '../shared/dateTime.js';
 
 const MASCOT_MAP = Object.freeze({
   'Hans Jørgen': '🦕',
@@ -10,6 +10,87 @@ const BOTH_KIDS = ['Hans Jørgen', 'Andrea'];
 
 function formatMoney(value) {
   return `${value.toFixed(2)} kr`;
+}
+
+function asMoneyValue(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function renderMoneySliders(viewRefs, activeRole, sprintUi) {
+  const statusText = viewRefs.statusText;
+  const sliderGroup = viewRefs.moneySliderGroup;
+  const coinIcon = viewRefs.coinIcon;
+  const moneyProgress = sprintUi?.moneyProgress;
+  const byKid = moneyProgress?.byKid ?? {};
+  const total = moneyProgress?.total ?? { earned: 0, target: 0 };
+
+  const entries = activeRole === 'parent'
+    ? [
+      { label: 'Samlet', earned: asMoneyValue(total.earned), target: asMoneyValue(total.target) },
+      {
+        label: 'Hans Jørgen',
+        earned: asMoneyValue(byKid['Hans Jørgen']?.earned),
+        target: asMoneyValue(byKid['Hans Jørgen']?.target)
+      },
+      {
+        label: 'Andrea',
+        earned: asMoneyValue(byKid.Andrea?.earned),
+        target: asMoneyValue(byKid.Andrea?.target)
+      }
+    ]
+    : [
+      {
+        label: activeRole,
+        earned: asMoneyValue(byKid[activeRole]?.earned),
+        target: asMoneyValue(byKid[activeRole]?.target)
+      }
+    ];
+
+  if (statusText) {
+    const roleLabel = activeRole === 'parent' ? 'Forældretilstand' : `${activeRole}s visning`;
+    statusText.textContent = `${roleLabel} • Sprintmål:`;
+  }
+
+  if (sliderGroup) {
+    sliderGroup.innerHTML = entries.map((entry) => {
+      const sliderMax = Math.max(1, entry.target);
+      const sliderValue = Math.min(entry.earned, sliderMax);
+      const fillPercent = sliderMax > 0 ? (sliderValue / sliderMax) * 100 : 0;
+
+      return `
+        <div class="money-slider-item">
+          <p class="money-slider-title">${entry.label}</p>
+          <div class="slider-wrapper">
+            <input
+              type="range"
+              class="progress-slider"
+              min="0"
+              max="${sliderMax}"
+              value="${sliderValue}"
+              disabled
+              style="--slider-fill:${fillPercent}%"
+            />
+            <span class="slider-label"><span class="money-slider-count">${formatMoney(entry.earned)} / ${formatMoney(entry.target)}</span></span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (coinIcon) {
+    const allTargetsReached = entries.length > 0 && entries.every(entry => entry.target > 0 && entry.earned >= entry.target);
+    if (allTargetsReached) {
+      if (coinIcon.hidden) {
+        coinIcon.hidden = false;
+        coinIcon.classList.remove('celebrate');
+        void coinIcon.offsetWidth;
+        coinIcon.classList.add('celebrate');
+      }
+    } else {
+      coinIcon.hidden = true;
+      coinIcon.classList.remove('celebrate');
+    }
+  }
 }
 
 function renderChoreList(chores, activeRole, pendingCollaborations = []) {
@@ -263,47 +344,7 @@ function renderHistory(viewRefs, history) {
 }
 
 export function renderState(viewRefs, state, { activeRole, activeTab, sprintUi }) {
-  const roleLabel = activeRole === 'parent' ? 'Forældretilstand' : `${activeRole}s visning`;
-  const statusText = document.querySelector('#status-text');
-  const progressSlider = document.querySelector('#progress-slider');
-  const sliderCount = document.querySelector('#slider-count');
-  const coinIcon = document.querySelector('#coin-icon');
-
-  let totalChores = state.totalChores;
-  let doneTodayCount = state.doneTodayCount;
-
-  if (activeRole !== 'parent') {
-    const kidChores = state.chores.filter(chore => chore.assignedTo?.includes(activeRole));
-    totalChores = kidChores.length;
-    doneTodayCount = kidChores.filter(
-      chore => chore.isCompleted && chore.activeCompletedAt && isSameLocalDay(chore.activeCompletedAt)
-    ).length;
-  }
-
-  if (statusText) statusText.textContent = `${roleLabel} • I dag:`;
-  if (progressSlider) {
-    progressSlider.max = totalChores;
-    progressSlider.value = doneTodayCount;
-    const fillPercent = totalChores > 0 ? (doneTodayCount / totalChores) * 100 : 0;
-    progressSlider.style.setProperty('--slider-fill', `${fillPercent}%`);
-  }
-  if (sliderCount) sliderCount.textContent = `${doneTodayCount} ud af ${totalChores}`;
-
-  if (coinIcon) {
-    const allTasksDone = totalChores > 0 && doneTodayCount === totalChores;
-
-    if (allTasksDone) {
-      if (coinIcon.hidden) {
-        coinIcon.hidden = false;
-        coinIcon.classList.remove('celebrate');
-        void coinIcon.offsetWidth;
-        coinIcon.classList.add('celebrate');
-      }
-    } else {
-      coinIcon.hidden = true;
-      coinIcon.classList.remove('celebrate');
-    }
-  }
+  renderMoneySliders(viewRefs, activeRole, sprintUi);
 
   viewRefs.addChoreSection.hidden = activeRole !== 'parent';
   viewRefs.choreList.innerHTML = renderChoreList(state.chores, activeRole, state.pendingCollaborations ?? []);

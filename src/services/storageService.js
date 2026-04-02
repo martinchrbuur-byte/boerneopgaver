@@ -53,6 +53,9 @@ export function isChoreRecord(value) {
 }
 
 function isChoreItem(value) {
+  const hasValidUnlimitedDailyCap =
+    Number.isInteger(value.unlimitedDailyCap) && value.unlimitedDailyCap >= 1;
+
   return (
     value &&
     typeof value === 'object' &&
@@ -63,7 +66,8 @@ function isChoreItem(value) {
     value.assignedTo.every(kid => KIDS.includes(kid)) &&
     value.assignedTo.length > 0 &&
     typeof value.value === 'number' &&
-    typeof value.maxPerSprint === 'number'
+    typeof value.maxPerSprint === 'number' &&
+    hasValidUnlimitedDailyCap
   );
 }
 
@@ -161,7 +165,10 @@ function normalizePayload(value) {
         createdAt: isValidIsoTimestamp(chore.createdAt) ? chore.createdAt : new Date().toISOString(),
         assignedTo: Array.isArray(chore.assignedTo) && chore.assignedTo.length > 0 ? chore.assignedTo : KIDS,
         value: typeof chore.value === 'number' ? chore.value : 0,
-        maxPerSprint: typeof chore.maxPerSprint === 'number' ? chore.maxPerSprint : 1
+        maxPerSprint: typeof chore.maxPerSprint === 'number' ? chore.maxPerSprint : 1,
+        unlimitedDailyCap: Number.isInteger(chore.unlimitedDailyCap) && chore.unlimitedDailyCap >= 1
+          ? chore.unlimitedDailyCap
+          : 1
       }));
 
     const migratedRecords = value.records.filter(r => isChoreRecord(r));

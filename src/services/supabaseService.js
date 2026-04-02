@@ -10,7 +10,10 @@ function toAppChore(chore) {
     createdAt: chore.created_at,
     assignedTo: chore.assigned_to,
     value: typeof chore.value === 'number' ? chore.value : 0,
-    maxPerSprint: typeof chore.max_per_sprint === 'number' ? chore.max_per_sprint : 1
+    maxPerSprint: typeof chore.max_per_sprint === 'number' ? chore.max_per_sprint : 1,
+    unlimitedDailyCap: Number.isInteger(chore.unlimited_daily_cap) && chore.unlimited_daily_cap >= 1
+      ? chore.unlimited_daily_cap
+      : 1
   };
 }
 
@@ -134,7 +137,8 @@ export async function saveChores(chores, userId) {
         assigned_to: chore.assignedTo,
         user_id: userId,
         value: chore.value ?? 0,
-        max_per_sprint: chore.maxPerSprint ?? 1
+        max_per_sprint: chore.maxPerSprint ?? 1,
+        unlimited_daily_cap: chore.unlimitedDailyCap ?? 1
       }))
     );
 
