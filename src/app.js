@@ -619,6 +619,17 @@ async function init() {
     });
   }
 
+  if (isSupabaseConfigured() && viewRefs.switchAccountButton) {
+    viewRefs.switchAccountButton.addEventListener('click', async () => {
+      try {
+        await signOutCurrentUser();
+        await moveToAuthScreen(root, 'Log ind med en anden konto.');
+      } catch (error) {
+        refresh(authErrorMessage(error, 'Kunne ikke skifte konto.'));
+      }
+    });
+  }
+
   viewRefs.roleSwitch.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-role]');
     if (!button) {

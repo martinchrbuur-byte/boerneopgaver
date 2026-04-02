@@ -13,6 +13,7 @@ export function createMainView(rootElement) {
           </div>
           <div id="account-section" class="account-section" hidden>
             <span id="account-email" class="account-email"></span>
+            <button id="switch-account-btn" type="button" class="button button-secondary">Skift konto</button>
             <button id="logout-btn" type="button" class="button button-secondary">Log ud</button>
           </div>
         </div>
@@ -204,6 +205,7 @@ export function createMainView(rootElement) {
     coinIcon: rootElement.querySelector('#coin-icon'),
     accountSection: rootElement.querySelector('#account-section'),
     accountEmail: rootElement.querySelector('#account-email'),
+    switchAccountButton: rootElement.querySelector('#switch-account-btn'),
     logoutButton: rootElement.querySelector('#logout-btn')
   };
 }

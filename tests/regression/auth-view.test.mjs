@@ -74,6 +74,8 @@ test('main view renders hidden account controls for authenticated mode', () => {
     assert.ok(refs.accountSection);
     assert.equal(refs.accountSection.hidden, true);
     assert.ok(refs.accountEmail);
+    assert.ok(refs.switchAccountButton);
+    assert.match(refs.switchAccountButton.textContent, /Skift konto/i);
     assert.ok(refs.logoutButton);
     assert.match(refs.logoutButton.textContent, /Log ud/i);
   } finally {
