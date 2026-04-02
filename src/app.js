@@ -610,23 +610,27 @@ async function init() {
 
   if (isSupabaseConfigured() && viewRefs.logoutButton) {
     viewRefs.logoutButton.addEventListener('click', async () => {
+      let message = 'Du er logget ud.';
       try {
         await signOutCurrentUser();
-        await moveToAuthScreen(root, 'Du er logget ud.');
       } catch (error) {
-        refresh(authErrorMessage(error, 'Kunne ikke logge ud.'));
+        message = `${authErrorMessage(error, 'Kunne ikke logge ud.')}. Log ind igen for at fortsætte.`;
       }
+
+      await moveToAuthScreen(root, message);
     });
   }
 
   if (isSupabaseConfigured() && viewRefs.switchAccountButton) {
     viewRefs.switchAccountButton.addEventListener('click', async () => {
+      let message = 'Log ind med en anden konto.';
       try {
         await signOutCurrentUser();
-        await moveToAuthScreen(root, 'Log ind med en anden konto.');
       } catch (error) {
-        refresh(authErrorMessage(error, 'Kunne ikke skifte konto.'));
+        message = `${authErrorMessage(error, 'Kunne ikke skifte konto.')}. Log ind med en anden konto.`;
       }
+
+      await moveToAuthScreen(root, message);
     });
   }
 

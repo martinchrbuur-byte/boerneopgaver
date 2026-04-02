@@ -40,7 +40,7 @@ export async function signInWithEmail(email, password) {
 
 export async function signOutCurrentUser() {
   const client = getSupabaseClient();
-  const { error } = await client.auth.signOut();
+  const { error } = await client.auth.signOut({ scope: 'local' });
   if (error) {
     throw error;
   }
