@@ -33,6 +33,9 @@ export function renderSyncStatusIndicator(syncState) {
     statusText = isRetrying ? `⚠️ Sync Retry (${queueLength} pending)` : `⚠️ Sync Error (${failedItemsLabel})`;
     html += 'background-color: #fee; color: #c33; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin: 8px 0;">';
     html += `${statusText}<span style="margin-left: 8px; font-size: 10px; opacity: 0.7;">${safeError}</span>`;
+    if (failureCount > 0) {
+      html += '<button type="button" onclick="retryFailedSync()" style="margin-left: 12px; border: none; border-radius: 6px; padding: 4px 8px; background: #c33; color: #fff; font-size: 11px; cursor: pointer;">Retry failed</button>';
+    }
   } else if (isRetrying) {
     statusText = `⏳ Syncing (Retry ${queueLength})`;
     html += 'background-color: #ffa; color: #663; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin: 8px 0; animation: pulse 1s infinite;">';
@@ -73,6 +76,18 @@ export function renderSyncStatusIndicator(syncState) {
   }
 
   return html;
+}
+
+export function renderLocalOnlyIndicator({ reason = 'missing-config' } = {}) {
+  let message = 'Cloud sync is disabled. Changes are saved only on this device.';
+
+  if (reason === 'offline') {
+    message = 'You are offline. Changes are saved locally and will sync once online.';
+  }
+
+  return `<div id="local-only-status" class="sync-status-container" style="background-color: #fff4e5; color: #7c4700; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin: 8px 0;">
+    ⚠️ ${message}
+  </div>`;
 }
 
 /**

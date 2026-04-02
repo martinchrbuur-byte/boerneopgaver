@@ -195,6 +195,12 @@ export function createStorageService({ storage = globalThis.localStorage, storag
   let userId = 'anonymous';
   const syncQueue = createSyncQueue();
 
+  syncQueue.registerHandler('chores', data => saveChores(data, userId));
+  syncQueue.registerHandler('records', data => saveRecords(data, userId));
+  syncQueue.registerHandler('ui', data => saveUiState(data, userId));
+  syncQueue.registerHandler('sprints', data => saveSprints(data, userId));
+  syncQueue.registerHandler('settings', data => saveSettings(data, userId));
+
   function loadData() {
     if (!storage) {
       return createEmptyPayload();
@@ -227,21 +233,11 @@ export function createStorageService({ storage = globalThis.localStorage, storag
 
     // Queue Supabase syncs (serialized, not parallel)
     if (isSupabaseConfigured()) {
-      syncQueue.enqueue('chores', nextData.chores, data => 
-        saveChores(data, userId)
-      );
-      syncQueue.enqueue('records', nextData.records, data => 
-        saveRecords(data, userId)
-      );
-      syncQueue.enqueue('ui', nextData.ui.activeRole, data => 
-        saveUiState(data, userId)
-      );
-      syncQueue.enqueue('sprints', nextData.sprints, data => 
-        saveSprints(data, userId)
-      );
-      syncQueue.enqueue('settings', nextData.settings, data => 
-        saveSettings(data, userId)
-      );
+      syncQueue.enqueue('chores', nextData.chores);
+      syncQueue.enqueue('records', nextData.records);
+      syncQueue.enqueue('ui', nextData.ui.activeRole);
+      syncQueue.enqueue('sprints', nextData.sprints);
+      syncQueue.enqueue('settings', nextData.settings);
     }
   }
 
@@ -264,12 +260,17 @@ export function createStorageService({ storage = globalThis.localStorage, storag
     return syncQueue.syncNow();
   }
 
+  async function retryFailedSync() {
+    return syncQueue.retryFailed();
+  }
+
   return {
     loadData,
     saveData,
     updateData,
     setUserId,
     getSyncState,
-    syncNow
+    syncNow,
+    retryFailedSync
   };
 }

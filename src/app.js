@@ -8,7 +8,7 @@ import { createStorageService, KIDS } from './services/storageService.js';
 import { initializeSupabaseData } from './services/supabaseService.js';
 import { createMainView } from './ui/mainView.js';
 import { renderFeedback, renderState, showMascot, showRoleSwitchWalk } from './ui/choreView.js';
-import { renderSyncStatusIndicator } from './ui/syncStatusUI.js';
+import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
@@ -165,36 +165,49 @@ async function init() {
   renderState(viewRefs, choreState, { activeRole, activeTab, sprintUi, editState: sprintUi.editState });
     renderFeedback(viewRefs, message);
 
+    const feedbackEl = viewRefs.feedback;
+    const existingSyncStatus = document.getElementById('sync-status');
+    if (existingSyncStatus) {
+      existingSyncStatus.remove();
+    }
+
+    const existingLocalOnlyStatus = document.getElementById('local-only-status');
+    if (existingLocalOnlyStatus) {
+      existingLocalOnlyStatus.remove();
+    }
+
+    if (feedbackEl) {
+      if (!isSupabaseConfigured()) {
+        feedbackEl.insertAdjacentHTML('afterend', renderLocalOnlyIndicator({ reason: 'missing-config' }));
+      } else if (!navigator.onLine) {
+        feedbackEl.insertAdjacentHTML('afterend', renderLocalOnlyIndicator({ reason: 'offline' }));
+      }
+    }
+
     // Render sync status if configured
     if (isSupabaseConfigured()) {
       const syncState = storageService.getSyncState();
       if (syncState) {
         const syncStatusHtml = renderSyncStatusIndicator(syncState);
-        const feedbackEl = viewRefs.feedback;
         if (syncStatusHtml && feedbackEl) {
-          const existingSyncStatus = document.getElementById('sync-status');
-          if (existingSyncStatus) {
-            existingSyncStatus.remove();
-          }
           feedbackEl.insertAdjacentHTML('afterend', syncStatusHtml);
 
-            // Check and display orphaned records warning (P5)
-            const orphanSummary = orphanedRecordService.getOrphanedSummary(choreState.chores, choreState.records);
-            if (orphanSummary && orphanSummary.count > 0) {
-              hasOrphanedRecords = true;
-              const warningHtml = orphanedRecordService.createCleanupWarningUI(orphanSummary);
-              const feedbackEl = viewRefs.feedback;
-              if (warningHtml && feedbackEl) {
-                const existing = document.getElementById('orphaned-warning');
-                if (!existing) {
-                  feedbackEl.insertAdjacentHTML('afterend', warningHtml);
-                }
-              }
-            } else {
-              hasOrphanedRecords = false;
+          // Check and display orphaned records warning (P5)
+          const orphanSummary = orphanedRecordService.getOrphanedSummary(choreState.chores, choreState.records);
+          if (orphanSummary && orphanSummary.count > 0) {
+            hasOrphanedRecords = true;
+            const warningHtml = orphanedRecordService.createCleanupWarningUI(orphanSummary);
+            if (warningHtml && feedbackEl) {
               const existing = document.getElementById('orphaned-warning');
-              if (existing) existing.remove();
+              if (!existing) {
+                feedbackEl.insertAdjacentHTML('afterend', warningHtml);
+              }
             }
+          } else {
+            hasOrphanedRecords = false;
+            const existing = document.getElementById('orphaned-warning');
+            if (existing) existing.remove();
+          }
         }
       }
     }
@@ -430,23 +443,29 @@ async function init() {
     console.log('Manual sync triggered by user');
     await storageService.syncNow();
     refresh('Syncing...');
+  };
 
-    // Expose cleanupOrphanedRecords globally for UI buttons (P5)
-    window.cleanupOrphanedRecords = () => {
-      console.log('Cleanup orphaned records triggered');
-      const choreState = choreService.getState();
-      const { cleaned, orphanedCount } = orphanedRecordService.cleanOrphanedRecords(choreState.chores, choreState.records);
-    
-      if (orphanedCount > 0) {
-        storageService.updateData((data) => ({
-          ...data,
-          records: cleaned
-        }));
-        refresh(`Cleaned up ${orphanedCount} orphaned records ✓`);
-      } else {
-        refresh('No orphaned records found');
-      }
-    };
+  window.retryFailedSync = async () => {
+    console.log('Retry failed sync triggered by user');
+    await storageService.retryFailedSync();
+    refresh('Retrying failed sync items...');
+  };
+
+  // Expose cleanupOrphanedRecords globally for UI buttons (P5)
+  window.cleanupOrphanedRecords = () => {
+    console.log('Cleanup orphaned records triggered');
+    const choreState = choreService.getState();
+    const { cleaned, orphanedCount } = orphanedRecordService.cleanOrphanedRecords(choreState.chores, choreState.records);
+
+    if (orphanedCount > 0) {
+      storageService.updateData((data) => ({
+        ...data,
+        records: cleaned
+      }));
+      refresh(`Cleaned up ${orphanedCount} orphaned records ✓`);
+    } else {
+      refresh('No orphaned records found');
+    }
   };
 }
 
