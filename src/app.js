@@ -146,6 +146,10 @@ function resolveInitialAuthPage() {
   return window.location.hash === '#reset-password' ? 'reset-password' : 'welcome';
 }
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function moveToAuthScreen(root, message = 'Session udløbet. Log ind igen.') {
   if (isAuthTransitioning) {
     return;
@@ -610,27 +614,17 @@ async function init() {
 
   if (isSupabaseConfigured() && viewRefs.logoutButton) {
     viewRefs.logoutButton.addEventListener('click', async () => {
-      let message = 'Du er logget ud.';
-      try {
-        await signOutCurrentUser();
-      } catch (error) {
-        message = `${authErrorMessage(error, 'Kunne ikke logge ud.')}. Log ind igen for at fortsætte.`;
-      }
-
-      await moveToAuthScreen(root, message);
+      await moveToAuthScreen(root, 'Du er logget ud.');
+      Promise.race([signOutCurrentUser(), delay(1500)]).catch(() => {
+      });
     });
   }
 
   if (isSupabaseConfigured() && viewRefs.switchAccountButton) {
     viewRefs.switchAccountButton.addEventListener('click', async () => {
-      let message = 'Log ind med en anden konto.';
-      try {
-        await signOutCurrentUser();
-      } catch (error) {
-        message = `${authErrorMessage(error, 'Kunne ikke skifte konto.')}. Log ind med en anden konto.`;
-      }
-
-      await moveToAuthScreen(root, message);
+      await moveToAuthScreen(root, 'Log ind med en anden konto.');
+      Promise.race([signOutCurrentUser(), delay(1500)]).catch(() => {
+      });
     });
   }
 
