@@ -44,6 +44,77 @@ function asMoneyValue(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
+function escapeAttribute(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function renderEditAssigneeCheckboxes(choreId, selectedKids = []) {
+  const selected = new Set(Array.isArray(selectedKids) ? selectedKids : []);
+
+  return BOTH_KIDS.map((kid) => `
+    <label class="checkbox-label">
+      <input
+        type="checkbox"
+        data-edit-field="assignedTo"
+        data-chore-id="${choreId}"
+        data-kid="${kid}"
+        ${selected.has(kid) ? 'checked' : ''}
+      /> ${kid}
+    </label>
+  `).join('');
+}
+
+function renderParentEditFields(chore, draft) {
+  return `
+    <div class="chore-edit-fields">
+      <div class="form-row form-row-3">
+        <input
+          class="input"
+          type="text"
+          maxlength="80"
+          data-edit-field="name"
+          data-chore-id="${chore.id}"
+          value="${escapeAttribute(draft.name)}"
+        />
+        <div class="value-input-wrapper">
+          <input
+            class="input input-narrow"
+            type="number"
+            min="0"
+            step="0.5"
+            data-edit-field="value"
+            data-chore-id="${chore.id}"
+            value="${escapeAttribute(draft.value)}"
+          />
+          <span class="value-unit">kr</span>
+        </div>
+        <input
+          class="input input-narrow"
+          type="number"
+          min="0"
+          data-edit-field="maxPerSprint"
+          data-chore-id="${chore.id}"
+          value="${escapeAttribute(draft.maxPerSprint)}"
+        />
+      </div>
+      <div class="assign-to-section">
+        <span class="assign-label">Tildelt til</span>
+        <div class="assign-checkboxes">
+          ${renderEditAssigneeCheckboxes(chore.id, draft.assignedTo)}
+        </div>
+      </div>
+      <div class="actions">
+        <button class="button button-success" data-action="save-edit" data-chore-id="${chore.id}">💾 Gem</button>
+        <button class="button button-secondary" data-action="cancel-edit" data-chore-id="${chore.id}">✖️ Annuller</button>
+      </div>
+    </div>
+  `;
+}
+
 function renderChoreMarker(choreName) {
   const visual = getChoreVisual(choreName);
   return `<span class="chore-marker" role="img" aria-label="${visual.label} opgave">${visual.emoji}</span>`;
@@ -126,7 +197,7 @@ function renderMoneySliders(viewRefs, activeRole, sprintUi) {
   }
 }
 
-function renderChoreList(chores, activeRole, pendingCollaborations = []) {
+function renderChoreList(chores, activeRole, pendingCollaborations = [], editState = null) {
   const filteredChores = activeRole === 'parent'
     ? chores
     : chores.filter(chore => chore.assignedTo?.includes(activeRole));
@@ -183,7 +254,10 @@ function renderChoreList(chores, activeRole, pendingCollaborations = []) {
           }
         }
       } else {
-        actionButtons = `<button class="button button-secondary" data-action="delete" data-chore-id="${chore.id}">🗑️ Slet</button>`;
+        actionButtons = `
+          <button class="button button-secondary" data-action="edit" data-chore-id="${chore.id}">✏️ Rediger</button>
+          <button class="button button-secondary" data-action="delete" data-chore-id="${chore.id}">🗑️ Slet</button>
+        `;
       }
 
       const meta = chore.isCompleted
@@ -192,9 +266,14 @@ function renderChoreList(chores, activeRole, pendingCollaborations = []) {
           ? `Sidst udført kl. ${toDateTimeLabel(chore.lastCompletedAt)}`
           : 'Ikke fuldført endnu';
 
-      const valueText = maxPerSprint > 0
-        ? `${formatMoney(chore.value ?? 0)} × op til ${maxPerSprint === 0 ? '∞' : maxPerSprint} gange`
-        : `${formatMoney(chore.value ?? 0)} pr. gang`;
+      const isEditing = editState?.choreId === chore.id;
+      const editDraft = isEditing ? editState?.draft : null;
+      const detailsMarkup = isEditing && editDraft
+        ? renderParentEditFields(chore, editDraft)
+        : `
+          <p class="chore-meta">${meta}</p>
+          <p class="chore-meta">Værdi: ${formatMoney(chore.value ?? 0)}</p>
+        `;
 
       return `
         <li class="chore-item${isFullyDone ? ' chore-fully-done' : ''}">
@@ -205,8 +284,7 @@ function renderChoreList(chores, activeRole, pendingCollaborations = []) {
             </div>
             <div class="actions">${actionButtons}</div>
           </div>
-          <p class="chore-meta">${meta}</p>
-          <p class="chore-meta">Værdi: ${formatMoney(chore.value ?? 0)}</p>
+          ${detailsMarkup}
         </li>
       `;
     })
@@ -423,11 +501,11 @@ function renderHistory(viewRefs, history) {
   `).join('');
 }
 
-export function renderState(viewRefs, state, { activeRole, activeTab, sprintUi }) {
+export function renderState(viewRefs, state, { activeRole, activeTab, sprintUi, editState = null }) {
   renderMoneySliders(viewRefs, activeRole, sprintUi);
 
   viewRefs.addChoreSection.hidden = activeRole !== 'parent';
-  viewRefs.choreList.innerHTML = renderChoreList(state.chores, activeRole, state.pendingCollaborations ?? []);
+  viewRefs.choreList.innerHTML = renderChoreList(state.chores, activeRole, state.pendingCollaborations ?? [], editState);
   viewRefs.recentCompletions.innerHTML = renderRecentCompletions(state.recentCompletions);
   renderRoleSwitch(viewRefs, activeRole);
   renderTabs(viewRefs, activeTab, activeRole);

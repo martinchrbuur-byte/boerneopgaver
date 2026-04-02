@@ -155,7 +155,7 @@ async function init() {
         : null
     };
 
-    renderState(viewRefs, choreState, { activeRole, activeTab, sprintUi });
+  renderState(viewRefs, choreState, { activeRole, activeTab, sprintUi, editState: sprintUi.editState });
     renderFeedback(viewRefs, message);
   }
 
