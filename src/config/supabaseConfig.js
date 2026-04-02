@@ -9,10 +9,18 @@ export const SUPABASE_CONFIG = {
   publishableKey: SUPABASE_PUBLISHABLE_KEY_PLACEHOLDER
 };
 
-export function isSupabaseConfigured() {
+export function getPublishableKey() {
   return (
-    typeof SUPABASE_CONFIG.publishableKey === 'string' &&
-    SUPABASE_CONFIG.publishableKey.length > 0 &&
-    SUPABASE_CONFIG.publishableKey !== SUPABASE_PUBLISHABLE_KEY_PLACEHOLDER
+    (typeof window !== 'undefined' && window.SUPABASE_PUBLISHABLE_KEY) ||
+    SUPABASE_CONFIG.publishableKey
+  );
+}
+
+export function isSupabaseConfigured() {
+  const key = getPublishableKey();
+  return (
+    typeof key === 'string' &&
+    key.length > 0 &&
+    key !== SUPABASE_PUBLISHABLE_KEY_PLACEHOLDER
   );
 }

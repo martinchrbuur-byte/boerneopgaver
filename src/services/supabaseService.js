@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_CONFIG, isSupabaseConfigured } from '../config/supabaseConfig.js';
+import { SUPABASE_CONFIG, isSupabaseConfigured, getPublishableKey } from '../config/supabaseConfig.js';
 
 let supabaseClient = null;
 
@@ -109,7 +109,7 @@ export function getSupabaseClient() {
   }
 
   if (!supabaseClient) {
-    supabaseClient = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
+    supabaseClient = createClient(SUPABASE_CONFIG.url, getPublishableKey());
   }
 
   return supabaseClient;
