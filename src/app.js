@@ -742,7 +742,8 @@ async function init() {
       result = choreService.completeChore(choreId, { actorRole: activeRole, sprintId: activeSprint.id });
       if (result.ok) {
         // Check if all chores for this kid are fully done
-        const kidChores = result.state.chores.filter(c => c.assignedTo?.includes(activeRole));
+        const chores = Array.isArray(result.state?.chores) ? result.state.chores : [];
+        const kidChores = chores.filter(c => c.assignedTo?.includes(activeRole));
         const allDone = kidChores.length > 0 && kidChores.every(c => c.isFullyDone || c.isCompleted);
         if (allDone) {
           showMascot(viewRefs.mascotOverlay, activeRole, 'Alle opgaver klaret! 🎉', { type: 'celebrate', duration: 4000 });

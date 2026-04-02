@@ -143,6 +143,7 @@ function buildViewState(data, { activeSprintId = null } = {}) {
 
   return {
     chores,
+    records: data.records,
     recentCompletions,
     doneTodayCount,
     totalChores: chores.length,

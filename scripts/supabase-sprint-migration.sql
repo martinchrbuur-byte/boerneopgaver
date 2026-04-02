@@ -7,8 +7,9 @@ ALTER TABLE chores ADD COLUMN IF NOT EXISTS max_per_sprint int NOT NULL DEFAULT 
 ALTER TABLE chores ADD COLUMN IF NOT EXISTS unlimited_daily_cap int NOT NULL DEFAULT 1;
 
 -- 2. Sprints table
+-- Note: id is TEXT (not uuid) because the app prefixes IDs: 'sprint_<uuid>'
 CREATE TABLE IF NOT EXISTS sprints (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  id            text PRIMARY KEY,
   user_id       text NOT NULL,
   start_date    date NOT NULL,
   end_date      date NOT NULL,
@@ -30,7 +31,8 @@ CREATE POLICY "Users can delete own sprints" ON sprints
   FOR DELETE USING (auth.uid()::text = user_id);
 
 -- 3. Add sprint_id to records
-ALTER TABLE records ADD COLUMN IF NOT EXISTS sprint_id uuid REFERENCES sprints(id);
+-- Note: TEXT to match app-generated sprint IDs like 'sprint_<uuid>'
+ALTER TABLE records ADD COLUMN IF NOT EXISTS sprint_id text REFERENCES sprints(id);
 ALTER TABLE records ADD COLUMN IF NOT EXISTS completed_by text;
 ALTER TABLE records ADD COLUMN IF NOT EXISTS earned_value numeric;
 
