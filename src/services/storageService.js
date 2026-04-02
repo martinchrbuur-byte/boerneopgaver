@@ -1,6 +1,7 @@
 import { isOnOrAfter, isValidIsoTimestamp } from '../shared/dateTime.js';
 import { isSupabaseConfigured } from '../config/supabaseConfig.js';
 import { saveChores, saveRecords, saveUiState, saveSprints, saveSettings } from './supabaseService.js';
+import { createSyncQueue } from './syncQueueService.js';
 
 export const STORAGE_KEY = 'kids_chore_tracker_v1';
 
@@ -192,6 +193,7 @@ function normalizePayload(value) {
 
 export function createStorageService({ storage = globalThis.localStorage, storageKey = STORAGE_KEY } = {}) {
   let userId = 'anonymous';
+  const syncQueue = createSyncQueue();
 
   function loadData() {
     if (!storage) {
@@ -220,26 +222,26 @@ export function createStorageService({ storage = globalThis.localStorage, storag
       return;
     }
 
-    // Save to localStorage
+    // Save to localStorage immediately (synchronous)
     storage.setItem(storageKey, JSON.stringify(nextData));
 
-    // Also save to Supabase if configured
+    // Queue Supabase syncs (serialized, not parallel)
     if (isSupabaseConfigured()) {
-      saveChores(nextData.chores, userId).catch(error => {
-        console.warn('Failed to sync chores to Supabase:', error);
-      });
-      saveRecords(nextData.records, userId).catch(error => {
-        console.warn('Failed to sync records to Supabase:', error);
-      });
-      saveUiState(nextData.ui.activeRole, userId).catch(error => {
-        console.warn('Failed to sync UI state to Supabase:', error);
-      });
-      saveSprints(nextData.sprints, userId).catch(error => {
-        console.warn('Failed to sync sprints to Supabase:', error);
-      });
-      saveSettings(nextData.settings, userId).catch(error => {
-        console.warn('Failed to sync settings to Supabase:', error);
-      });
+      syncQueue.enqueue('chores', nextData.chores, data => 
+        saveChores(data, userId)
+      );
+      syncQueue.enqueue('records', nextData.records, data => 
+        saveRecords(data, userId)
+      );
+      syncQueue.enqueue('ui', nextData.ui.activeRole, data => 
+        saveUiState(data, userId)
+      );
+      syncQueue.enqueue('sprints', nextData.sprints, data => 
+        saveSprints(data, userId)
+      );
+      syncQueue.enqueue('settings', nextData.settings, data => 
+        saveSettings(data, userId)
+      );
     }
   }
 
@@ -254,10 +256,20 @@ export function createStorageService({ storage = globalThis.localStorage, storag
     userId = newUserId;
   }
 
+  function getSyncState() {
+    return syncQueue.getSyncState();
+  }
+
+  async function syncNow() {
+    return syncQueue.syncNow();
+  }
+
   return {
     loadData,
     saveData,
     updateData,
-    setUserId
+    setUserId,
+    getSyncState,
+    syncNow
   };
 }

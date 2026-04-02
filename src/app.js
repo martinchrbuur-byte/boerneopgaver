@@ -1,3 +1,5 @@
+import { createOrphanedRecordService } from './services/orphanedRecordService.js';
+import { createCorruptionRecoveryService } from './services/corruptionRecoveryService.js';
 import { resolveAppConfig } from './config/appConfig.js';
 import { isSupabaseConfigured } from './config/supabaseConfig.js';
 import { createChoreService } from './services/choreService.js';
@@ -6,6 +8,7 @@ import { createStorageService, KIDS } from './services/storageService.js';
 import { initializeSupabaseData } from './services/supabaseService.js';
 import { createMainView } from './ui/mainView.js';
 import { renderFeedback, renderState, showMascot, showRoleSwitchWalk } from './ui/choreView.js';
+import { renderSyncStatusIndicator } from './ui/syncStatusUI.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
@@ -52,6 +55,10 @@ async function init() {
   const storageService = createStorageService();
   const sprintService = createSprintService({ storageService });
   let activeTab = 'opgaver';
+  const orphanedRecordService = createOrphanedRecordService();
+  const corruptionRecoveryService = createCorruptionRecoveryService();
+  let hasOrphanedRecords = false;
+  let hasPendingSyncs = false;
 
   // Initialize Supabase if configured
   if (isSupabaseConfigured()) {
@@ -157,6 +164,36 @@ async function init() {
 
   renderState(viewRefs, choreState, { activeRole, activeTab, sprintUi, editState: sprintUi.editState });
     renderFeedback(viewRefs, message);
+
+    // Render sync status if configured
+    if (isSupabaseConfigured()) {
+      const syncState = storageService.getSyncState();
+      if (syncState) {
+        const syncStatusHtml = renderSyncStatusIndicator(syncState);
+        const feedbackEl = viewRefs.feedback;
+        if (syncStatusHtml && feedbackEl) {
+          feedbackEl.insertAdjacentHTML('afterend', syncStatusHtml);
+
+            // Check and display orphaned records warning (P5)
+            const orphanSummary = orphanedRecordService.getOrphanedSummary(choreState.chores, choreState.records);
+            if (orphanSummary && orphanSummary.count > 0) {
+              hasOrphanedRecords = true;
+              const warningHtml = orphanedRecordService.createCleanupWarningUI(orphanSummary);
+              const feedbackEl = viewRefs.feedback;
+              if (warningHtml && feedbackEl) {
+                const existing = document.getElementById('orphaned-warning');
+                if (!existing) {
+                  feedbackEl.insertAdjacentHTML('afterend', warningHtml);
+                }
+              }
+            } else {
+              hasOrphanedRecords = false;
+              const existing = document.getElementById('orphaned-warning');
+              if (existing) existing.remove();
+            }
+        }
+      }
+    }
   }
 
   seedStarterChores(choreService);
@@ -383,6 +420,30 @@ async function init() {
     }
     refresh(result.message);
   });
+
+  // Expose syncNow globally for UI buttons
+  window.syncNow = async () => {
+    console.log('Manual sync triggered by user');
+    await storageService.syncNow();
+    refresh('Syncing...');
+
+    // Expose cleanupOrphanedRecords globally for UI buttons (P5)
+    window.cleanupOrphanedRecords = () => {
+      console.log('Cleanup orphaned records triggered');
+      const choreState = choreService.getState();
+      const { cleaned, orphanedCount } = orphanedRecordService.cleanOrphanedRecords(choreState.chores, choreState.records);
+    
+      if (orphanedCount > 0) {
+        storageService.updateData((data) => ({
+          ...data,
+          records: cleaned
+        }));
+        refresh(`Cleaned up ${orphanedCount} orphaned records ✓`);
+      } else {
+        refresh('No orphaned records found');
+      }
+    };
+  };
 }
 
 document.addEventListener('DOMContentLoaded', init);

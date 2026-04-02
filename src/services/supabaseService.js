@@ -126,10 +126,9 @@ export async function saveChores(chores, userId) {
   const client = getSupabaseClient();
 
   try {
-    // Delete existing chores and insert new ones
-    await client.from('chores').delete().eq('user_id', userId);
-    
-    const { error } = await client.from('chores').insert(
+    // Use upsert instead of destructive delete+insert
+    // This is atomic and prevents data loss on partial failures
+    const { error } = await client.from('chores').upsert(
       chores.map(chore => ({
         id: chore.id,
         name: chore.name,
@@ -139,7 +138,8 @@ export async function saveChores(chores, userId) {
         value: chore.value ?? 0,
         max_per_sprint: chore.maxPerSprint ?? 1,
         unlimited_daily_cap: chore.unlimitedDailyCap ?? 1
-      }))
+      })),
+      { onConflict: ['id', 'user_id'] }
     );
 
     if (error) throw error;
@@ -153,10 +153,9 @@ export async function saveRecords(records, userId) {
   const client = getSupabaseClient();
 
   try {
-    // Delete existing records and insert new ones
-    await client.from('records').delete().eq('user_id', userId);
-    
-    const { error } = await client.from('records').insert(
+    // Use upsert instead of destructive delete+insert
+    // This is atomic and prevents data loss on partial failures
+    const { error } = await client.from('records').upsert(
       records.map(record => ({
         id: record.id,
         chore_id: record.choreId,
@@ -166,7 +165,8 @@ export async function saveRecords(records, userId) {
         sprint_id: record.sprintId || null,
         completed_by: record.completedBy || null,
         earned_value: typeof record.earnedValue === 'number' ? record.earnedValue : null
-      }))
+      })),
+      { onConflict: ['id', 'user_id'] }
     );
 
     if (error) throw error;
