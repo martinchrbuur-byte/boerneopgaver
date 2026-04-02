@@ -89,6 +89,36 @@ function pickNewerSection(localValue, remoteValue, localUpdatedAt, remoteUpdated
   return remoteUpdatedAt >= localUpdatedAt ? remoteValue : localValue;
 }
 
+function toRemoteStorageShape(supabaseData) {
+  return {
+    chores: supabaseData.chores,
+    records: supabaseData.records,
+    ui: { activeRole: supabaseData.ui.activeRole },
+    sprints: supabaseData.sprints,
+    settings: { sprintLengthDays: supabaseData.settings.sprintLengthDays }
+  };
+}
+
+function hasSectionChanges(currentData, nextData) {
+  return (
+    JSON.stringify(currentData.chores) !== JSON.stringify(nextData.chores) ||
+    JSON.stringify(currentData.records) !== JSON.stringify(nextData.records) ||
+    JSON.stringify(currentData.ui) !== JSON.stringify(nextData.ui) ||
+    JSON.stringify(currentData.sprints) !== JSON.stringify(nextData.sprints) ||
+    JSON.stringify(currentData.settings) !== JSON.stringify(nextData.settings)
+  );
+}
+
+function createRemoteSnapshotKey(supabaseData) {
+  const remoteShape = toRemoteStorageShape(supabaseData);
+  const remoteTimestamps = resolveRemoteSectionTimestamps(supabaseData);
+  return JSON.stringify({
+    remoteShape,
+    remoteTimestamps,
+    userId: supabaseData.userId
+  });
+}
+
 async function init() {
   const appConfig = resolveAppConfig();
 
@@ -101,81 +131,95 @@ async function init() {
   const corruptionRecoveryService = createCorruptionRecoveryService();
   let hasOrphanedRecords = false;
   let hasPendingSyncs = false;
+  let lastRemoteSnapshotKey = null;
+
+  async function reconcileRemoteSnapshot(supabaseData) {
+    storageService.setUserId(supabaseData.userId);
+
+    const localData = storageService.loadData();
+    const syncState = storageService.getSyncState();
+    const hasUnsyncedLocalChanges =
+      (syncState?.queueLength || 0) > 0 ||
+      (syncState?.deadLetterCount || 0) > 0 ||
+      (syncState?.failureCount || 0) > 0;
+
+    const hasRemoteData =
+      supabaseData.chores.length > 0 ||
+      supabaseData.records.length > 0 ||
+      supabaseData.sprints.length > 0 ||
+      supabaseData.settings.sprintLengthDays !== 7;
+
+    if (!hasRemoteData) {
+      if (hasUnsyncedLocalChanges) {
+        storageService.syncNow();
+      }
+      return { applied: false, hasRemoteData: false, skippedReason: null };
+    }
+
+    if (hasUnsyncedLocalChanges) {
+      console.log('Skipping remote merge because unsynced local changes are pending.');
+      storageService.syncNow();
+      return { applied: false, hasRemoteData: true, skippedReason: 'unsynced-local' };
+    }
+
+    const localSyncMeta = localData.syncMeta || {};
+    const remoteSectionTimestamps = resolveRemoteSectionTimestamps(supabaseData);
+    const remoteShape = toRemoteStorageShape(supabaseData);
+
+    const reconciledData = {
+      ...localData,
+      chores: pickNewerSection(
+        localData.chores,
+        remoteShape.chores,
+        localSyncMeta.choresUpdatedAt,
+        remoteSectionTimestamps.choresUpdatedAt
+      ),
+      records: pickNewerSection(
+        localData.records,
+        remoteShape.records,
+        localSyncMeta.recordsUpdatedAt,
+        remoteSectionTimestamps.recordsUpdatedAt
+      ),
+      ui: pickNewerSection(
+        localData.ui,
+        remoteShape.ui,
+        localSyncMeta.uiUpdatedAt,
+        remoteSectionTimestamps.uiUpdatedAt
+      ),
+      sprints: pickNewerSection(
+        localData.sprints,
+        remoteShape.sprints,
+        localSyncMeta.sprintsUpdatedAt,
+        remoteSectionTimestamps.sprintsUpdatedAt
+      ),
+      settings: pickNewerSection(
+        localData.settings,
+        remoteShape.settings,
+        localSyncMeta.settingsUpdatedAt,
+        remoteSectionTimestamps.settingsUpdatedAt
+      )
+    };
+
+    if (!hasSectionChanges(localData, reconciledData)) {
+      return { applied: false, hasRemoteData: true, skippedReason: 'no-change' };
+    }
+
+    storageService.saveDataWithOptions(reconciledData, {
+      previousData: localData,
+      source: 'remote',
+      skipCloudSync: true
+    });
+
+    return { applied: true, hasRemoteData: true, skippedReason: null };
+  }
 
   // Initialize Supabase if configured
   if (isSupabaseConfigured()) {
     try {
       const supabaseData = await initializeSupabaseData();
       if (supabaseData) {
-        storageService.setUserId(supabaseData.userId);
-        const localData = storageService.loadData();
-        const syncState = storageService.getSyncState();
-        const hasUnsyncedLocalChanges =
-          (syncState?.queueLength || 0) > 0 ||
-          (syncState?.deadLetterCount || 0) > 0 ||
-          (syncState?.failureCount || 0) > 0;
-
-        const hasRemoteData =
-          supabaseData.chores.length > 0 ||
-          supabaseData.records.length > 0 ||
-          supabaseData.sprints.length > 0 ||
-          supabaseData.settings.sprintLengthDays !== 7;
-
-        if (hasRemoteData) {
-          const localSyncMeta = localData.syncMeta || {};
-
-          if (hasUnsyncedLocalChanges) {
-            console.log('Keeping local data on startup because unsynced changes are pending.');
-            storageService.syncNow();
-          } else {
-            const remoteSectionTimestamps = resolveRemoteSectionTimestamps(supabaseData);
-            const reconciledData = {
-              ...localData,
-              chores: pickNewerSection(
-                localData.chores,
-                supabaseData.chores,
-                localSyncMeta.choresUpdatedAt,
-                remoteSectionTimestamps.choresUpdatedAt
-              ),
-              records: pickNewerSection(
-                localData.records,
-                supabaseData.records,
-                localSyncMeta.recordsUpdatedAt,
-                remoteSectionTimestamps.recordsUpdatedAt
-              ),
-              ui: pickNewerSection(
-                localData.ui,
-                { activeRole: supabaseData.ui.activeRole },
-                localSyncMeta.uiUpdatedAt,
-                remoteSectionTimestamps.uiUpdatedAt
-              ),
-              sprints: pickNewerSection(
-                localData.sprints,
-                supabaseData.sprints,
-                localSyncMeta.sprintsUpdatedAt,
-                remoteSectionTimestamps.sprintsUpdatedAt
-              ),
-              settings: pickNewerSection(
-                localData.settings,
-                { sprintLengthDays: supabaseData.settings.sprintLengthDays },
-                localSyncMeta.settingsUpdatedAt,
-                remoteSectionTimestamps.settingsUpdatedAt
-              )
-            };
-
-            storageService.saveDataWithOptions(reconciledData, {
-              previousData: localData,
-              source: 'remote',
-              skipCloudSync: true
-            });
-          }
-        } else {
-          storageService.syncNow();
-        }
-
-        if (!hasRemoteData && hasUnsyncedLocalChanges) {
-          storageService.syncNow();
-        }
+        await reconcileRemoteSnapshot(supabaseData);
+        lastRemoteSnapshotKey = createRemoteSnapshotKey(supabaseData);
         console.log('Connected to Supabase');
       }
     } catch (error) {
@@ -310,6 +354,55 @@ async function init() {
   seedStarterChores(choreService);
   persistActiveRole();
   refresh();
+
+  if (isSupabaseConfigured()) {
+    const POLL_INTERVAL_MS = 15000;
+    setInterval(async () => {
+      if (document.hidden || !navigator.onLine) {
+        return;
+      }
+
+      try {
+        const supabaseData = await initializeSupabaseData();
+        if (!supabaseData) {
+          return;
+        }
+
+        const nextRemoteSnapshotKey = createRemoteSnapshotKey(supabaseData);
+        if (nextRemoteSnapshotKey === lastRemoteSnapshotKey) {
+          return;
+        }
+
+        lastRemoteSnapshotKey = nextRemoteSnapshotKey;
+        const result = await reconcileRemoteSnapshot(supabaseData);
+        if (result.applied) {
+          refresh('Data opdateret fra en anden enhed.');
+        }
+      } catch (error) {
+        console.warn('Live sync poll failed:', error);
+      }
+    }, POLL_INTERVAL_MS);
+
+    window.addEventListener('online', async () => {
+      try {
+        await storageService.syncNow();
+        const supabaseData = await initializeSupabaseData();
+        if (!supabaseData) {
+          return;
+        }
+
+        lastRemoteSnapshotKey = createRemoteSnapshotKey(supabaseData);
+        const result = await reconcileRemoteSnapshot(supabaseData);
+        if (result.applied) {
+          refresh('Data opdateret efter genforbindelse.');
+        } else {
+          refresh();
+        }
+      } catch (error) {
+        console.warn('Failed to sync after reconnect:', error);
+      }
+    });
+  }
 
   viewRefs.roleSwitch.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-role]');
