@@ -1,42 +1,42 @@
 const CATEGORY_RULES = Object.freeze([
   {
-    emoji: '🛏️',
     label: 'Søvn',
+    visuals: ['🛏️', '🛌', '🌙', '🧸'],
     keywords: ['make the bed', 'bed', 'seng', 'red seng', 'rede seng']
   },
   {
-    emoji: '🪥',
     label: 'Tandpleje',
+    visuals: ['🪥', '🦷', '✨', '🫧'],
     keywords: ['brush teeth', 'teeth', 'tooth', 'taender', 'tand', 'borst taender', 'børst tænder']
   },
   {
-    emoji: '🐶',
     label: 'Kæledyr',
+    visuals: ['🐶', '🐱', '🐾', '🦴'],
     keywords: ['feed dog', 'feed the dog', 'dog', 'hund', 'fodr hund', 'fodre hund', 'pet', 'cat', 'kat', 'fish', 'fisk']
   },
   {
-    emoji: '🧹',
     label: 'Rengøring',
+    visuals: ['🧹', '🧽', '🪣', '✨'],
     keywords: ['clean', 'tidy', 'opryd', 'ryd op', 'stovsug', 'støvsug', 'sweep', 'vacuum', 'wash dishes', 'opvask']
   },
   {
-    emoji: '🧺',
     label: 'Tøj',
+    visuals: ['🧺', '👕', '🧦', '🫧'],
     keywords: ['laundry', 'vasketoj', 'vasketøj', 'toj', 'tøj', 'clothes']
   },
   {
-    emoji: '📚',
     label: 'Skole',
+    visuals: ['📚', '✏️', '📖', '🧠'],
     keywords: ['homework', 'lektier', 'read', 'laes', 'læs', 'book']
   },
   {
-    emoji: '🛁',
     label: 'Bad',
+    visuals: ['🛁', '🚿', '🧼', '🫧'],
     keywords: ['bath', 'shower', 'bad', 'vaske sig', 'wash up']
   },
   {
-    emoji: '🍽️',
     label: 'Mad',
+    visuals: ['🍽️', '🥗', '🍳', '🥣'],
     keywords: ['table', 'dinner', 'meal', 'mad', 'bord', 'kokken', 'køkken']
   }
 ]);
@@ -49,7 +49,14 @@ const FALLBACK_VISUALS = Object.freeze([
   { emoji: '🎈', label: 'Sjov' },
   { emoji: '🌈', label: 'Regnbue' },
   { emoji: '🏆', label: 'Sejr' },
-  { emoji: '🎵', label: 'Rytme' }
+  { emoji: '🎵', label: 'Rytme' },
+  { emoji: '🎨', label: 'Kreativ' },
+  { emoji: '🛠️', label: 'Byg' },
+  { emoji: '🧭', label: 'Eventyr' },
+  { emoji: '🎲', label: 'Spil' },
+  { emoji: '💡', label: 'Idé' },
+  { emoji: '🪄', label: 'Magi' },
+  { emoji: '🥇', label: 'Guld' }
 ]);
 
 function normalizeText(value) {
@@ -83,17 +90,23 @@ function findRule(normalizedName) {
 export function getChoreVisual(choreName) {
   const normalizedName = normalizeText(choreName);
   const keywordRule = findRule(normalizedName);
+  const hash = hashString(normalizedName);
 
   if (keywordRule) {
+    const visuals = Array.isArray(keywordRule.visuals) && keywordRule.visuals.length > 0
+      ? keywordRule.visuals
+      : ['⭐'];
+    const emoji = visuals[hash % visuals.length];
+
     return {
-      emoji: keywordRule.emoji,
+      emoji,
       label: keywordRule.label,
       source: 'keyword'
     };
   }
 
   const fallbackIndex = normalizedName.length > 0
-    ? hashString(normalizedName) % FALLBACK_VISUALS.length
+    ? hash % FALLBACK_VISUALS.length
     : 0;
   const fallback = FALLBACK_VISUALS[fallbackIndex];
   return {

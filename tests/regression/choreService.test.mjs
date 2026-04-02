@@ -56,6 +56,54 @@ test('addChore preserves assignedTo in state for role-based filtering', () => {
   assert.deepEqual(result.state.chores[0].assignedTo, ['Andrea']);
 });
 
+test('parent can update chore name, value, assignees and limits', () => {
+  const { choreService } = buildService();
+
+  const addResult = choreService.addChore('Old name', {
+    nowIso: '2026-01-01T08:00:00.000Z',
+    actorRole: 'parent',
+    assignedTo: ['Andrea'],
+    value: 5,
+    maxPerSprint: 1,
+    unlimitedDailyCap: 1
+  });
+
+  const choreId = addResult.state.chores[0].id;
+  const updateResult = choreService.updateChore(choreId, {
+    actorRole: 'parent',
+    name: 'New name',
+    value: 12,
+    assignedTo: ['Hans Jørgen'],
+    maxPerSprint: 0,
+    unlimitedDailyCap: 3
+  });
+
+  assert.equal(updateResult.ok, true);
+  assert.equal(updateResult.state.chores[0].name, 'New name');
+  assert.equal(updateResult.state.chores[0].value, 12);
+  assert.deepEqual(updateResult.state.chores[0].assignedTo, ['Hans Jørgen']);
+  assert.equal(updateResult.state.chores[0].maxPerSprint, 0);
+  assert.equal(updateResult.state.chores[0].unlimitedDailyCap, 3);
+});
+
+test('kid cannot update chore', () => {
+  const { choreService } = buildService();
+
+  const addResult = choreService.addChore('Parent task', {
+    nowIso: '2026-01-01T08:00:00.000Z',
+    actorRole: 'parent'
+  });
+
+  const choreId = addResult.state.chores[0].id;
+  const updateResult = choreService.updateChore(choreId, {
+    actorRole: 'Andrea',
+    name: 'Kid edit attempt'
+  });
+
+  assert.equal(updateResult.ok, false);
+  assert.match(updateResult.message, /Kun forældrevisning/i);
+});
+
 test('cannot complete chore twice without undo, then can complete again after undo', () => {
   const { choreService } = buildService();
 
@@ -225,6 +273,34 @@ test('completion record stores completedBy actor', () => {
 
   const data = storageService.loadData();
   assert.equal(data.records[0].completedBy, 'Andrea');
+  assert.equal(data.records[0].earnedValue, 0);
+});
+
+test('completion snapshots earnedValue even if chore value changes later', () => {
+  const { choreService, storageService } = buildService();
+
+  const addResult = choreService.addChore('Snapshot task', {
+    nowIso: '2026-01-01T08:00:00.000Z',
+    actorRole: 'parent',
+    assignedTo: ['Andrea'],
+    value: 8
+  });
+  const choreId = addResult.state.chores[0].id;
+
+  const completeResult = choreService.completeChore(choreId, {
+    nowIso: '2026-01-01T09:00:00.000Z',
+    actorRole: 'Andrea'
+  });
+  assert.equal(completeResult.ok, true);
+
+  const updateResult = choreService.updateChore(choreId, {
+    actorRole: 'parent',
+    value: 20
+  });
+  assert.equal(updateResult.ok, true);
+
+  const data = storageService.loadData();
+  assert.equal(data.records[0].earnedValue, 8);
 });
 
 test('unlimited chore stores custom unlimitedDailyCap', () => {

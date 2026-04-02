@@ -86,6 +86,25 @@ async function init() {
   sprintService.ensureActiveSprint();
   const storedRole = storageService.loadData().ui.activeRole;
   let activeRole = resolveInitialRole(storedRole, appConfig.defaultRole);
+  let editingChoreId = null;
+  let editDraft = null;
+  let latestChoreState = null;
+
+  function clearEditState() {
+    editingChoreId = null;
+    editDraft = null;
+  }
+
+  function beginEdit(chore) {
+    editingChoreId = chore.id;
+    editDraft = {
+      name: chore.name,
+      value: String(chore.value ?? 0),
+      maxPerSprint: String(chore.maxPerSprint ?? 1),
+      unlimitedDailyCap: String(chore.unlimitedDailyCap ?? 1),
+      assignedTo: Array.isArray(chore.assignedTo) ? [...chore.assignedTo] : []
+    };
+  }
 
   function persistActiveRole() {
     if (!appConfig.persistRoleSelection) {
@@ -104,6 +123,21 @@ async function init() {
   function refresh(message = '') {
     const activeSprint = sprintService.getActiveSprint();
     const activeSprintId = activeSprint?.id ?? null;
+    const choreState = choreService.getState({ activeSprintId });
+
+    if (activeRole !== 'parent') {
+      clearEditState();
+    }
+
+    if (editingChoreId) {
+      const exists = choreState.chores.some(chore => chore.id === editingChoreId);
+      if (!exists) {
+        clearEditState();
+      }
+    }
+
+    latestChoreState = choreState;
+
     const sprintUi = {
       activeSprint,
       settings: sprintService.getSettings(),
@@ -115,10 +149,13 @@ async function init() {
           byKid: Object.fromEntries(KIDS.map(kid => [kid, { earned: 0, target: 0 }]))
         },
       history: sprintService.getSprintHistory(),
-      daysLeft: activeSprint ? calculateDaysLeft(activeSprint.endDate) : 0
+      daysLeft: activeSprint ? calculateDaysLeft(activeSprint.endDate) : 0,
+      editState: editingChoreId && editDraft
+        ? { choreId: editingChoreId, draft: editDraft }
+        : null
     };
 
-    renderState(viewRefs, choreService.getState({ activeSprintId }), { activeRole, activeTab, sprintUi });
+    renderState(viewRefs, choreState, { activeRole, activeTab, sprintUi });
     renderFeedback(viewRefs, message);
   }
 
@@ -143,6 +180,7 @@ async function init() {
       activeTab = 'opgaver';
     }
     if (activeRole !== 'parent') {
+      clearEditState();
       showRoleSwitchWalk(viewRefs.mascotOverlay, activeRole);
     }
     const message = activeRole === 'parent' ? 'Skiftet til forældrevisning.' : `Skiftet til ${activeRole}s visning.`;
@@ -202,7 +240,37 @@ async function init() {
     const collabId = actionButton.getAttribute('data-collab-id');
     let result;
 
-    if (action === 'delete') {
+    if (action === 'edit') {
+      if (activeRole !== 'parent') {
+        result = choreService.updateChore(choreId, { actorRole: activeRole });
+      } else {
+        const chore = latestChoreState?.chores.find(item => item.id === choreId);
+        if (!chore) {
+          result = choreService.updateChore(choreId, { actorRole: activeRole });
+        } else {
+          beginEdit(chore);
+          result = { ok: true, message: 'Redigering aktiveret.' };
+        }
+      }
+    } else if (action === 'save-edit') {
+      result = choreService.updateChore(choreId, {
+        actorRole: activeRole,
+        name: editDraft?.name,
+        value: editDraft?.value,
+        assignedTo: editDraft?.assignedTo,
+        maxPerSprint: editDraft?.maxPerSprint,
+        unlimitedDailyCap: editDraft?.unlimitedDailyCap
+      });
+      if (result.ok) {
+        clearEditState();
+      }
+    } else if (action === 'cancel-edit') {
+      clearEditState();
+      result = { ok: true, message: 'Redigering annulleret.' };
+    } else if (action === 'delete') {
+      if (editingChoreId === choreId) {
+        clearEditState();
+      }
       result = choreService.deleteChore(choreId, { actorRole: activeRole });
     } else if (action === 'complete') {
       const activeSprint = sprintService.getActiveSprint() || sprintService.ensureActiveSprint();
@@ -233,6 +301,50 @@ async function init() {
     }
 
     if (result) refresh(result.message);
+  });
+
+  function updateEditDraftFromField(target) {
+    const field = target.getAttribute('data-edit-field');
+    const choreId = target.getAttribute('data-chore-id');
+    if (!field || !choreId || choreId !== editingChoreId || !editDraft) {
+      return;
+    }
+
+    if (field === 'assignedTo') {
+      const kid = target.getAttribute('data-kid');
+      if (!kid) {
+        return;
+      }
+
+      const selected = new Set(Array.isArray(editDraft.assignedTo) ? editDraft.assignedTo : []);
+      if (target.checked) {
+        selected.add(kid);
+      } else {
+        selected.delete(kid);
+      }
+      editDraft.assignedTo = [...selected];
+      return;
+    }
+
+    editDraft[field] = target.value;
+  }
+
+  viewRefs.choreList.addEventListener('input', (event) => {
+    const target = event.target.closest('[data-edit-field]');
+    if (!target) {
+      return;
+    }
+
+    updateEditDraftFromField(target);
+  });
+
+  viewRefs.choreList.addEventListener('change', (event) => {
+    const target = event.target.closest('[data-edit-field]');
+    if (!target) {
+      return;
+    }
+
+    updateEditDraftFromField(target);
   });
 
   // Collab inbox delegation (collab proposals shown above the chore list)

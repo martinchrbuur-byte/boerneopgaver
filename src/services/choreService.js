@@ -2,6 +2,7 @@ import { isOnOrAfter, isSameLocalDay, nowIsoTimestamp } from '../shared/dateTime
 
 export const CHORE_MESSAGES = Object.freeze({
   choreAdded: 'Opgave tilføjet! Klar til brug.',
+  choreUpdated: 'Opgaven er opdateret.',
   choreCompleted: 'Flot! Opgaven er fuldført.',
   choreUndone: 'Ingen problem — opgaven er markeret som ikke udført.',
   parentOnlyAdd: 'Kun forældrevisning kan tilføje opgaver.',
@@ -26,6 +27,24 @@ export const CHORE_MESSAGES = Object.freeze({
 
 function normalizeName(name) {
   return typeof name === 'string' ? name.trim() : '';
+}
+
+const DEFAULT_ASSIGNEES = Object.freeze(['Hans Jørgen', 'Andrea']);
+
+function sanitizeAssignedTo(assignedTo, fallbackAssignedTo = DEFAULT_ASSIGNEES) {
+  const validAssignedTo = Array.isArray(assignedTo)
+    ? assignedTo.filter(kid => DEFAULT_ASSIGNEES.includes(kid))
+    : [];
+
+  if (validAssignedTo.length > 0) {
+    return validAssignedTo;
+  }
+
+  const fallback = Array.isArray(fallbackAssignedTo)
+    ? fallbackAssignedTo.filter(kid => DEFAULT_ASSIGNEES.includes(kid))
+    : [];
+
+  return fallback.length > 0 ? fallback : [...DEFAULT_ASSIGNEES];
 }
 
 function createId(prefix) {
@@ -189,10 +208,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       return asResult(false, CHORE_MESSAGES.invalidUnlimitedDailyCap, getState());
     }
 
-    const validAssignedTo = Array.isArray(assignedTo) ? assignedTo.filter(k => typeof k === 'string') : [];
-    if (validAssignedTo.length === 0) {
-      validAssignedTo.push('Hans Jørgen', 'Andrea');
-    }
+    const validAssignedTo = sanitizeAssignedTo(assignedTo);
 
     storageService.updateData((data) => ({
       ...data,
@@ -211,6 +227,71 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     }));
 
     return asResult(true, CHORE_MESSAGES.choreAdded, getState());
+  }
+
+  function updateChore(choreId, {
+    actorRole,
+    name,
+    value,
+    assignedTo,
+    maxPerSprint,
+    unlimitedDailyCap
+  } = {}) {
+    if (!isRoleAllowed(actorRole, ['parent'])) {
+      return asResult(false, CHORE_MESSAGES.parentOnlyAdd, getState());
+    }
+
+    const data = storageService.loadData();
+    const chore = data.chores.find((item) => item.id === choreId);
+    if (!chore) {
+      return asResult(false, CHORE_MESSAGES.missingChore, buildViewState(data));
+    }
+
+    const nextName = name === undefined ? chore.name : normalizeName(name);
+    if (!nextName) {
+      return asResult(false, CHORE_MESSAGES.invalidName, buildViewState(data));
+    }
+
+    const parsedValue = value === undefined ? chore.value : parseFloat(value);
+    if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+      return asResult(false, CHORE_MESSAGES.invalidValue, buildViewState(data));
+    }
+
+    const parsedMax = maxPerSprint === undefined ? chore.maxPerSprint : parseInt(maxPerSprint, 10);
+    if (!Number.isInteger(parsedMax) || parsedMax < 0) {
+      return asResult(false, CHORE_MESSAGES.invalidMax, buildViewState(data));
+    }
+
+    const parsedUnlimitedDailyCap = unlimitedDailyCap === undefined
+      ? chore.unlimitedDailyCap
+      : parseInt(unlimitedDailyCap, 10);
+    if (!Number.isInteger(parsedUnlimitedDailyCap) || parsedUnlimitedDailyCap < 1) {
+      return asResult(false, CHORE_MESSAGES.invalidUnlimitedDailyCap, buildViewState(data));
+    }
+
+    const nextAssignedTo = assignedTo === undefined
+      ? sanitizeAssignedTo(chore.assignedTo)
+      : sanitizeAssignedTo(assignedTo, chore.assignedTo);
+
+    storageService.saveData({
+      ...data,
+      chores: data.chores.map((item) => {
+        if (item.id !== choreId) {
+          return item;
+        }
+
+        return {
+          ...item,
+          name: nextName,
+          assignedTo: nextAssignedTo,
+          value: parsedValue,
+          maxPerSprint: parsedMax,
+          unlimitedDailyCap: parsedUnlimitedDailyCap
+        };
+      })
+    });
+
+    return asResult(true, CHORE_MESSAGES.choreUpdated, getState());
   }
 
   function completeChore(choreId, { nowIso = nowProvider(), actorRole, sprintId = null } = {}) {
@@ -249,7 +330,8 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       completedAt: nowIso,
       undoneAt: null,
       sprintId,
-      completedBy: actorRole
+      completedBy: actorRole,
+      earnedValue: chore.value ?? 0
     };
 
     const withNewRecord = [...records, nextRecord];
@@ -452,6 +534,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
   return {
     getState,
     addChore,
+    updateChore,
     completeChore,
     undoChore,
     deleteChore,

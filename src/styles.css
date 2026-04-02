@@ -347,6 +347,11 @@ body {
   flex-wrap: wrap;
 }
 
+.chore-edit-fields {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .section-title {
   margin: 0 0 0.6rem;
   font-size: 1.25rem;
