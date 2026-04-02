@@ -40,6 +40,7 @@ async function withBootstrappedApp(run) {
     const choreList = document.querySelector('#chore-list');
     const feedback = document.querySelector('#feedback');
     const moneySliderCount = document.querySelector('.money-slider-count');
+    const mascotOverlay = document.querySelector('#mascot-overlay');
 
     assert.ok(roleSwitch);
     assert.ok(addChoreForm);
@@ -48,6 +49,7 @@ async function withBootstrappedApp(run) {
     assert.ok(feedback);
     assert.ok(choreValueInput);
     assert.ok(moneySliderCount);
+    assert.ok(mascotOverlay);
 
     await run({
       window,
@@ -57,7 +59,8 @@ async function withBootstrappedApp(run) {
       choreValueInput,
       choreList,
       feedback,
-      moneySliderCount
+      moneySliderCount,
+      mascotOverlay
     });
   } finally {
     dom.window.close();
@@ -77,7 +80,8 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     choreValueInput,
     choreList,
     feedback,
-    moneySliderCount
+    moneySliderCount,
+    mascotOverlay
   }) => {
     const initialChoreCount = choreList.querySelectorAll('.chore-item').length;
     assert.equal(initialChoreCount, 3);
@@ -93,6 +97,9 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     const andreaButton = roleSwitch.querySelector('button[data-role="Andrea"]');
     assert.ok(andreaButton);
     click(window, andreaButton);
+    assert.equal(mascotOverlay.hidden, false);
+    assert.ok(mascotOverlay.classList.contains('mascot-role-walk'));
+    assert.equal(mascotOverlay.querySelector('.mascot-emoji')?.textContent, '🦄');
 
     const feedFishItem = Array.from(choreList.querySelectorAll('.chore-item'))
       .find(item => item.textContent.includes('Feed fish'));
@@ -104,6 +111,19 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     const refreshedMoneySliderCount = document.querySelector('.money-slider-count');
     assert.ok(refreshedMoneySliderCount);
     assert.match(refreshedMoneySliderCount.textContent, /kr/);
+  });
+});
+
+test('switching to Hans Jørgen triggers giant dinosaur walk animation', async () => {
+  await withBootstrappedApp(async ({ window, roleSwitch, mascotOverlay }) => {
+    const hansButton = roleSwitch.querySelector('button[data-role="Hans Jørgen"]');
+    assert.ok(hansButton);
+
+    click(window, hansButton);
+
+    assert.equal(mascotOverlay.hidden, false);
+    assert.ok(mascotOverlay.classList.contains('mascot-role-walk'));
+    assert.equal(mascotOverlay.querySelector('.mascot-emoji')?.textContent, '🦕');
   });
 });
 

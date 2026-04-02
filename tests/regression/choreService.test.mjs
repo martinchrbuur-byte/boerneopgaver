@@ -255,3 +255,29 @@ test('invalid unlimitedDailyCap is rejected', () => {
   assert.equal(result.ok, false);
   assert.match(result.message, /Dagligt loft/i);
 });
+
+test('isCompleted is scoped to active sprint in state', () => {
+  const { choreService } = buildService();
+
+  const addResult = choreService.addChore('Sprint scoped task', {
+    nowIso: '2026-01-01T08:00:00.000Z',
+    actorRole: 'parent',
+    assignedTo: ['Hans Jørgen']
+  });
+  const choreId = addResult.state.chores[0].id;
+
+  const completeResult = choreService.completeChore(choreId, {
+    nowIso: '2026-01-01T09:00:00.000Z',
+    actorRole: 'Hans Jørgen',
+    sprintId: 'sprint_A'
+  });
+  assert.equal(completeResult.ok, true);
+
+  const sprintAState = choreService.getState({ activeSprintId: 'sprint_A' });
+  const sprintBState = choreService.getState({ activeSprintId: 'sprint_B' });
+
+  assert.equal(sprintAState.chores[0].isCompleted, true);
+  assert.equal(sprintAState.chores[0].sprintCompletionCount, 1);
+  assert.equal(sprintBState.chores[0].isCompleted, false);
+  assert.equal(sprintBState.chores[0].sprintCompletionCount, 0);
+});

@@ -245,6 +245,50 @@ export function renderCollabInbox(viewRefs, pendingCollaborations, activeRole, c
 }
 
 let mascotTimer = null;
+let roleSwitchWalkTimer = null;
+
+function clearMascotTimers() {
+  if (mascotTimer) {
+    clearTimeout(mascotTimer);
+    mascotTimer = null;
+  }
+
+  if (roleSwitchWalkTimer) {
+    clearTimeout(roleSwitchWalkTimer);
+    roleSwitchWalkTimer = null;
+  }
+}
+
+function resetMascotAnimations(mascotOverlay) {
+  mascotOverlay.classList.remove(
+    'mascot-pop',
+    'mascot-celebrate',
+    'mascot-collab',
+    'mascot-confetti',
+    'mascot-role-walk'
+  );
+}
+
+export function showRoleSwitchWalk(mascotOverlay, role, { duration = 2000 } = {}) {
+  if (!mascotOverlay || !BOTH_KIDS.includes(role)) return;
+
+  const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
+  const messageEl = mascotOverlay.querySelector('.mascot-message');
+
+  if (emojiEl) emojiEl.textContent = MASCOT_MAP[role] ?? '⭐';
+  if (messageEl) messageEl.textContent = '';
+
+  clearMascotTimers();
+  resetMascotAnimations(mascotOverlay);
+  void mascotOverlay.offsetWidth;
+  mascotOverlay.classList.add('mascot-role-walk');
+  mascotOverlay.hidden = false;
+
+  roleSwitchWalkTimer = setTimeout(() => {
+    mascotOverlay.hidden = true;
+    roleSwitchWalkTimer = null;
+  }, duration);
+}
 
 export function showMascot(mascotOverlay, activeRole, message, { type = 'pop', duration = 2500 } = {}) {
   if (!mascotOverlay) return;
@@ -256,13 +300,13 @@ export function showMascot(mascotOverlay, activeRole, message, { type = 'pop', d
   if (emojiEl) emojiEl.textContent = emoji;
   if (messageEl) messageEl.textContent = message;
 
+  clearMascotTimers();
   // Remove all animation classes
-  mascotOverlay.classList.remove('mascot-pop', 'mascot-celebrate', 'mascot-collab', 'mascot-confetti');
+  resetMascotAnimations(mascotOverlay);
   void mascotOverlay.offsetWidth; // reflow to restart animation
   mascotOverlay.classList.add(`mascot-${type}`);
   mascotOverlay.hidden = false;
 
-  if (mascotTimer) clearTimeout(mascotTimer);
   mascotTimer = setTimeout(() => {
     mascotOverlay.hidden = true;
     mascotTimer = null;

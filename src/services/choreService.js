@@ -71,6 +71,9 @@ function buildViewState(data, { activeSprintId = null } = {}) {
   const chores = data.chores.map((chore) => {
     const records = recordsByChoreId.get(chore.id) ?? [];
     const activeRecords = records.filter((record) => record.undoneAt === null);
+    const scopedActiveRecords = activeSprintId
+      ? activeRecords.filter((record) => record.sprintId === activeSprintId)
+      : activeRecords;
     const lastRecord = sortByCompletedAtDescending(records)[0] ?? null;
 
     // Count completions within the active sprint (or all-time if no sprint)
@@ -93,9 +96,11 @@ function buildViewState(data, { activeSprintId = null } = {}) {
         : 1,
       sprintCompletionCount,
       isFullyDone,
-      // Legacy compat: isCompleted = has any active record
-      isCompleted: activeRecords.length > 0,
-      activeCompletedAt: activeRecords.length > 0 ? activeRecords[activeRecords.length - 1].completedAt : null,
+      // Active completion reflects the current sprint scope when provided.
+      isCompleted: scopedActiveRecords.length > 0,
+      activeCompletedAt: scopedActiveRecords.length > 0
+        ? scopedActiveRecords[scopedActiveRecords.length - 1].completedAt
+        : null,
       lastCompletedAt: lastRecord?.completedAt ?? null
     };
   });

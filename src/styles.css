@@ -646,6 +646,22 @@ body {
   animation: mascotConfetti 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
 }
 
+/* Role switch: giant walk across screen */
+.mascot-role-walk {
+  bottom: 8vh;
+  left: -20vw;
+  right: auto;
+}
+
+.mascot-role-walk .mascot-emoji {
+  font-size: clamp(7rem, 18vw, 14rem);
+  animation: mascotRoleWalk 2s linear forwards;
+}
+
+.mascot-role-walk .mascot-message {
+  display: none;
+}
+
 @keyframes mascotPop {
   0%   { transform: scale(0.6) translateY(20px); opacity: 0; }
   60%  { transform: scale(1.25) translateY(-8px); opacity: 1; }
@@ -668,4 +684,13 @@ body {
   40%  { transform: scale(1.4) rotate(180deg); opacity: 1; }
   70%  { transform: scale(0.9) rotate(300deg); }
   100% { transform: scale(1) rotate(360deg); opacity: 1; }
+}
+
+@keyframes mascotRoleWalk {
+  0%   { transform: translateX(0) translateY(0); opacity: 1; }
+  20%  { transform: translateX(24vw) translateY(-4px); opacity: 1; }
+  40%  { transform: translateX(48vw) translateY(0); opacity: 1; }
+  60%  { transform: translateX(72vw) translateY(-4px); opacity: 1; }
+  80%  { transform: translateX(96vw) translateY(0); opacity: 1; }
+  100% { transform: translateX(120vw) translateY(-2px); opacity: 1; }
 }

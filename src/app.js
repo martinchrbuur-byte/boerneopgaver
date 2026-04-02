@@ -5,7 +5,7 @@ import { createSprintService } from './services/sprintService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
 import { initializeSupabaseData } from './services/supabaseService.js';
 import { createMainView } from './ui/mainView.js';
-import { renderFeedback, renderState, showMascot } from './ui/choreView.js';
+import { renderFeedback, renderState, showMascot, showRoleSwitchWalk } from './ui/choreView.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
@@ -141,6 +141,9 @@ async function init() {
     persistActiveRole();
     if (activeRole !== 'parent' && activeTab === 'historik') {
       activeTab = 'opgaver';
+    }
+    if (activeRole !== 'parent') {
+      showRoleSwitchWalk(viewRefs.mascotOverlay, activeRole);
     }
     const message = activeRole === 'parent' ? 'Skiftet til forældrevisning.' : `Skiftet til ${activeRole}s visning.`;
     refresh(message);
