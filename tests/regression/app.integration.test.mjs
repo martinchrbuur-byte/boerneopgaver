@@ -103,6 +103,10 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
 
     const feedFishItem = Array.from(choreList.querySelectorAll('.chore-item'))
       .find(item => item.textContent.includes('Feed fish'));
+    const feedFishMarker = feedFishItem?.querySelector('.chore-marker');
+    assert.ok(feedFishMarker);
+    assert.ok((feedFishMarker.textContent ?? '').trim().length > 0);
+
     const completeButton = feedFishItem?.querySelector('button[data-action="complete"]');
     assert.ok(completeButton);
     click(window, completeButton);

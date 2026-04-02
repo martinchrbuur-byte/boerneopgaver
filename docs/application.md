@@ -5,7 +5,9 @@ Chore Champions is a chore and pocket-money tracker for a family with sprint-bas
 
 It allows:
 - Parents to add chores and set a value (`kr`) for each chore.
+- Parents to configure repeat limits per sprint (`maxPerSprint`) and unlimited-mode daily cap.
 - Kids to complete and undo chores.
+- Kids to propose/accept/decline collaboration on shared chores.
 - Everyone (Parent, Andrea, Hans Jørgen) to see current sprint earnings.
 - Parents to close a sprint and mark it as paid.
 - Parents to review historic paid sprints.
@@ -14,11 +16,14 @@ It allows:
 - Role switcher (Parent View / Kid View).
 - Chore list with complete/undo (kids) and delete (parent).
 - Per-chore value in DKK.
+- Repeat chores with sprint-aware completion counts.
+- Collaboration flow with split earnings.
 - Sprint tab with current totals per kid.
 - Parent controls for sprint length and sprint close/payout.
 - History tab (parent-only) showing prior paid sprints.
 - Recent completion feed.
-- Daily status summary (`Today: X of Y chores done`).
+- Dynamic chore markers (emoji) for instant visual recognition.
+- Role-switch mascot walk animation (🦕 for Hans Jørgen, 🦄 for Andrea).
 - Persistence via `localStorage` with optional Supabase sync.
 
 ## Tech Stack
@@ -35,6 +40,7 @@ It allows:
 - `src/ui/mainView.js` — static markup and element refs.
 - `src/ui/choreView.js` — state-to-DOM rendering only.
 - `src/shared/dateTime.js` — date parsing/validation/formatting helpers.
+- `src/shared/choreMarker.js` — deterministic chore-to-visual mapping helper.
 - `src/config/appConfig.js` — runtime config for provider selection.
 - `tests/regression/choreService.test.mjs` — service-level regression tests.
 
@@ -80,7 +86,38 @@ No persistence rules in the UI layer.
 - Formatting for display.
 - Timestamp ordering checks.
 
+`src/shared/choreMarker.js` centralizes:
+- Dynamic chore emoji selection.
+- Danish/English keyword-category matching.
+- Deterministic hash fallback for unknown chore names.
+
 Do not duplicate date logic in services or UI.
+Do not duplicate marker logic in services or UI.
+
+## Dynamic Chore Markers
+The app assigns a visual marker automatically for each chore without storing extra marker fields.
+
+Rule order:
+1. Normalize chore text (trim, lowercase, diacritics-safe).
+2. Try keyword/category match (Danish + English).
+3. If no match: apply deterministic hash fallback into a fixed emoji pool.
+
+This ensures:
+- No manual mapping per chore is needed.
+- Stable marker across reloads/devices for the same chore name.
+- No storage schema migration is required.
+
+Example mappings:
+- Make the bed → 🛏️
+- Børst tænder / Brush teeth → 🪥
+- Feed the dog / Fodre hunden → 🐶
+- Ryd op / Tidy room → 🧹
+- Unknown task text → deterministic fallback (e.g., ⭐ / 🎯 / 🚀 ...)
+
+Current marker render scope:
+- Main chore list
+- Recent completions
+- Collaboration inbox
 
 ### 6) Config Layer
 `src/config/appConfig.js` resolves runtime app config.
@@ -91,10 +128,10 @@ Current providers:
 
 ## Domain Invariants
 The app enforces these rules:
-- A chore cannot be completed twice without undo/reset.
-- For each chore, at most one active completion exists (`undoneAt === null`).
+- For single-completion chores (`maxPerSprint <= 1`), a chore cannot be completed twice without undo/reset.
+- For multi-repeat chores (`maxPerSprint > 1`), multiple active records can exist up to sprint limit.
 - Undo timestamp must be on or after completion timestamp.
-- Completion intervals for the same chore cannot overlap.
+- For single-completion chores, completion intervals for the same chore cannot overlap.
 - Persisted record shape remains compatible with storage guards.
 - Parent role is required for adding chores.
 - Kid role is required for complete/undo actions.
@@ -102,6 +139,7 @@ The app enforces these rules:
 - Allowance is credited to the child who actually completed the chore.
 - Collaboration splits one chore value across participants (sum equals chore value).
 - Undo removes earnings from sprint totals.
+- `isCompleted` in view state is scoped to the active sprint when `activeSprintId` is provided.
 - History tab is parent-only.
 
 ## Data Model (MVP)
@@ -111,6 +149,8 @@ The app enforces these rules:
 - `createdAt: ISO timestamp`
 - `assignedTo: string[]`
 - `value: number` (kr per completion)
+- `maxPerSprint: number` (`0` = unlimited)
+- `unlimitedDailyCap: number` (>= 1)
 
 ### Completion Record
 - `id: string`
@@ -183,6 +223,13 @@ Legacy payloads without `ui` are automatically normalized at load time.
    - User toggles between Parent and Kid mode in-app.
    - Selected role is persisted in local storage for reload continuity.
    - History tab is only visible for parent role.
+   - Switching to Hans Jørgen view triggers a giant 🦕 walk across screen.
+   - Switching to Andrea view triggers a giant 🦄 walk across screen.
+
+7. **Collaboration flow (kid action)**
+   - A kid proposes collaboration on a shared chore.
+   - The other kid can accept or decline.
+   - On accept, one completion record per kid is created with split value.
 
 ## Running the App
 Because this uses ES modules, use a local static server (recommended) instead of opening the HTML file directly.
@@ -200,10 +247,14 @@ Commands:
 
 Current coverage focus:
 - Name normalization and add flow.
-- Double-complete prevention.
+- Single-completion double-complete prevention.
+- Repeat chore and unlimited-cap behavior.
 - Undo timestamp validation.
-- Overlap prevention for intervals.
+- Overlap prevention for single-completion intervals.
 - Storage record shape compatibility.
+- Sprint-scoped `isCompleted` behavior.
+- Dynamic chore marker behavior (keyword and deterministic fallback).
+- Role-switch mascot walk animation for Hans Jørgen and Andrea.
 
 ## Naming Conventions
 - Use `chore` for one item and `chores` for lists.
@@ -217,4 +268,6 @@ If adding new behavior:
 2. Add regression tests in `tests/regression`.
 3. Wire orchestration updates in `app.js`.
 4. Keep date behavior in `shared/dateTime.js`.
-5. Avoid direct `localStorage` access outside storage service.
+5. Keep chore-marker behavior in `shared/choreMarker.js`.
+6. Update documentation in `docs/` in the same change.
+7. Avoid direct `localStorage` access outside storage service.

@@ -322,6 +322,17 @@ body {
 .chore-title {
   margin: 0;
   font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.chore-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
 .chore-meta {

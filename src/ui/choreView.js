@@ -1,4 +1,5 @@
 import { toDateTimeLabel } from '../shared/dateTime.js';
+import { getChoreVisual } from '../shared/choreMarker.js';
 
 const MASCOT_MAP = Object.freeze({
   'Hans Jørgen': '🦕',
@@ -14,6 +15,11 @@ function formatMoney(value) {
 
 function asMoneyValue(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function renderChoreMarker(choreName) {
+  const visual = getChoreVisual(choreName);
+  return `<span class="chore-marker" role="img" aria-label="${visual.label} opgave">${visual.emoji}</span>`;
 }
 
 function renderMoneySliders(viewRefs, activeRole, sprintUi) {
@@ -108,6 +114,7 @@ function renderChoreList(chores, activeRole, pendingCollaborations = []) {
       const maxPerSprint = chore.maxPerSprint ?? 1;
       const sprintCount = chore.sprintCompletionCount ?? 0;
       const isFullyDone = chore.isFullyDone ?? false;
+      const choreMarker = renderChoreMarker(chore.name);
 
       // Repeat badge: only show when maxPerSprint > 1 or when limit reached
       const repeatBadge = maxPerSprint > 1
@@ -166,7 +173,7 @@ function renderChoreList(chores, activeRole, pendingCollaborations = []) {
         <li class="chore-item${isFullyDone ? ' chore-fully-done' : ''}">
           <div class="chore-main">
             <div class="chore-title-row">
-              <h3 class="chore-title">${chore.name}</h3>
+              <h3 class="chore-title">${choreMarker}<span>${chore.name}</span></h3>
               ${repeatBadge}
             </div>
             <div class="actions">${actionButtons}</div>
@@ -186,11 +193,12 @@ function renderRecentCompletions(items) {
 
   return items
     .map((item) => {
+      const choreMarker = renderChoreMarker(item.choreName);
       const resetText = item.undoneAt ? ` (fortrudt ${toDateTimeLabel(item.undoneAt)})` : ' (aktiv)';
       return `
         <li class="chore-item">
           <p class="chore-meta">
-            ${item.choreName} fuldført ${toDateTimeLabel(item.completedAt)}${resetText}
+            ${choreMarker} ${item.choreName} fuldført ${toDateTimeLabel(item.completedAt)}${resetText}
           </p>
         </li>
       `;
@@ -229,10 +237,11 @@ export function renderCollabInbox(viewRefs, pendingCollaborations, activeRole, c
       ${incoming.map(collab => {
         const chore = choreMap.get(collab.choreId);
         const choreName = chore ? chore.name : 'Ukendt opgave';
+        const choreMarker = renderChoreMarker(choreName);
         const proposerEmoji = MASCOT_MAP[collab.proposedBy] ?? '👤';
         return `
           <div class="collab-proposal">
-            <p>${proposerEmoji} <strong>${collab.proposedBy}</strong> vil gøre <strong>${choreName}</strong> sammen med dig!</p>
+            <p>${proposerEmoji} <strong>${collab.proposedBy}</strong> vil gøre <strong>${choreMarker} ${choreName}</strong> sammen med dig!</p>
             <div class="actions">
               <button class="button button-success" data-action="accept-collab" data-collab-id="${collab.id}">✅ Gør det sammen!</button>
               <button class="button button-secondary" data-action="decline-collab" data-collab-id="${collab.id}">❌ Nej tak</button>
