@@ -19,7 +19,15 @@ CREATE TABLE IF NOT EXISTS sprints (
 );
 
 ALTER TABLE sprints ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "public read/write sprints" ON sprints USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "public read/write sprints" ON sprints;
+CREATE POLICY "Users can read own sprints" ON sprints
+  FOR SELECT USING (auth.uid()::text = user_id);
+CREATE POLICY "Users can insert own sprints" ON sprints
+  FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY "Users can update own sprints" ON sprints
+  FOR UPDATE USING (auth.uid()::text = user_id) WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY "Users can delete own sprints" ON sprints
+  FOR DELETE USING (auth.uid()::text = user_id);
 
 -- 3. Add sprint_id to records
 ALTER TABLE records ADD COLUMN IF NOT EXISTS sprint_id uuid REFERENCES sprints(id);
@@ -34,4 +42,12 @@ CREATE TABLE IF NOT EXISTS app_settings (
 );
 
 ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "public read/write app_settings" ON app_settings USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "public read/write app_settings" ON app_settings;
+CREATE POLICY "Users can read own settings" ON app_settings
+  FOR SELECT USING (auth.uid()::text = user_id);
+CREATE POLICY "Users can insert own settings" ON app_settings
+  FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY "Users can update own settings" ON app_settings
+  FOR UPDATE USING (auth.uid()::text = user_id) WITH CHECK (auth.uid()::text = user_id);
+CREATE POLICY "Users can delete own settings" ON app_settings
+  FOR DELETE USING (auth.uid()::text = user_id);

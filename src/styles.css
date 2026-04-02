@@ -22,6 +22,14 @@ body {
   gap: 1rem;
 }
 
+.auth-shell {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
 .card {
   background: #ffffff;
   border: 1px solid #cbd5e1;
@@ -38,6 +46,27 @@ body {
 .app-subtitle {
   margin: 0.25rem 0 0;
   color: #334155;
+}
+
+.app-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.account-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.account-email {
+  font-size: 0.85rem;
+  color: #334155;
+  word-break: break-all;
 }
 
 .status-row {
@@ -197,6 +226,49 @@ body {
 .feedback {
   min-height: 1.3rem;
   color: #92400e;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.auth-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.auth-subtitle {
+  margin-bottom: 0.75rem;
+}
+
+.auth-actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.auth-link-stack {
+  margin-top: 0.75rem;
+}
+
+.auth-link-row {
+  margin: 0.5rem 0 0;
+  color: #334155;
+}
+
+.auth-link-button {
+  border: none;
+  background: none;
+  color: #1d4ed8;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.auth-link-button:hover {
+  text-decoration: underline;
 }
 
 .role-switch {

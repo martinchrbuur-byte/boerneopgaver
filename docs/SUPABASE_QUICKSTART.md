@@ -20,31 +20,39 @@ Choose one option:
 - [ ] Replace the empty string with your API key
 - [ ] Remember to remove it before committing!
 
-## 3. Create Database Tables
+## 3. Create Database Tables + Auth Policies
 - [ ] Open your Supabase dashboard
 - [ ] Go to SQL Editor
 - [ ] Copy all SQL from [docs/supabase-setup.md](supabase-setup.md)
 - [ ] Run the SQL in your project
-- [ ] Verify tables are created (chores, records, ui_state)
+- [ ] Verify tables are created (chores, records, ui_state, sprints, app_settings)
+- [ ] Confirm RLS policies are auth-based (`auth.uid()::text = user_id`)
 
-## 4. Load Environment Variables (if using .env)
+## 4. Enable Auth (Email + Password)
+- [ ] Go to Supabase Dashboard → Authentication → Providers
+- [ ] Ensure Email provider is enabled
+- [ ] Optional: disable "Confirm email" during local testing
+- [ ] Keep "Confirm email" enabled in production
+
+## 5. Load Environment Variables (if using .env)
 Add this to the top of your app initialization:
 ```javascript
 import dotenv from 'dotenv';
 dotenv.config();
 ```
 
-## 5. Test the Integration
+## 6. Test the Integration
 - [ ] Install dependencies: `npm install`
 - [ ] Start your dev server or open index.html
 - [ ] Open browser DevTools (F12)
 - [ ] Check Console tab for "Connected to Supabase" message
+- [ ] Use app landing page to create account or log in
 - [ ] Create/complete a chore
 - [ ] Verify data appears in your Supabase database
   - Go to Supabase Dashboard → your project
   - Check the Tables tab for data
 
-## 6. Verify Data Sync
+## 7. Verify Data Sync
 - [ ] Data appears in Supabase `chores` table
 - [ ] Data appears in Supabase `records` table
 - [ ] Data appears in Supabase `ui_state` table
@@ -69,8 +77,8 @@ dotenv.config();
 
 ### Row Level Security (RLS) Blocking Access
 - [ ] Go to Supabase Dashboard → Authentication → Policies
-- [ ] Review or temporarily disable RLS policies if testing
-- [ ] Policies in comment block are optional - only needed for multi-user auth
+- [ ] Verify every policy uses `auth.uid()::text = user_id`
+- [ ] Do not use public `USING (true)` policies in production
 
 ## For Production Deployment
 

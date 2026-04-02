@@ -6,8 +6,16 @@ export function createMainView(rootElement) {
   rootElement.innerHTML = `
     <section class="app-shell" aria-label="Børnenes opgaveskema">
       <header class="card">
-        <h1 class="app-title">🌟 Opgavehelte</h1>
-        <p class="app-subtitle">Fuldfør opgaver, optjen lommepenge, og gør samarbejdet sjovt.</p>
+        <div class="app-header-row">
+          <div>
+            <h1 class="app-title">🌟 Opgavehelte</h1>
+            <p class="app-subtitle">Fuldfør opgaver, optjen lommepenge, og gør samarbejdet sjovt.</p>
+          </div>
+          <div id="account-section" class="account-section" hidden>
+            <span id="account-email" class="account-email"></span>
+            <button id="logout-btn" type="button" class="button button-secondary">Log ud</button>
+          </div>
+        </div>
       </header>
 
       <section class="card" aria-label="Rolleskift">
@@ -193,6 +201,120 @@ export function createMainView(rootElement) {
     mascotOverlay: rootElement.querySelector('#mascot-overlay'),
     statusText: rootElement.querySelector('#status-text'),
     moneySliderGroup: rootElement.querySelector('#money-slider-group'),
-    coinIcon: rootElement.querySelector('#coin-icon')
+    coinIcon: rootElement.querySelector('#coin-icon'),
+    accountSection: rootElement.querySelector('#account-section'),
+    accountEmail: rootElement.querySelector('#account-email'),
+    logoutButton: rootElement.querySelector('#logout-btn')
+  };
+}
+
+function authPageHeading(page) {
+  if (page === 'signup') return 'Opret familiekonto';
+  if (page === 'login') return 'Log ind';
+  if (page === 'forgot-password') return 'Glemt adgangskode';
+  if (page === 'reset-password') return 'Nulstil adgangskode';
+  return 'Velkommen til Opgavehelte';
+}
+
+function authPageSubheading(page) {
+  if (page === 'signup') return 'Lav én konto til familien for sikker cloud sync på tværs af enheder.';
+  if (page === 'login') return 'Log ind for at fortsætte med jeres opgaver og sprintdata.';
+  if (page === 'forgot-password') return 'Vi sender et link, så du kan vælge en ny adgangskode.';
+  if (page === 'reset-password') return 'Vælg en ny adgangskode til jeres familiekonto.';
+  return 'Vælg hvordan du vil komme i gang med cloud sync.';
+}
+
+function authPageBody(page) {
+  if (page === 'signup') {
+    return `
+      <form id="auth-signup-form" class="auth-form" novalidate>
+        <label class="auth-label" for="signup-email">Email</label>
+        <input id="signup-email" class="input" name="email" type="email" autocomplete="email" required />
+        <label class="auth-label" for="signup-password">Adgangskode</label>
+        <input id="signup-password" class="input" name="password" type="password" autocomplete="new-password" minlength="6" required />
+        <label class="auth-label" for="signup-password-confirm">Gentag adgangskode</label>
+        <input id="signup-password-confirm" class="input" name="passwordConfirm" type="password" autocomplete="new-password" minlength="6" required />
+        <button type="submit" class="button button-primary">Opret konto</button>
+      </form>
+      <p class="auth-link-row">Har du allerede en konto? <button type="button" class="auth-link-button" data-auth-nav="login">Log ind</button></p>
+    `;
+  }
+
+  if (page === 'login') {
+    return `
+      <form id="auth-login-form" class="auth-form" novalidate>
+        <label class="auth-label" for="login-email">Email</label>
+        <input id="login-email" class="input" name="email" type="email" autocomplete="email" required />
+        <label class="auth-label" for="login-password">Adgangskode</label>
+        <input id="login-password" class="input" name="password" type="password" autocomplete="current-password" required />
+        <button type="submit" class="button button-primary">Log ind</button>
+      </form>
+      <div class="auth-link-stack">
+        <p class="auth-link-row">Ingen konto endnu? <button type="button" class="auth-link-button" data-auth-nav="signup">Opret konto</button></p>
+        <p class="auth-link-row"><button type="button" class="auth-link-button" data-auth-nav="forgot-password">Glemt adgangskode?</button></p>
+      </div>
+    `;
+  }
+
+  if (page === 'forgot-password') {
+    return `
+      <form id="auth-forgot-form" class="auth-form" novalidate>
+        <label class="auth-label" for="forgot-email">Email</label>
+        <input id="forgot-email" class="input" name="email" type="email" autocomplete="email" required />
+        <button type="submit" class="button button-primary">Send nulstillingslink</button>
+      </form>
+      <p class="auth-link-row"><button type="button" class="auth-link-button" data-auth-nav="login">Tilbage til log ind</button></p>
+    `;
+  }
+
+  if (page === 'reset-password') {
+    return `
+      <form id="auth-reset-form" class="auth-form" novalidate>
+        <label class="auth-label" for="reset-password">Ny adgangskode</label>
+        <input id="reset-password" class="input" name="password" type="password" autocomplete="new-password" minlength="6" required />
+        <label class="auth-label" for="reset-password-confirm">Gentag ny adgangskode</label>
+        <input id="reset-password-confirm" class="input" name="passwordConfirm" type="password" autocomplete="new-password" minlength="6" required />
+        <button type="submit" class="button button-primary">Gem ny adgangskode</button>
+      </form>
+      <p class="auth-link-row"><button type="button" class="auth-link-button" data-auth-nav="login">Tilbage til log ind</button></p>
+    `;
+  }
+
+  return `
+    <div class="auth-actions">
+      <button type="button" class="button button-primary" data-auth-nav="signup">Opret konto</button>
+      <button type="button" class="button button-secondary" data-auth-nav="login">Log ind</button>
+    </div>
+  `;
+}
+
+export function createAuthView(rootElement, { page = 'welcome', message = '' } = {}) {
+  if (!rootElement) {
+    throw new Error('Root element is required.');
+  }
+
+  rootElement.innerHTML = `
+    <section class="auth-shell" aria-label="Konto og login">
+      <header class="card">
+        <h1 class="app-title">🌟 Opgavehelte</h1>
+        <p class="app-subtitle">Sikker cloud sync for familiens opgaver.</p>
+      </header>
+      <section class="card" data-auth-page="${page}">
+        <h2 class="section-title">${authPageHeading(page)}</h2>
+        <p class="app-subtitle auth-subtitle">${authPageSubheading(page)}</p>
+        <p id="auth-feedback" class="feedback" role="status" aria-live="polite">${message}</p>
+        ${authPageBody(page)}
+      </section>
+    </section>
+  `;
+
+  return {
+    page,
+    feedback: rootElement.querySelector('#auth-feedback'),
+    navButtons: rootElement.querySelectorAll('button[data-auth-nav]'),
+    signupForm: rootElement.querySelector('#auth-signup-form'),
+    loginForm: rootElement.querySelector('#auth-login-form'),
+    forgotForm: rootElement.querySelector('#auth-forgot-form'),
+    resetForm: rootElement.querySelector('#auth-reset-form')
   };
 }

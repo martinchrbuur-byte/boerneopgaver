@@ -5,13 +5,24 @@ import { isSupabaseConfigured } from './config/supabaseConfig.js';
 import { createChoreService } from './services/choreService.js';
 import { createSprintService } from './services/sprintService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
-import { initializeSupabaseData } from './services/supabaseService.js';
-import { createMainView } from './ui/mainView.js';
+import {
+  getCurrentSession,
+  initializeSupabaseData,
+  onAuthStateChange,
+  sendPasswordResetEmail,
+  signOutCurrentUser,
+  signInWithEmail,
+  signUpWithEmail,
+  updateCurrentUserPassword
+} from './services/supabaseService.js';
+import { createAuthView, createMainView } from './ui/mainView.js';
 import { renderFeedback, renderState, showMascot, showRoleSwitchWalk } from './ui/choreView.js';
 import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
+let disposeActiveApp = null;
+let isAuthTransitioning = false;
 
 function seedStarterChores(choreService) {
   const state = choreService.getState();
@@ -119,11 +130,188 @@ function createRemoteSnapshotKey(supabaseData) {
   });
 }
 
+function authErrorMessage(error, fallback = 'Kunne ikke gennemføre login.') {
+  if (!error || typeof error !== 'object') {
+    return fallback;
+  }
+
+  if (typeof error.message === 'string' && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
+function resolveInitialAuthPage() {
+  return window.location.hash === '#reset-password' ? 'reset-password' : 'welcome';
+}
+
+async function moveToAuthScreen(root, message = 'Session udløbet. Log ind igen.') {
+  if (isAuthTransitioning) {
+    return;
+  }
+
+  isAuthTransitioning = true;
+  if (typeof disposeActiveApp === 'function') {
+    const dispose = disposeActiveApp;
+    disposeActiveApp = null;
+    dispose();
+  }
+
+  await startAuthFlow(root, 'login', message);
+  isAuthTransitioning = false;
+}
+
+async function startAuthFlow(root, initialPage = resolveInitialAuthPage(), message = '') {
+  function render(page, feedbackMessage = '') {
+    const authView = createAuthView(root, { page, message: feedbackMessage });
+
+    authView.navButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const nextPage = button.getAttribute('data-auth-nav') || 'welcome';
+        render(nextPage);
+      });
+    });
+
+    if (authView.signupForm) {
+      authView.signupForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(authView.signupForm);
+        const email = String(formData.get('email') || '').trim();
+        const password = String(formData.get('password') || '');
+        const passwordConfirm = String(formData.get('passwordConfirm') || '');
+
+        if (password !== passwordConfirm) {
+          render('signup', 'Adgangskoderne matcher ikke.');
+          return;
+        }
+
+        try {
+          const result = await signUpWithEmail(email, password);
+          if (result?.session?.user?.id) {
+            window.location.hash = '';
+            await init();
+            return;
+          }
+
+          render('login', 'Konto oprettet. Tjek email og log derefter ind.');
+        } catch (error) {
+          render('signup', authErrorMessage(error, 'Kunne ikke oprette konto.'));
+        }
+      });
+    }
+
+    if (authView.loginForm) {
+      authView.loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(authView.loginForm);
+        const email = String(formData.get('email') || '').trim();
+        const password = String(formData.get('password') || '');
+
+        try {
+          await signInWithEmail(email, password);
+          window.location.hash = '';
+          await init();
+        } catch (error) {
+          render('login', authErrorMessage(error, 'Login mislykkedes.'));
+        }
+      });
+    }
+
+    if (authView.forgotForm) {
+      authView.forgotForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(authView.forgotForm);
+        const email = String(formData.get('email') || '').trim();
+
+        try {
+          await sendPasswordResetEmail(email);
+          render('login', 'Nulstillingslink sendt. Tjek din email.');
+        } catch (error) {
+          render('forgot-password', authErrorMessage(error, 'Kunne ikke sende nulstillingslink.'));
+        }
+      });
+    }
+
+    if (authView.resetForm) {
+      authView.resetForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(authView.resetForm);
+        const password = String(formData.get('password') || '');
+        const passwordConfirm = String(formData.get('passwordConfirm') || '');
+
+        if (password !== passwordConfirm) {
+          render('reset-password', 'Adgangskoderne matcher ikke.');
+          return;
+        }
+
+        try {
+          await updateCurrentUserPassword(password);
+          window.location.hash = '';
+          render('login', 'Adgangskode opdateret. Log ind igen.');
+        } catch (error) {
+          render('reset-password', authErrorMessage(error, 'Kunne ikke opdatere adgangskode.'));
+        }
+      });
+    }
+  }
+
+  render(initialPage, message);
+}
+
+function hasMeaningfulLocalData(data) {
+  return (
+    (data.chores || []).length > 0 ||
+    (data.records || []).length > 0 ||
+    (data.sprints || []).length > 0 ||
+    (data.settings?.sprintLengthDays || 7) !== 7
+  );
+}
+
 async function init() {
   const appConfig = resolveAppConfig();
 
   const root = document.querySelector('#app');
+  if (typeof disposeActiveApp === 'function') {
+    const dispose = disposeActiveApp;
+    disposeActiveApp = null;
+    dispose();
+  }
+
+  let currentSession = null;
+
+  if (isSupabaseConfigured()) {
+    try {
+      const session = await getCurrentSession();
+      currentSession = session;
+      if (!session?.user?.id) {
+        await startAuthFlow(root, resolveInitialAuthPage());
+        return;
+      }
+    } catch (error) {
+      await startAuthFlow(root, 'welcome', authErrorMessage(error, 'Kunne ikke hente login-status.'));
+      return;
+    }
+  }
+
   const viewRefs = createMainView(root);
+  const cleanupTasks = [];
+  disposeActiveApp = () => {
+    while (cleanupTasks.length > 0) {
+      const cleanup = cleanupTasks.pop();
+      try {
+        cleanup();
+      } catch (error) {
+        console.warn('Cleanup task failed:', error);
+      }
+    }
+  };
+
+  if (isSupabaseConfigured() && currentSession?.user?.email && viewRefs.accountSection && viewRefs.accountEmail) {
+    viewRefs.accountSection.hidden = false;
+    viewRefs.accountEmail.textContent = currentSession.user.email;
+  }
+
   const storageService = createStorageService();
   const sprintService = createSprintService({ storageService });
   let activeTab = 'opgaver';
@@ -150,6 +338,12 @@ async function init() {
       supabaseData.settings.sprintLengthDays !== 7;
 
     if (!hasRemoteData) {
+      if (hasMeaningfulLocalData(localData)) {
+        storageService.updateData(data => ({ ...data }));
+        await storageService.syncNow();
+        return { applied: false, hasRemoteData: false, skippedReason: 'claimed-local' };
+      }
+
       if (hasUnsyncedLocalChanges) {
         storageService.syncNow();
       }
@@ -356,8 +550,15 @@ async function init() {
   refresh();
 
   if (isSupabaseConfigured()) {
+    const authListener = onAuthStateChange(async (event, session) => {
+      if ((event === 'SIGNED_OUT' || !session?.user?.id) && !isAuthTransitioning) {
+        await moveToAuthScreen(root, 'Session udløbet. Log ind igen.');
+      }
+    });
+    cleanupTasks.push(() => authListener?.data?.subscription?.unsubscribe());
+
     const POLL_INTERVAL_MS = 15000;
-    setInterval(async () => {
+    const pollIntervalId = setInterval(async () => {
       if (document.hidden || !navigator.onLine) {
         return;
       }
@@ -382,8 +583,9 @@ async function init() {
         console.warn('Live sync poll failed:', error);
       }
     }, POLL_INTERVAL_MS);
+    cleanupTasks.push(() => clearInterval(pollIntervalId));
 
-    window.addEventListener('online', async () => {
+    const onOnline = async () => {
       try {
         await storageService.syncNow();
         const supabaseData = await initializeSupabaseData();
@@ -400,6 +602,19 @@ async function init() {
         }
       } catch (error) {
         console.warn('Failed to sync after reconnect:', error);
+      }
+    };
+    window.addEventListener('online', onOnline);
+    cleanupTasks.push(() => window.removeEventListener('online', onOnline));
+  }
+
+  if (isSupabaseConfigured() && viewRefs.logoutButton) {
+    viewRefs.logoutButton.addEventListener('click', async () => {
+      try {
+        await signOutCurrentUser();
+        await moveToAuthScreen(root, 'Du er logget ud.');
+      } catch (error) {
+        refresh(authErrorMessage(error, 'Kunne ikke logge ud.'));
       }
     });
   }

@@ -3,6 +3,70 @@ import { SUPABASE_CONFIG, isSupabaseConfigured } from '../config/supabaseConfig.
 
 let supabaseClient = null;
 
+export async function getCurrentSession() {
+  const client = getSupabaseClient();
+  const { data, error } = await client.auth.getSession();
+  if (error) {
+    throw error;
+  }
+
+  return data?.session || null;
+}
+
+export function onAuthStateChange(callback) {
+  const client = getSupabaseClient();
+  return client.auth.onAuthStateChange(callback);
+}
+
+export async function signUpWithEmail(email, password) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.auth.signUp({ email, password });
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function signInWithEmail(email, password) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function signOutCurrentUser() {
+  const client = getSupabaseClient();
+  const { error } = await client.auth.signOut();
+  if (error) {
+    throw error;
+  }
+}
+
+export async function sendPasswordResetEmail(email) {
+  const client = getSupabaseClient();
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}${window.location.pathname}#reset-password`
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function updateCurrentUserPassword(password) {
+  const client = getSupabaseClient();
+  const { data, error } = await client.auth.updateUser({ password });
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
 function toAppChore(chore) {
   return {
     id: chore.id,
@@ -59,9 +123,12 @@ export async function initializeSupabaseData() {
   try {
     const client = getSupabaseClient();
 
-    // Get the authenticated user (for multi-user support)
     const { data: { user } } = await client.auth.getUser();
-    const userId = user?.id || 'anonymous';
+    if (!user?.id) {
+      return null;
+    }
+
+    const userId = user.id;
 
     // Load chores
     const { data: chores, error: choresError } = await client
