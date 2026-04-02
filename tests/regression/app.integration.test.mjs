@@ -2,6 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
+const ANDREA_EMOJIS = [
+  '🦄', '💖', '👧', '🌸', '🎀', '🧚', '🌷',
+  '💐', '🦋', '⭐', '💎', '🌟', '🎊', '🎁'
+];
+
+const HANS_EMOJIS = [
+  '🦕', '⚽', '👦', '🚀', '🛹', '🤖', '🎮',
+  '🏀', '🔧', '🛸', '🚗', '💪', '🎯', '🔥', '⚡', '🏆'
+];
+
 function click(window, element) {
   element.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 }
@@ -99,7 +109,8 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     click(window, andreaButton);
     assert.equal(mascotOverlay.hidden, false);
     assert.ok(mascotOverlay.classList.contains('mascot-role-walk'));
-    assert.equal(mascotOverlay.querySelector('.mascot-emoji')?.textContent, '🦄');
+    const andreaEmoji = mascotOverlay.querySelector('.mascot-emoji')?.textContent;
+    assert.ok(ANDREA_EMOJIS.includes(andreaEmoji), `Expected emoji from Andrea set, got: ${andreaEmoji}`);
 
     const feedFishItem = Array.from(choreList.querySelectorAll('.chore-item'))
       .find(item => item.textContent.includes('Feed fish'));
@@ -127,7 +138,8 @@ test('switching to Hans Jørgen triggers giant dinosaur walk animation', async (
 
     assert.equal(mascotOverlay.hidden, false);
     assert.ok(mascotOverlay.classList.contains('mascot-role-walk'));
-    assert.equal(mascotOverlay.querySelector('.mascot-emoji')?.textContent, '🦕');
+    const hansEmoji = mascotOverlay.querySelector('.mascot-emoji')?.textContent;
+    assert.ok(HANS_EMOJIS.includes(hansEmoji), `Expected emoji from Hans set, got: ${hansEmoji}`);
   });
 });
 

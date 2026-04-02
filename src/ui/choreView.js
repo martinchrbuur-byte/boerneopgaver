@@ -7,7 +7,34 @@ const MASCOT_MAP = Object.freeze({
   'parent': '🎉'
 });
 
+const MASCOT_EMOJI_SETS = Object.freeze({
+  'Andrea': [
+    '🦄', '💖', '👧', '🌸', '🎀', '🧚', '🌷',
+    '💐', '🦋', '⭐', '💎', '🌟', '🎊', '🎁'
+  ],
+  'Hans Jørgen': [
+    '🦕', '⚽', '👦', '🚀', '🛹', '🤖', '🎮',
+    '🏀', '🔧', '🛸', '🚗', '💪', '🎯', '🔥', '⚡', '🏆'
+  ]
+});
+
+const lastMascotEmojiByRole = {
+  'Andrea': null,
+  'Hans Jørgen': null
+};
+
 const BOTH_KIDS = ['Hans Jørgen', 'Andrea'];
+
+function getNextMascotEmoji(role) {
+  const emojiSet = MASCOT_EMOJI_SETS[role] ?? [];
+  if (emojiSet.length === 0) return '⭐';
+
+  const available = emojiSet.filter(e => e !== lastMascotEmojiByRole[role]);
+  const nextEmoji = available[Math.floor(Math.random() * available.length)];
+
+  lastMascotEmojiByRole[role] = nextEmoji;
+  return nextEmoji;
+}
 
 function formatMoney(value) {
   return `${value.toFixed(2)} kr`;
@@ -284,7 +311,7 @@ export function showRoleSwitchWalk(mascotOverlay, role, { duration = 2000 } = {}
   const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
   const messageEl = mascotOverlay.querySelector('.mascot-message');
 
-  if (emojiEl) emojiEl.textContent = MASCOT_MAP[role] ?? '⭐';
+  if (emojiEl) emojiEl.textContent = getNextMascotEmoji(role);
   if (messageEl) messageEl.textContent = '';
 
   clearMascotTimers();
@@ -302,7 +329,7 @@ export function showRoleSwitchWalk(mascotOverlay, role, { duration = 2000 } = {}
 export function showMascot(mascotOverlay, activeRole, message, { type = 'pop', duration = 2500 } = {}) {
   if (!mascotOverlay) return;
 
-  const emoji = MASCOT_MAP[activeRole] ?? '⭐';
+  const emoji = BOTH_KIDS.includes(activeRole) ? getNextMascotEmoji(activeRole) : MASCOT_MAP[activeRole] ?? '⭐';
   const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
   const messageEl = mascotOverlay.querySelector('.mascot-message');
 
