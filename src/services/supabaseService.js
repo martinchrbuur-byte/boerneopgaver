@@ -109,11 +109,16 @@ export async function initializeSupabaseData() {
     return {
       chores: (chores || []).map(toAppChore),
       records: (records || []).map(toAppRecord),
-      ui: uiStateData ? { activeRole: uiStateData.active_role } : { activeRole: 'parent' },
+      ui: uiStateData
+        ? { activeRole: uiStateData.active_role, updatedAt: uiStateData.updated_at || null }
+        : { activeRole: 'parent', updatedAt: null },
       sprints: (sprints || []).map(toAppSprint),
       settings: settingsData
-        ? { sprintLengthDays: settingsData.sprint_length_days }
-        : { sprintLengthDays: 7 },
+        ? {
+          sprintLengthDays: settingsData.sprint_length_days,
+          updatedAt: settingsData.updated_at || null
+        }
+        : { sprintLengthDays: 7, updatedAt: null },
       userId
     };
   } catch (error) {

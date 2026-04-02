@@ -47,6 +47,48 @@ function calculateDaysLeft(endDate) {
   return Math.max(0, Math.ceil(diffMs / (24 * 60 * 60 * 1000)));
 }
 
+function maxIsoTimestamp(values) {
+  const validValues = values.filter(value => typeof value === 'string' && value.length > 0);
+  if (validValues.length === 0) {
+    return null;
+  }
+
+  return validValues.reduce((latest, value) => (value > latest ? value : latest));
+}
+
+function resolveRemoteSectionTimestamps(supabaseData) {
+  const choresUpdatedAt = maxIsoTimestamp((supabaseData.chores || []).map(item => item.createdAt));
+  const recordsUpdatedAt = maxIsoTimestamp((supabaseData.records || []).flatMap(item => [item.completedAt, item.undoneAt]));
+  const sprintsUpdatedAt = maxIsoTimestamp((supabaseData.sprints || []).flatMap(item => [item.createdAt, item.paidAt]));
+
+  return {
+    choresUpdatedAt,
+    recordsUpdatedAt,
+    uiUpdatedAt: supabaseData.ui?.updatedAt || null,
+    sprintsUpdatedAt,
+    settingsUpdatedAt: supabaseData.settings?.updatedAt || null
+  };
+}
+
+function pickNewerSection(localValue, remoteValue, localUpdatedAt, remoteUpdatedAt) {
+  if (!remoteUpdatedAt && localUpdatedAt) {
+    return localValue;
+  }
+
+  if (remoteUpdatedAt && !localUpdatedAt) {
+    return remoteValue;
+  }
+
+  if (!remoteUpdatedAt && !localUpdatedAt) {
+    const hasRemoteValues = Array.isArray(remoteValue)
+      ? remoteValue.length > 0
+      : Boolean(remoteValue && Object.keys(remoteValue).length > 0);
+    return hasRemoteValues ? remoteValue : localValue;
+  }
+
+  return remoteUpdatedAt >= localUpdatedAt ? remoteValue : localValue;
+}
+
 async function init() {
   const appConfig = resolveAppConfig();
 
@@ -66,21 +108,73 @@ async function init() {
       const supabaseData = await initializeSupabaseData();
       if (supabaseData) {
         storageService.setUserId(supabaseData.userId);
+        const localData = storageService.loadData();
+        const syncState = storageService.getSyncState();
+        const hasUnsyncedLocalChanges =
+          (syncState?.queueLength || 0) > 0 ||
+          (syncState?.deadLetterCount || 0) > 0 ||
+          (syncState?.failureCount || 0) > 0;
+
         const hasRemoteData =
           supabaseData.chores.length > 0 ||
           supabaseData.records.length > 0 ||
           supabaseData.sprints.length > 0 ||
           supabaseData.settings.sprintLengthDays !== 7;
+
         if (hasRemoteData) {
-          const localData = storageService.loadData();
-          storageService.saveData({
-            ...localData,
-            chores: supabaseData.chores,
-            records: supabaseData.records,
-            ui: supabaseData.ui,
-            sprints: supabaseData.sprints,
-            settings: supabaseData.settings
-          });
+          const localSyncMeta = localData.syncMeta || {};
+
+          if (hasUnsyncedLocalChanges) {
+            console.log('Keeping local data on startup because unsynced changes are pending.');
+            storageService.syncNow();
+          } else {
+            const remoteSectionTimestamps = resolveRemoteSectionTimestamps(supabaseData);
+            const reconciledData = {
+              ...localData,
+              chores: pickNewerSection(
+                localData.chores,
+                supabaseData.chores,
+                localSyncMeta.choresUpdatedAt,
+                remoteSectionTimestamps.choresUpdatedAt
+              ),
+              records: pickNewerSection(
+                localData.records,
+                supabaseData.records,
+                localSyncMeta.recordsUpdatedAt,
+                remoteSectionTimestamps.recordsUpdatedAt
+              ),
+              ui: pickNewerSection(
+                localData.ui,
+                { activeRole: supabaseData.ui.activeRole },
+                localSyncMeta.uiUpdatedAt,
+                remoteSectionTimestamps.uiUpdatedAt
+              ),
+              sprints: pickNewerSection(
+                localData.sprints,
+                supabaseData.sprints,
+                localSyncMeta.sprintsUpdatedAt,
+                remoteSectionTimestamps.sprintsUpdatedAt
+              ),
+              settings: pickNewerSection(
+                localData.settings,
+                { sprintLengthDays: supabaseData.settings.sprintLengthDays },
+                localSyncMeta.settingsUpdatedAt,
+                remoteSectionTimestamps.settingsUpdatedAt
+              )
+            };
+
+            storageService.saveDataWithOptions(reconciledData, {
+              previousData: localData,
+              source: 'remote',
+              skipCloudSync: true
+            });
+          }
+        } else {
+          storageService.syncNow();
+        }
+
+        if (!hasRemoteData && hasUnsyncedLocalChanges) {
+          storageService.syncNow();
         }
         console.log('Connected to Supabase');
       }

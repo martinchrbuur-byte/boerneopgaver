@@ -101,6 +101,19 @@ function createDefaultSettings() {
   return { sprintLengthDays: 7 };
 }
 
+function createDefaultSyncMeta() {
+  const now = new Date().toISOString();
+  return {
+    choresUpdatedAt: now,
+    recordsUpdatedAt: now,
+    uiUpdatedAt: now,
+    sprintsUpdatedAt: now,
+    settingsUpdatedAt: now,
+    lastLocalWriteAt: now,
+    lastRemoteMergeAt: null
+  };
+}
+
 function createEmptyPayload() {
   return {
     chores: [],
@@ -108,7 +121,8 @@ function createEmptyPayload() {
     ui: createDefaultUiState(),
     sprints: [],
     settings: createDefaultSettings(),
-    pendingCollaborations: []
+    pendingCollaborations: [],
+    syncMeta: createDefaultSyncMeta()
   };
 }
 
@@ -124,6 +138,20 @@ function isSprintItem(value) {
 }
 
 function isPayload(value) {
+  const hasValidSyncMeta =
+    !value.syncMeta ||
+    (
+      typeof value.syncMeta === 'object' &&
+      value.syncMeta !== null &&
+      (value.syncMeta.choresUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.choresUpdatedAt)) &&
+      (value.syncMeta.recordsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.recordsUpdatedAt)) &&
+      (value.syncMeta.uiUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.uiUpdatedAt)) &&
+      (value.syncMeta.sprintsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.sprintsUpdatedAt)) &&
+      (value.syncMeta.settingsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.settingsUpdatedAt)) &&
+      (value.syncMeta.lastLocalWriteAt === undefined || isValidIsoTimestamp(value.syncMeta.lastLocalWriteAt)) &&
+      (value.syncMeta.lastRemoteMergeAt === undefined || value.syncMeta.lastRemoteMergeAt === null || isValidIsoTimestamp(value.syncMeta.lastRemoteMergeAt))
+    );
+
   return (
     value &&
     typeof value === 'object' &&
@@ -138,7 +166,8 @@ function isPayload(value) {
     Array.isArray(value.pendingCollaborations) &&
     value.pendingCollaborations.every(isCollabItem) &&
     value.chores.every(isChoreItem) &&
-    value.records.every(isChoreRecord)
+    value.records.every(isChoreRecord) &&
+    hasValidSyncMeta
   );
 }
 
@@ -153,8 +182,44 @@ function isLegacyPayload(value) {
 }
 
 function normalizePayload(value) {
+  const defaultSyncMeta = createDefaultSyncMeta();
+
+  function normalizeSyncMeta(syncMeta) {
+    if (!syncMeta || typeof syncMeta !== 'object') {
+      return defaultSyncMeta;
+    }
+
+    return {
+      choresUpdatedAt: isValidIsoTimestamp(syncMeta.choresUpdatedAt)
+        ? syncMeta.choresUpdatedAt
+        : defaultSyncMeta.choresUpdatedAt,
+      recordsUpdatedAt: isValidIsoTimestamp(syncMeta.recordsUpdatedAt)
+        ? syncMeta.recordsUpdatedAt
+        : defaultSyncMeta.recordsUpdatedAt,
+      uiUpdatedAt: isValidIsoTimestamp(syncMeta.uiUpdatedAt)
+        ? syncMeta.uiUpdatedAt
+        : defaultSyncMeta.uiUpdatedAt,
+      sprintsUpdatedAt: isValidIsoTimestamp(syncMeta.sprintsUpdatedAt)
+        ? syncMeta.sprintsUpdatedAt
+        : defaultSyncMeta.sprintsUpdatedAt,
+      settingsUpdatedAt: isValidIsoTimestamp(syncMeta.settingsUpdatedAt)
+        ? syncMeta.settingsUpdatedAt
+        : defaultSyncMeta.settingsUpdatedAt,
+      lastLocalWriteAt: isValidIsoTimestamp(syncMeta.lastLocalWriteAt)
+        ? syncMeta.lastLocalWriteAt
+        : defaultSyncMeta.lastLocalWriteAt,
+      lastRemoteMergeAt:
+        syncMeta.lastRemoteMergeAt === null || isValidIsoTimestamp(syncMeta.lastRemoteMergeAt)
+          ? syncMeta.lastRemoteMergeAt
+          : null
+    };
+  }
+
   if (isPayload(value)) {
-    return value;
+    return {
+      ...value,
+      syncMeta: normalizeSyncMeta(value.syncMeta)
+    };
   }
 
   if (isLegacyPayload(value)) {
@@ -184,7 +249,8 @@ function normalizePayload(value) {
         : createDefaultSettings(),
       pendingCollaborations: Array.isArray(value.pendingCollaborations)
         ? value.pendingCollaborations.filter(isCollabItem)
-        : []
+        : [],
+      syncMeta: normalizeSyncMeta(value.syncMeta)
     };
   }
 
@@ -220,6 +286,14 @@ export function createStorageService({ storage = globalThis.localStorage, storag
   }
 
   function saveData(nextData) {
+    return saveDataWithOptions(nextData);
+  }
+
+  function saveDataWithOptions(nextData, {
+    previousData = null,
+    source = 'local',
+    skipCloudSync = false
+  } = {}) {
     if (!isPayload(nextData)) {
       throw new Error('Storage payload shape is invalid.');
     }
@@ -228,24 +302,58 @@ export function createStorageService({ storage = globalThis.localStorage, storag
       return;
     }
 
+    const priorData = normalizePayload(previousData || loadData());
+    const now = new Date().toISOString();
+    const syncMeta = {
+      ...(priorData.syncMeta || createDefaultSyncMeta())
+    };
+
+    if (JSON.stringify(priorData.chores) !== JSON.stringify(nextData.chores)) {
+      syncMeta.choresUpdatedAt = now;
+    }
+    if (JSON.stringify(priorData.records) !== JSON.stringify(nextData.records)) {
+      syncMeta.recordsUpdatedAt = now;
+    }
+    if (JSON.stringify(priorData.ui) !== JSON.stringify(nextData.ui)) {
+      syncMeta.uiUpdatedAt = now;
+    }
+    if (JSON.stringify(priorData.sprints) !== JSON.stringify(nextData.sprints)) {
+      syncMeta.sprintsUpdatedAt = now;
+    }
+    if (JSON.stringify(priorData.settings) !== JSON.stringify(nextData.settings)) {
+      syncMeta.settingsUpdatedAt = now;
+    }
+
+    if (source === 'remote') {
+      syncMeta.lastRemoteMergeAt = now;
+    } else {
+      syncMeta.lastLocalWriteAt = now;
+    }
+
+    const normalizedNextData = {
+      ...nextData,
+      syncMeta
+    };
+
     // Save to localStorage immediately (synchronous)
-    storage.setItem(storageKey, JSON.stringify(nextData));
+    storage.setItem(storageKey, JSON.stringify(normalizedNextData));
 
     // Queue Supabase syncs (serialized, not parallel)
-    if (isSupabaseConfigured()) {
-      syncQueue.enqueue('chores', nextData.chores);
-      syncQueue.enqueue('records', nextData.records);
-      syncQueue.enqueue('ui', nextData.ui.activeRole);
-      syncQueue.enqueue('sprints', nextData.sprints);
-      syncQueue.enqueue('settings', nextData.settings);
+    if (!skipCloudSync && isSupabaseConfigured()) {
+      syncQueue.enqueue('chores', normalizedNextData.chores);
+      syncQueue.enqueue('records', normalizedNextData.records);
+      syncQueue.enqueue('ui', normalizedNextData.ui.activeRole);
+      syncQueue.enqueue('sprints', normalizedNextData.sprints);
+      syncQueue.enqueue('settings', normalizedNextData.settings);
     }
+
+    return normalizedNextData;
   }
 
   function updateData(updater) {
     const currentData = loadData();
     const nextData = updater(currentData);
-    saveData(nextData);
-    return nextData;
+    return saveDataWithOptions(nextData, { previousData: currentData, source: 'local' });
   }
 
   function setUserId(newUserId) {
@@ -267,6 +375,7 @@ export function createStorageService({ storage = globalThis.localStorage, storag
   return {
     loadData,
     saveData,
+    saveDataWithOptions,
     updateData,
     setUserId,
     getSyncState,
