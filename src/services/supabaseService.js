@@ -139,7 +139,7 @@ export async function saveChores(chores, userId) {
         max_per_sprint: chore.maxPerSprint ?? 1,
         unlimited_daily_cap: chore.unlimitedDailyCap ?? 1
       })),
-      { onConflict: ['id', 'user_id'] }
+      { onConflict: 'id' }
     );
 
     if (error) throw error;
@@ -166,7 +166,7 @@ export async function saveRecords(records, userId) {
         completed_by: record.completedBy || null,
         earned_value: typeof record.earnedValue === 'number' ? record.earnedValue : null
       })),
-      { onConflict: ['id', 'user_id'] }
+      { onConflict: 'id' }
     );
 
     if (error) throw error;
@@ -182,7 +182,10 @@ export async function saveUiState(activeRole, userId) {
   try {
     const { error } = await client
       .from('ui_state')
-      .upsert({ id: userId, active_role: activeRole, user_id: userId });
+      .upsert(
+        { id: userId, active_role: activeRole, user_id: userId },
+        { onConflict: 'id' }
+      );
 
     if (error) throw error;
   } catch (error) {
@@ -226,7 +229,7 @@ export async function saveSettings(settings, userId) {
       user_id: userId,
       sprint_length_days: settings.sprintLengthDays,
       updated_at: new Date().toISOString()
-    });
+    }, { onConflict: 'user_id' });
 
     if (error) throw error;
   } catch (error) {

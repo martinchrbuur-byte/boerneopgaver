@@ -172,6 +172,10 @@ async function init() {
         const syncStatusHtml = renderSyncStatusIndicator(syncState);
         const feedbackEl = viewRefs.feedback;
         if (syncStatusHtml && feedbackEl) {
+          const existingSyncStatus = document.getElementById('sync-status');
+          if (existingSyncStatus) {
+            existingSyncStatus.remove();
+          }
           feedbackEl.insertAdjacentHTML('afterend', syncStatusHtml);
 
             // Check and display orphaned records warning (P5)

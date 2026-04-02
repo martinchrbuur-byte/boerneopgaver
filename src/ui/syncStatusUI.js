@@ -8,30 +8,40 @@ export function renderSyncStatusIndicator(syncState) {
     return ''; // No sync state available
   }
 
+  function escapeHtml(value) {
+    if (typeof value !== 'string') {
+      return '';
+    }
+
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
   const { isPending, isRetrying, queueLength, lastError, lastSuccessfulSync, failureCount } = syncState;
 
   // Determine status message and styling
   let html = '<div id="sync-status" class="sync-status-container" style="';
   let statusText = '';
-  let statusClass = '';
 
-  if (lastError && failureCount > 0) {
-    statusClass = 'sync-failed';
-    statusText = `⚠️ Sync Error (${failureCount} items failed)`;
+  if (lastError) {
+    const safeError = escapeHtml(lastError);
+    const failedItemsLabel = failureCount > 0 ? `${failureCount} items failed` : 'sync issue detected';
+    statusText = isRetrying ? `⚠️ Sync Retry (${queueLength} pending)` : `⚠️ Sync Error (${failedItemsLabel})`;
     html += 'background-color: #fee; color: #c33; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin: 8px 0;">';
-    html += `${statusText}<span style="margin-left: 8px; font-size: 10px; opacity: 0.7;">${lastError}</span>`;
+    html += `${statusText}<span style="margin-left: 8px; font-size: 10px; opacity: 0.7;">${safeError}</span>`;
   } else if (isRetrying) {
-    statusClass = 'sync-retrying';
     statusText = `⏳ Syncing (Retry ${queueLength})`;
     html += 'background-color: #ffa; color: #663; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin: 8px 0; animation: pulse 1s infinite;">';
     html += statusText;
   } else if (isPending) {
-    statusClass = 'sync-pending';
     statusText = `🔄 Syncing (${queueLength} items)`;
     html += 'background-color: #eef; color: #336; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin: 8px 0; animation: pulse 1s infinite;">';
     html += statusText;
   } else if (lastSuccessfulSync) {
-    statusClass = 'sync-success';
     const syncTime = new Date(lastSuccessfulSync);
     const now = new Date();
     const diffMs = now - syncTime;
