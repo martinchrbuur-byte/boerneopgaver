@@ -273,11 +273,11 @@ body {
 .auth-form {
   display: grid;
   gap: 0.65rem;
-  gap: 0.65rem;
+}
 
 .auth-label {
   font-size: 0.9rem;
-  font-size: 2.9rem;
+  font-weight: 600;
   color: #334155;
 }
 
@@ -287,13 +287,13 @@ body {
 
 .auth-actions {
   display: flex;
-  font-size: 3rem;
+  gap: 0.65rem;
   flex-wrap: wrap;
 }
 
 .auth-link-stack {
   margin-top: 0.75rem;
-  font-size: 1.9rem;
+}
 
 .auth-link-row {
   margin: 0.5rem 0 0;
