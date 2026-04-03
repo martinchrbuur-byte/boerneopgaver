@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "test:regression": "node --test tests/regression/*.test.mjs"
+    "test:regression": "node --test tests/regression/*.test.mjs",
+    "token:report": "node scripts/token-metrics.mjs report",
+    "token:baseline": "node scripts/token-metrics.mjs baseline --out scripts/token-baseline.json",
+    "token:budget:init": "node scripts/token-metrics.mjs init-budget --out scripts/token-budgets.json",
+    "token:gate": "node scripts/token-metrics.mjs gate --budget scripts/token-budgets.json"
   },
   "devDependencies": {
     "jsdom": "^29.0.1"

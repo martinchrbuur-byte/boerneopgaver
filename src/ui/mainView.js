@@ -227,8 +227,9 @@ function authPageSubheading(page) {
 }
 
 function authPageBody(page) {
-  if (page === 'signup') {
-    return `
+  switch (page) {
+    case 'signup':
+      return `
       <form id="auth-signup-form" class="auth-form" novalidate>
         <label class="auth-label" for="signup-email">Email</label>
         <input id="signup-email" class="input" name="email" type="email" autocomplete="email" required />
@@ -240,10 +241,8 @@ function authPageBody(page) {
       </form>
       <p class="auth-link-row">Har du allerede en konto? <button type="button" class="auth-link-button" data-auth-nav="login">Log ind</button></p>
     `;
-  }
-
-  if (page === 'login') {
-    return `
+    case 'login':
+      return `
       <form id="auth-login-form" class="auth-form" novalidate>
         <label class="auth-label" for="login-email">Email</label>
         <input id="login-email" class="input" name="email" type="email" autocomplete="email" required />
@@ -256,10 +255,8 @@ function authPageBody(page) {
         <p class="auth-link-row"><button type="button" class="auth-link-button" data-auth-nav="forgot-password">Glemt adgangskode?</button></p>
       </div>
     `;
-  }
-
-  if (page === 'forgot-password') {
-    return `
+    case 'forgot-password':
+      return `
       <form id="auth-forgot-form" class="auth-form" novalidate>
         <label class="auth-label" for="forgot-email">Email</label>
         <input id="forgot-email" class="input" name="email" type="email" autocomplete="email" required />
@@ -267,10 +264,8 @@ function authPageBody(page) {
       </form>
       <p class="auth-link-row"><button type="button" class="auth-link-button" data-auth-nav="login">Tilbage til log ind</button></p>
     `;
-  }
-
-  if (page === 'reset-password') {
-    return `
+    case 'reset-password':
+      return `
       <form id="auth-reset-form" class="auth-form" novalidate>
         <label class="auth-label" for="reset-password">Ny adgangskode</label>
         <input id="reset-password" class="input" name="password" type="password" autocomplete="new-password" minlength="6" required />
@@ -280,14 +275,14 @@ function authPageBody(page) {
       </form>
       <p class="auth-link-row"><button type="button" class="auth-link-button" data-auth-nav="login">Tilbage til log ind</button></p>
     `;
-  }
-
-  return `
+    default:
+      return `
     <div class="auth-actions">
       <button type="button" class="button button-primary" data-auth-nav="signup">Opret konto</button>
       <button type="button" class="button button-secondary" data-auth-nav="login">Log ind</button>
     </div>
   `;
+  }
 }
 
 export function createAuthView(rootElement, { page = 'welcome', message = '' } = {}) {

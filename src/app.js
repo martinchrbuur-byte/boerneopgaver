@@ -1,5 +1,4 @@
 import { createOrphanedRecordService } from './services/orphanedRecordService.js';
-import { createCorruptionRecoveryService } from './services/corruptionRecoveryService.js';
 import { resolveAppConfig } from './config/appConfig.js';
 import { isSupabaseConfigured } from './config/supabaseConfig.js';
 import { createChoreService } from './services/choreService.js';
@@ -18,6 +17,7 @@ import {
 import { createAuthView, createMainView } from './ui/mainView.js';
 import { renderFeedback, renderState, showMascot, showRoleSwitchWalk } from './ui/choreView.js';
 import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
+import { hasSectionChanges } from './shared/sectionDiff.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
@@ -110,16 +110,6 @@ function toRemoteStorageShape(supabaseData) {
   };
 }
 
-function hasSectionChanges(currentData, nextData) {
-  return (
-    JSON.stringify(currentData.chores) !== JSON.stringify(nextData.chores) ||
-    JSON.stringify(currentData.records) !== JSON.stringify(nextData.records) ||
-    JSON.stringify(currentData.ui) !== JSON.stringify(nextData.ui) ||
-    JSON.stringify(currentData.sprints) !== JSON.stringify(nextData.sprints) ||
-    JSON.stringify(currentData.settings) !== JSON.stringify(nextData.settings)
-  );
-}
-
 function createRemoteSnapshotKey(supabaseData) {
   const remoteShape = toRemoteStorageShape(supabaseData);
   const remoteTimestamps = resolveRemoteSectionTimestamps(supabaseData);
@@ -169,6 +159,20 @@ async function moveToAuthScreen(root, message = 'Session udløbet. Log ind igen.
 async function startAuthFlow(root, initialPage = resolveInitialAuthPage(), message = '') {
   function render(page, feedbackMessage = '') {
     const authView = createAuthView(root, { page, message: feedbackMessage });
+    const readField = (formData, key, trim = true) => {
+      const value = String(formData.get(key) || '');
+      return trim ? value.trim() : value;
+    };
+    const bindSubmit = (form, handler) => {
+      if (!form) {
+        return;
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await handler(new FormData(form));
+      });
+    };
 
     authView.navButtons.forEach(button => {
       button.addEventListener('click', () => {
@@ -177,87 +181,71 @@ async function startAuthFlow(root, initialPage = resolveInitialAuthPage(), messa
       });
     });
 
-    if (authView.signupForm) {
-      authView.signupForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(authView.signupForm);
-        const email = String(formData.get('email') || '').trim();
-        const password = String(formData.get('password') || '');
-        const passwordConfirm = String(formData.get('passwordConfirm') || '');
+    bindSubmit(authView.signupForm, async (formData) => {
+      const email = readField(formData, 'email');
+      const password = readField(formData, 'password', false);
+      const passwordConfirm = readField(formData, 'passwordConfirm', false);
 
-        if (password !== passwordConfirm) {
-          render('signup', 'Adgangskoderne matcher ikke.');
-          return;
-        }
+      if (password !== passwordConfirm) {
+        render('signup', 'Adgangskoderne matcher ikke.');
+        return;
+      }
 
-        try {
-          const result = await signUpWithEmail(email, password);
-          if (result?.session?.user?.id) {
-            window.location.hash = '';
-            await init();
-            return;
-          }
-
-          render('login', 'Konto oprettet. Tjek email og log derefter ind.');
-        } catch (error) {
-          render('signup', authErrorMessage(error, 'Kunne ikke oprette konto.'));
-        }
-      });
-    }
-
-    if (authView.loginForm) {
-      authView.loginForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(authView.loginForm);
-        const email = String(formData.get('email') || '').trim();
-        const password = String(formData.get('password') || '');
-
-        try {
-          await signInWithEmail(email, password);
+      try {
+        const result = await signUpWithEmail(email, password);
+        if (result?.session?.user?.id) {
           window.location.hash = '';
           await init();
-        } catch (error) {
-          render('login', authErrorMessage(error, 'Login mislykkedes.'));
-        }
-      });
-    }
-
-    if (authView.forgotForm) {
-      authView.forgotForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(authView.forgotForm);
-        const email = String(formData.get('email') || '').trim();
-
-        try {
-          await sendPasswordResetEmail(email);
-          render('login', 'Nulstillingslink sendt. Tjek din email.');
-        } catch (error) {
-          render('forgot-password', authErrorMessage(error, 'Kunne ikke sende nulstillingslink.'));
-        }
-      });
-    }
-
-    if (authView.resetForm) {
-      authView.resetForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(authView.resetForm);
-        const password = String(formData.get('password') || '');
-        const passwordConfirm = String(formData.get('passwordConfirm') || '');
-
-        if (password !== passwordConfirm) {
-          render('reset-password', 'Adgangskoderne matcher ikke.');
           return;
         }
 
-        try {
-          await updateCurrentUserPassword(password);
-          window.location.hash = '';
-          render('login', 'Adgangskode opdateret. Log ind igen.');
-        } catch (error) {
-          render('reset-password', authErrorMessage(error, 'Kunne ikke opdatere adgangskode.'));
-        }
-      });
-    }
+        render('login', 'Konto oprettet. Tjek email og log derefter ind.');
+      } catch (error) {
+        render('signup', authErrorMessage(error, 'Kunne ikke oprette konto.'));
+      }
+    });
+
+    bindSubmit(authView.loginForm, async (formData) => {
+      const email = readField(formData, 'email');
+      const password = readField(formData, 'password', false);
+
+      try {
+        await signInWithEmail(email, password);
+        window.location.hash = '';
+        await init();
+      } catch (error) {
+        render('login', authErrorMessage(error, 'Login mislykkedes.'));
+      }
+    });
+
+    bindSubmit(authView.forgotForm, async (formData) => {
+      const email = readField(formData, 'email');
+
+      try {
+        await sendPasswordResetEmail(email);
+        render('login', 'Nulstillingslink sendt. Tjek din email.');
+      } catch (error) {
+        render('forgot-password', authErrorMessage(error, 'Kunne ikke sende nulstillingslink.'));
+      }
+    });
+
+    bindSubmit(authView.resetForm, async (formData) => {
+      const password = readField(formData, 'password', false);
+      const passwordConfirm = readField(formData, 'passwordConfirm', false);
+
+      if (password !== passwordConfirm) {
+        render('reset-password', 'Adgangskoderne matcher ikke.');
+        return;
+      }
+
+      try {
+        await updateCurrentUserPassword(password);
+        window.location.hash = '';
+        render('login', 'Adgangskode opdateret. Log ind igen.');
+      } catch (error) {
+        render('reset-password', authErrorMessage(error, 'Kunne ikke opdatere adgangskode.'));
+      }
+    });
   }
 
   render(initialPage, message);
@@ -320,9 +308,6 @@ async function init() {
   const sprintService = createSprintService({ storageService });
   let activeTab = 'opgaver';
   const orphanedRecordService = createOrphanedRecordService();
-  const corruptionRecoveryService = createCorruptionRecoveryService();
-  let hasOrphanedRecords = false;
-  let hasPendingSyncs = false;
   let lastRemoteSnapshotKey = null;
 
   async function reconcileRemoteSnapshot(supabaseData) {
@@ -411,7 +396,6 @@ async function init() {
     return { applied: true, hasRemoteData: true, skippedReason: null };
   }
 
-  // Initialize Supabase if configured
   if (isSupabaseConfigured()) {
     try {
       const supabaseData = await initializeSupabaseData();
@@ -520,7 +504,6 @@ async function init() {
       }
     }
 
-    // Render sync status if configured
     if (isSupabaseConfigured()) {
       const syncState = storageService.getSyncState();
       if (syncState) {
@@ -528,10 +511,8 @@ async function init() {
         if (syncStatusHtml && feedbackEl) {
           feedbackEl.insertAdjacentHTML('afterend', syncStatusHtml);
 
-          // Check and display orphaned records warning (P5)
           const orphanSummary = orphanedRecordService.getOrphanedSummary(choreState.chores, choreState.records);
           if (orphanSummary && orphanSummary.count > 0) {
-            hasOrphanedRecords = true;
             const warningHtml = orphanedRecordService.createCleanupWarningUI(orphanSummary);
             if (warningHtml && feedbackEl) {
               const existing = document.getElementById('orphaned-warning');
@@ -540,7 +521,6 @@ async function init() {
               }
             }
           } else {
-            hasOrphanedRecords = false;
             const existing = document.getElementById('orphaned-warning');
             if (existing) existing.remove();
           }
@@ -552,6 +532,37 @@ async function init() {
   seedStarterChores(choreService);
   persistActiveRole();
   refresh();
+
+  function handleCollabAction(action, collabId) {
+    if (!collabId) {
+      return null;
+    }
+
+    if (action === 'accept-collab') {
+      const result = choreService.acceptCollaboration(collabId, { actorRole: activeRole, sprintId: ensureActiveSprintId() });
+      if (result.ok) {
+        showMascot(viewRefs.mascotOverlay, activeRole, 'Godt samarbejde! 🤝', { type: 'collab', duration: 3000 });
+      }
+      return result;
+    }
+
+    if (action === 'decline-collab') {
+      return choreService.declineCollaboration(collabId, { actorRole: activeRole });
+    }
+
+    return null;
+  }
+
+  async function signOutAndReturnToAuth(message) {
+    await moveToAuthScreen(root, message);
+    Promise.race([signOutCurrentUser(), delay(1500)]).catch(() => {
+    });
+  }
+
+  function ensureActiveSprintId() {
+    const activeSprint = sprintService.getActiveSprint() || sprintService.ensureActiveSprint();
+    return activeSprint.id;
+  }
 
   if (isSupabaseConfigured()) {
     const authListener = onAuthStateChange(async (event, session) => {
@@ -614,17 +625,13 @@ async function init() {
 
   if (isSupabaseConfigured() && viewRefs.logoutButton) {
     viewRefs.logoutButton.addEventListener('click', async () => {
-      await moveToAuthScreen(root, 'Du er logget ud.');
-      Promise.race([signOutCurrentUser(), delay(1500)]).catch(() => {
-      });
+      await signOutAndReturnToAuth('Du er logget ud.');
     });
   }
 
   if (isSupabaseConfigured() && viewRefs.switchAccountButton) {
     viewRefs.switchAccountButton.addEventListener('click', async () => {
-      await moveToAuthScreen(root, 'Log ind med en anden konto.');
-      Promise.race([signOutCurrentUser(), delay(1500)]).catch(() => {
-      });
+      await signOutAndReturnToAuth('Log ind med en anden konto.');
     });
   }
 
@@ -706,16 +713,14 @@ async function init() {
     let result;
 
     if (action === 'edit') {
-      if (activeRole !== 'parent') {
+      const chore = activeRole === 'parent'
+        ? latestChoreState?.chores.find(item => item.id === choreId)
+        : null;
+      if (!chore) {
         result = choreService.updateChore(choreId, { actorRole: activeRole });
       } else {
-        const chore = latestChoreState?.chores.find(item => item.id === choreId);
-        if (!chore) {
-          result = choreService.updateChore(choreId, { actorRole: activeRole });
-        } else {
-          beginEdit(chore);
-          result = { ok: true, message: 'Redigering aktiveret.' };
-        }
+        beginEdit(chore);
+        result = { ok: true, message: 'Redigering aktiveret.' };
       }
     } else if (action === 'save-edit') {
       result = choreService.updateChore(choreId, {
@@ -738,10 +743,8 @@ async function init() {
       }
       result = choreService.deleteChore(choreId, { actorRole: activeRole });
     } else if (action === 'complete') {
-      const activeSprint = sprintService.getActiveSprint() || sprintService.ensureActiveSprint();
-      result = choreService.completeChore(choreId, { actorRole: activeRole, sprintId: activeSprint.id });
+      result = choreService.completeChore(choreId, { actorRole: activeRole, sprintId: ensureActiveSprintId() });
       if (result.ok) {
-        // Check if all chores for this kid are fully done
         const chores = Array.isArray(result.state?.chores) ? result.state.chores : [];
         const kidChores = chores.filter(c => c.assignedTo?.includes(activeRole));
         const allDone = kidChores.length > 0 && kidChores.every(c => c.isFullyDone || c.isCompleted);
@@ -756,14 +759,8 @@ async function init() {
       result = choreService.undoChore(choreId, { actorRole: activeRole, sprintId: activeSprint?.id ?? null });
     } else if (action === 'propose-collab') {
       result = choreService.proposeCollaboration(choreId, { actorRole: activeRole });
-    } else if (action === 'accept-collab') {
-      const activeSprint = sprintService.getActiveSprint() || sprintService.ensureActiveSprint();
-      result = choreService.acceptCollaboration(collabId, { actorRole: activeRole, sprintId: activeSprint.id });
-      if (result.ok) {
-        showMascot(viewRefs.mascotOverlay, activeRole, 'Godt samarbejde! 🤝', { type: 'collab', duration: 3000 });
-      }
-    } else if (action === 'decline-collab') {
-      result = choreService.declineCollaboration(collabId, { actorRole: activeRole });
+    } else if (action === 'accept-collab' || action === 'decline-collab') {
+      result = handleCollabAction(action, collabId);
     }
 
     if (result) refresh(result.message);
@@ -795,25 +792,18 @@ async function init() {
     editDraft[field] = target.value;
   }
 
-  viewRefs.choreList.addEventListener('input', (event) => {
+  function onEditDraftEvent(event) {
     const target = event.target.closest('[data-edit-field]');
     if (!target) {
       return;
     }
 
     updateEditDraftFromField(target);
-  });
+  }
 
-  viewRefs.choreList.addEventListener('change', (event) => {
-    const target = event.target.closest('[data-edit-field]');
-    if (!target) {
-      return;
-    }
+  viewRefs.choreList.addEventListener('input', onEditDraftEvent);
+  viewRefs.choreList.addEventListener('change', onEditDraftEvent);
 
-    updateEditDraftFromField(target);
-  });
-
-  // Collab inbox delegation (collab proposals shown above the chore list)
   if (viewRefs.collabInbox) {
     viewRefs.collabInbox.addEventListener('click', (event) => {
       const actionButton = event.target.closest('button[data-action][data-collab-id]');
@@ -821,17 +811,7 @@ async function init() {
 
       const action = actionButton.getAttribute('data-action');
       const collabId = actionButton.getAttribute('data-collab-id');
-      let result;
-
-      if (action === 'accept-collab') {
-        const activeSprint = sprintService.getActiveSprint() || sprintService.ensureActiveSprint();
-        result = choreService.acceptCollaboration(collabId, { actorRole: activeRole, sprintId: activeSprint.id });
-        if (result.ok) {
-          showMascot(viewRefs.mascotOverlay, activeRole, 'Godt samarbejde! 🤝', { type: 'collab', duration: 3000 });
-        }
-      } else if (action === 'decline-collab') {
-        result = choreService.declineCollaboration(collabId, { actorRole: activeRole });
-      }
+      const result = handleCollabAction(action, collabId);
 
       if (result) refresh(result.message);
     });
@@ -850,7 +830,6 @@ async function init() {
     refresh(result.message);
   });
 
-  // Expose syncNow globally for UI buttons
   window.syncNow = async () => {
     console.log('Manual sync triggered by user');
     await storageService.syncNow();
@@ -863,7 +842,6 @@ async function init() {
     refresh('Retrying failed sync items...');
   };
 
-  // Expose cleanupOrphanedRecords globally for UI buttons (P5)
   window.cleanupOrphanedRecords = () => {
     console.log('Cleanup orphaned records triggered');
     const choreState = choreService.getState();

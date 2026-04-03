@@ -1,4 +1,5 @@
 import { isOnOrAfter, isSameLocalDay, nowIsoTimestamp } from '../shared/dateTime.js';
+import { createEntityId } from '../shared/id.js';
 
 export const CHORE_MESSAGES = Object.freeze({
   choreAdded: 'Opgave tilføjet! Klar til brug.',
@@ -47,14 +48,6 @@ function sanitizeAssignedTo(assignedTo, fallbackAssignedTo = DEFAULT_ASSIGNEES) 
   return fallback.length > 0 ? fallback : [...DEFAULT_ASSIGNEES];
 }
 
-function createId(prefix) {
-  if (globalThis.crypto?.randomUUID) {
-    return `${prefix}_${globalThis.crypto.randomUUID()}`;
-  }
-
-  return `${prefix}_${Math.random().toString(36).slice(2, 10)}_${Date.now()}`;
-}
-
 function sortByCompletedAtDescending(records) {
   return [...records].sort((left, right) => right.completedAt.localeCompare(left.completedAt));
 }
@@ -64,8 +57,6 @@ function hasOverlap(records, { treatActiveAsInfinite = true } = {}) {
   for (let index = 0; index < sorted.length - 1; index += 1) {
     const current = sorted[index];
     const next = sorted[index + 1];
-    // When treatActiveAsInfinite is false (multi-repeat chores), an open-ended
-    // record does NOT block another simultaneous active record.
     if (!treatActiveAsInfinite && current.undoneAt === null) {
       continue;
     }
@@ -95,10 +86,7 @@ function buildViewState(data, { activeSprintId = null } = {}) {
       : activeRecords;
     const lastRecord = sortByCompletedAtDescending(records)[0] ?? null;
 
-    // Count completions within the active sprint (or all-time if no sprint)
-    const sprintCompletionCount = activeSprintId
-      ? activeRecords.filter((r) => r.sprintId === activeSprintId).length
-      : activeRecords.length;
+    const sprintCompletionCount = scopedActiveRecords.length;
 
     const maxPerSprint = chore.maxPerSprint ?? 1;
     const isFullyDone = maxPerSprint > 0 && sprintCompletionCount >= maxPerSprint;
@@ -115,7 +103,6 @@ function buildViewState(data, { activeSprintId = null } = {}) {
         : 1,
       sprintCompletionCount,
       isFullyDone,
-      // Active completion reflects the current sprint scope when provided.
       isCompleted: scopedActiveRecords.length > 0,
       activeCompletedAt: scopedActiveRecords.length > 0
         ? scopedActiveRecords[scopedActiveRecords.length - 1].completedAt
@@ -216,7 +203,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       chores: [
         ...data.chores,
         {
-          id: createId('chore'),
+          id: createEntityId('chore'),
           name: nextName,
           createdAt: nowIso,
           assignedTo: validAssignedTo,
@@ -313,20 +300,18 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     const maxPerSprint = chore.maxPerSprint ?? 1;
     const records = getChoreRecords(data, choreId);
 
-    // Count active completions in current sprint (or all-time if no sprint)
     const activeRecords = records.filter((r) => r.undoneAt === null);
     const sprintCount = sprintId
       ? activeRecords.filter((r) => r.sprintId === sprintId).length
       : activeRecords.length;
 
     if (maxPerSprint > 0 && sprintCount >= maxPerSprint) {
-      // For maxPerSprint === 1 use legacy message; otherwise use limit message
       const msg = maxPerSprint === 1 ? CHORE_MESSAGES.alreadyCompleted : CHORE_MESSAGES.atRepeatLimit;
       return asResult(false, msg, buildViewState(data, { activeSprintId: sprintId }));
     }
 
     const nextRecord = {
-      id: createId('record'),
+      id: createEntityId('record'),
       choreId,
       completedAt: nowIso,
       undoneAt: null,
@@ -337,8 +322,6 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
 
     const withNewRecord = [...records, nextRecord];
 
-    // For single-completion chores treat open records as infinite (blocks overlap).
-    // For multi-completion chores allow simultaneous active records.
     const treatActiveAsInfinite = maxPerSprint <= 1;
     if (hasOverlap(withNewRecord, { treatActiveAsInfinite })) {
       return asResult(false, CHORE_MESSAGES.invalidTimestamp, buildViewState(data, { activeSprintId: sprintId }));
@@ -363,10 +346,8 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       return asResult(false, CHORE_MESSAGES.missingChore, buildViewState(data));
     }
 
-    // Target the MOST RECENT active record (supports multi-repeat chores)
     const activeRecords = data.records.filter((r) => r.choreId === choreId && r.undoneAt === null);
-    const sortedActive = sortByCompletedAtDescending(activeRecords);
-    const activeRecord = sortedActive[0] ?? null;
+    const activeRecord = sortByCompletedAtDescending(activeRecords)[0] ?? null;
 
     if (!activeRecord) {
       return asResult(false, CHORE_MESSAGES.missingActiveCompletion, buildViewState(data));
@@ -415,8 +396,6 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     return asResult(true, `Opgaven "${chore.name}" er slettet.`, getState());
   }
 
-  // ─── Collaborative chore flow ────────────────────────────────────────────
-
   function proposeCollaboration(choreId, { actorRole } = {}) {
     if (!isKidRole(actorRole)) {
       return asResult(false, CHORE_MESSAGES.kidOnlyActions, getState());
@@ -439,7 +418,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     }
 
     const newCollab = {
-      id: createId('collab'),
+      id: createEntityId('collab'),
       choreId,
       proposedBy: actorRole,
       proposedAt: nowProvider()
@@ -465,7 +444,6 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       return asResult(false, CHORE_MESSAGES.collabMissing, buildViewState(data));
     }
 
-    // Acceptor must be a different kid than proposer
     if (collab.proposedBy === actorRole) {
       return asResult(false, CHORE_MESSAGES.notCollab, buildViewState(data));
     }
@@ -483,9 +461,8 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
 
     const splitValue = (chore.value ?? 0) / 2;
 
-    // Create one record per participant
     const record1 = {
-      id: createId('record'),
+      id: createEntityId('record'),
       choreId: chore.id,
       completedAt: nowIso,
       undoneAt: null,
@@ -494,7 +471,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       earnedValue: splitValue
     };
     const record2 = {
-      id: createId('record'),
+      id: createEntityId('record'),
       choreId: chore.id,
       completedAt: nowIso,
       undoneAt: null,

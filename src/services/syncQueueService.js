@@ -1,13 +1,4 @@
-/**
- * Sync Queue Service - Serializes Supabase saves with retry logic
- * 
- * Ensures:
- * - Saves processed ONE AT A TIME (not parallel)
- * - Correct ordering (complete before edit before delete)
- * - Retry on network failure (exponential backoff)
- * - Tracking of pending syncs
- * - User visibility into sync status
- */
+import { nowIsoTimestamp } from '../shared/dateTime.js';
 
 export function createSyncQueue() {
   const queueStorage = globalThis.localStorage;
@@ -63,7 +54,7 @@ export function createSyncQueue() {
       type: item.type,
       data: item.data,
       retries: Number.isInteger(item.retries) ? item.retries : 0,
-      createdAt: typeof item.createdAt === 'string' ? item.createdAt : new Date().toISOString(),
+      createdAt: typeof item.createdAt === 'string' ? item.createdAt : nowIsoTimestamp(),
       processedAt: typeof item.processedAt === 'string' ? item.processedAt : null,
       lastAttemptAt: typeof item.lastAttemptAt === 'string' ? item.lastAttemptAt : null
     };
@@ -98,12 +89,6 @@ export function createSyncQueue() {
 
   hydrateQueues();
 
-  /**
-   * Add a save operation to the queue
-   * @param {string} type - 'chores', 'records', 'ui', 'sprints', 'settings'
-   * @param {*} data - Data to save
-   * @param {Function} saveFunc - Async function that performs the save
-   */
   async function enqueue(type, data, saveFunc) {
     if (typeof saveFunc === 'function') {
       handlers.set(type, saveFunc);
@@ -114,7 +99,7 @@ export function createSyncQueue() {
       type,
       data,
       retries: 0,
-      createdAt: new Date().toISOString(),
+      createdAt: nowIsoTimestamp(),
       processedAt: null,
       lastAttemptAt: null
     };
@@ -123,13 +108,9 @@ export function createSyncQueue() {
     persistQueues();
     syncState.isPending = true;
     
-    // Start processing if not already running
     processQueue();
   }
 
-  /**
-   * Process queue items one at a time
-   */
   async function processQueue() {
     if (processing || queue.length === 0) {
       if (queue.length === 0) {
@@ -142,33 +123,28 @@ export function createSyncQueue() {
     
     while (queue.length > 0) {
       const item = queue[0];
-      item.lastAttemptAt = new Date().toISOString();
+      item.lastAttemptAt = nowIsoTimestamp();
       persistQueues();
       
       try {
-        // Attempt save with retry logic
         await attemptSave(item);
-        
-        // Success - move to next
-        item.processedAt = new Date().toISOString();
+
+        item.processedAt = nowIsoTimestamp();
         queue.shift();
-        syncState.lastSuccessfulSync = new Date().toISOString();
+        syncState.lastSuccessfulSync = nowIsoTimestamp();
         syncState.failureCount = 0;
         syncState.lastError = null;
         persistQueues();
         
-        // Log success for debugging
         console.log(`✓ Sync ${item.type}:`, {
           retries: item.retries,
           duration: Date.now() - new Date(item.createdAt).getTime() + 'ms'
         });
-        
+
       } catch (error) {
-        // Failure - handle retry logic
         console.error(`✗ Sync ${item.type} failed:`, error.message);
-        
+
         if (item.retries < MAX_RETRIES) {
-          // Retry with exponential backoff
           const backoff = Math.min(
             INITIAL_BACKOFF_MS * Math.pow(2, item.retries),
             MAX_BACKOFF_MS
@@ -178,15 +154,12 @@ export function createSyncQueue() {
           syncState.isRetrying = true;
           syncState.lastError = error.message;
           persistQueues();
-          
+
           console.log(`⏳ Retrying ${item.type} (attempt ${item.retries}/${MAX_RETRIES}) in ${backoff}ms`);
-          
-          // Wait before retrying
+
           await new Promise(resolve => setTimeout(resolve, backoff));
-          // Continue loop to retry this item
-          
+
         } else {
-          // Max retries exceeded - move to next but mark error
           console.error(`❌ Max retries exceeded for ${item.type}`);
           syncState.failureCount = deadLetterQueue.length + 1;
           syncState.lastError = `Failed after ${MAX_RETRIES} retries: ${error.message}`;
@@ -205,9 +178,6 @@ export function createSyncQueue() {
     processing = false;
   }
 
-  /**
-   * Attempt to save with error handling
-   */
   async function attemptSave(item) {
     const saveFunc = handlers.get(item.type);
     if (typeof saveFunc !== 'function') {
@@ -231,9 +201,6 @@ export function createSyncQueue() {
     });
   }
 
-  /**
-   * Get current sync state for UI
-   */
   function getSyncState() {
     return {
       ...syncState,

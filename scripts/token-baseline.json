@@ -1,0 +1,110 @@
+{
+  "targets": [
+    "src"
+  ],
+  "totals": {
+    "files": 16,
+    "lines": 5133,
+    "chars": 159102,
+    "tokens": 33584
+  },
+  "metrics": [
+    {
+      "file": "src/app.js",
+      "lines": 885,
+      "chars": 30487,
+      "tokens": 6424
+    },
+    {
+      "file": "src/services/choreService.js",
+      "lines": 547,
+      "chars": 19382,
+      "tokens": 4200
+    },
+    {
+      "file": "src/ui/choreView.js",
+      "lines": 520,
+      "chars": 18664,
+      "tokens": 3949
+    },
+    {
+      "file": "src/styles.css",
+      "lines": 789,
+      "chars": 14737,
+      "tokens": 3224
+    },
+    {
+      "file": "src/ui/mainView.js",
+      "lines": 323,
+      "chars": 15481,
+      "tokens": 3172
+    },
+    {
+      "file": "src/services/storageService.js",
+      "lines": 386,
+      "chars": 12038,
+      "tokens": 2584
+    },
+    {
+      "file": "src/services/supabaseService.js",
+      "lines": 431,
+      "chars": 11691,
+      "tokens": 2428
+    },
+    {
+      "file": "src/services/sprintService.js",
+      "lines": 272,
+      "chars": 8278,
+      "tokens": 1755
+    },
+    {
+      "file": "src/services/syncQueueService.js",
+      "lines": 309,
+      "chars": 8510,
+      "tokens": 1688
+    },
+    {
+      "file": "src/ui/syncStatusUI.js",
+      "lines": 152,
+      "chars": 5429,
+      "tokens": 1210
+    },
+    {
+      "file": "src/services/corruptionRecoveryService.js",
+      "lines": 157,
+      "chars": 4942,
+      "tokens": 938
+    },
+    {
+      "file": "src/shared/choreMarker.js",
+      "lines": 118,
+      "chars": 3270,
+      "tokens": 711
+    },
+    {
+      "file": "src/services/orphanedRecordService.js",
+      "lines": 130,
+      "chars": 3319,
+      "tokens": 655
+    },
+    {
+      "file": "src/shared/dateTime.js",
+      "lines": 61,
+      "chars": 1373,
+      "tokens": 304
+    },
+    {
+      "file": "src/config/supabaseConfig.js",
+      "lines": 27,
+      "chars": 794,
+      "tokens": 183
+    },
+    {
+      "file": "src/config/appConfig.js",
+      "lines": 26,
+      "chars": 707,
+      "tokens": 159
+    }
+  ],
+  "generatedAt": "2026-04-03T10:33:17.781Z"
+}

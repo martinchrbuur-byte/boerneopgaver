@@ -52,6 +52,17 @@ function escapeAttribute(value) {
     .replace(/>/g, '&gt;');
 }
 
+function renderEmptyChoreItem(text) {
+  return `<li class="chore-item"><p class="chore-meta">${text}</p></li>`;
+}
+
+function renderCollabDecisionButtons(collabId, acceptText = '✅ Acceptér samarbejde', declineText = '❌ Afvis') {
+  return `
+    <button class="button button-success" data-action="accept-collab" data-collab-id="${collabId}">${acceptText}</button>
+    <button class="button button-secondary" data-action="decline-collab" data-collab-id="${collabId}">${declineText}</button>
+  `;
+}
+
 function renderEditAssigneeCheckboxes(choreId, selectedKids = []) {
   const selected = new Set(Array.isArray(selectedKids) ? selectedKids : []);
 
@@ -203,54 +214,45 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
     : chores.filter(chore => chore.assignedTo?.includes(activeRole));
 
   if (filteredChores.length === 0) {
-    return '<li class="chore-item"><p class="chore-meta">Ingen opgaver endnu — tilføj en for at komme i gang.</p></li>';
+    return renderEmptyChoreItem('Ingen opgaver endnu — tilføj en for at komme i gang.');
   }
 
   return filteredChores
     .map((chore) => {
-      const isKidView = activeRole !== 'parent';
       const maxPerSprint = chore.maxPerSprint ?? 1;
       const sprintCount = chore.sprintCompletionCount ?? 0;
       const isFullyDone = chore.isFullyDone ?? false;
       const choreMarker = renderChoreMarker(chore.name);
 
-      // Repeat badge: only show when maxPerSprint > 1 or when limit reached
       const repeatBadge = maxPerSprint > 1
         ? `<span class="repeat-badge">${sprintCount}/${maxPerSprint} gange</span>`
         : (maxPerSprint === 0 && sprintCount > 0 ? `<span class="repeat-badge">${sprintCount}× gjort</span>` : '');
 
-      // Collab logic
       const isBothKidsChore = BOTH_KIDS.every(k => chore.assignedTo?.includes(k));
       const pendingCollab = pendingCollaborations.find(c => c.choreId === chore.id);
       const isProposer = pendingCollab?.proposedBy === activeRole;
 
       let actionButtons = '';
-      if (isKidView) {
+      if (activeRole !== 'parent') {
         if (isFullyDone) {
           actionButtons = `<button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">↩️ Fortryd</button>`;
         } else {
           actionButtons = `<button class="button button-success" data-action="complete" data-chore-id="${chore.id}">✅ Fuldfør</button>`;
 
-          // Collab button: show for chores assigned to both kids, no pending collab, not done
           if (isBothKidsChore && !pendingCollab) {
             actionButtons += ` <button class="button button-collab" data-action="propose-collab" data-chore-id="${chore.id}">🤝 Gør det sammen</button>`;
           }
 
-          // Undo button when partial completions exist
           if (sprintCount > 0) {
             actionButtons += ` <button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">↩️ Fortryd</button>`;
           }
         }
 
-        // Show pending collab state
         if (pendingCollab) {
           if (isProposer) {
             actionButtons += ` <span class="collab-pending-badge">⏳ Venter på den anden…</span>`;
           } else {
-            actionButtons = `
-              <button class="button button-success" data-action="accept-collab" data-collab-id="${pendingCollab.id}">✅ Acceptér samarbejde</button>
-              <button class="button button-secondary" data-action="decline-collab" data-collab-id="${pendingCollab.id}">❌ Afvis</button>
-            `;
+            actionButtons = renderCollabDecisionButtons(pendingCollab.id);
           }
         }
       } else {
@@ -293,7 +295,7 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
 
 function renderRecentCompletions(items) {
   if (items.length === 0) {
-    return '<li class="chore-item"><p class="chore-meta">Ingen fuldføringer endnu.</p></li>';
+    return renderEmptyChoreItem('Ingen fuldføringer endnu.');
   }
 
   return items
@@ -323,7 +325,6 @@ function renderRoleSwitch(viewRefs, activeRole) {
 export function renderCollabInbox(viewRefs, pendingCollaborations, activeRole, chores) {
   if (!viewRefs.collabInbox) return;
 
-  // Show incoming proposals for the current kid (proposed by someone else)
   const incoming = pendingCollaborations.filter(
     c => c.proposedBy !== activeRole && activeRole !== 'parent'
   );
@@ -348,8 +349,7 @@ export function renderCollabInbox(viewRefs, pendingCollaborations, activeRole, c
           <div class="collab-proposal">
             <p>${proposerEmoji} <strong>${collab.proposedBy}</strong> vil gøre <strong>${choreMarker} ${choreName}</strong> sammen med dig!</p>
             <div class="actions">
-              <button class="button button-success" data-action="accept-collab" data-collab-id="${collab.id}">✅ Gør det sammen!</button>
-              <button class="button button-secondary" data-action="decline-collab" data-collab-id="${collab.id}">❌ Nej tak</button>
+              ${renderCollabDecisionButtons(collab.id, '✅ Gør det sammen!', '❌ Nej tak')}
             </div>
           </div>
         `;
@@ -415,9 +415,8 @@ export function showMascot(mascotOverlay, activeRole, message, { type = 'pop', d
   if (messageEl) messageEl.textContent = message;
 
   clearMascotTimers();
-  // Remove all animation classes
   resetMascotAnimations(mascotOverlay);
-  void mascotOverlay.offsetWidth; // reflow to restart animation
+  void mascotOverlay.offsetWidth;
   mascotOverlay.classList.add(`mascot-${type}`);
   mascotOverlay.hidden = false;
 

@@ -52,3 +52,14 @@ This app integrates with Supabase for cloud data persistence while maintaining o
 - `SUPABASE_PUBLISHABLE_KEY` - Your Supabase publishable key for the client app
 
 See [docs/supabase-setup.md](docs/supabase-setup.md) for complete setup instructions.
+
+## Token Efficiency Gates
+
+- Generate a baseline snapshot:
+   - `npm run token:baseline`
+- Initialize or refresh token budgets:
+   - `npm run token:budget:init`
+- Inspect current estimated token footprint:
+   - `npm run token:report`
+- Enforce token budget gate:
+   - `npm run token:gate`

@@ -1,4 +1,5 @@
-import { isOnOrAfter, isValidIsoTimestamp } from '../shared/dateTime.js';
+import { isOnOrAfter, isValidIsoTimestamp, nowIsoTimestamp } from '../shared/dateTime.js';
+import { applySectionSyncTimestamps } from '../shared/sectionDiff.js';
 import { isSupabaseConfigured } from '../config/supabaseConfig.js';
 import { saveChores, saveRecords, saveUiState, saveSprints, saveSettings } from './supabaseService.js';
 import { createSyncQueue } from './syncQueueService.js';
@@ -102,7 +103,7 @@ function createDefaultSettings() {
 }
 
 function createDefaultSyncMeta() {
-  const now = new Date().toISOString();
+  const now = nowIsoTimestamp();
   return {
     choresUpdatedAt: now,
     recordsUpdatedAt: now,
@@ -228,7 +229,7 @@ function normalizePayload(value) {
       .map(chore => ({
         id: chore.id,
         name: chore.name,
-        createdAt: isValidIsoTimestamp(chore.createdAt) ? chore.createdAt : new Date().toISOString(),
+        createdAt: isValidIsoTimestamp(chore.createdAt) ? chore.createdAt : nowIsoTimestamp(),
         assignedTo: Array.isArray(chore.assignedTo) && chore.assignedTo.length > 0 ? chore.assignedTo : KIDS,
         value: typeof chore.value === 'number' ? chore.value : 0,
         maxPerSprint: typeof chore.maxPerSprint === 'number' ? chore.maxPerSprint : 1,
@@ -303,26 +304,13 @@ export function createStorageService({ storage = globalThis.localStorage, storag
     }
 
     const priorData = normalizePayload(previousData || loadData());
-    const now = new Date().toISOString();
-    const syncMeta = {
-      ...(priorData.syncMeta || createDefaultSyncMeta())
-    };
-
-    if (JSON.stringify(priorData.chores) !== JSON.stringify(nextData.chores)) {
-      syncMeta.choresUpdatedAt = now;
-    }
-    if (JSON.stringify(priorData.records) !== JSON.stringify(nextData.records)) {
-      syncMeta.recordsUpdatedAt = now;
-    }
-    if (JSON.stringify(priorData.ui) !== JSON.stringify(nextData.ui)) {
-      syncMeta.uiUpdatedAt = now;
-    }
-    if (JSON.stringify(priorData.sprints) !== JSON.stringify(nextData.sprints)) {
-      syncMeta.sprintsUpdatedAt = now;
-    }
-    if (JSON.stringify(priorData.settings) !== JSON.stringify(nextData.settings)) {
-      syncMeta.settingsUpdatedAt = now;
-    }
+    const now = nowIsoTimestamp();
+    const syncMeta = applySectionSyncTimestamps({
+      priorData,
+      nextData,
+      syncMeta: priorData.syncMeta || createDefaultSyncMeta(),
+      nowIso: now
+    });
 
     if (source === 'remote') {
       syncMeta.lastRemoteMergeAt = now;

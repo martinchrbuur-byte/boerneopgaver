@@ -32,6 +32,15 @@ Produce correct, maintainable code with minimal token usage while preserving arc
 - Identify exact modules impacted by requirement.
 - Avoid opening files outside that scope.
 
+### Step 1.5: Baseline and gate before refactor phases
+- Generate baseline snapshot once per phase start:
+   - `npm run token:baseline`
+- Initialize or refresh enforced token budgets when intentionally lowering limits:
+   - `npm run token:budget:init`
+- Require budget gate to pass before and after each refactor phase:
+   - `npm run token:gate`
+- Track token reduction goal per phase and fail phase if total tokens increase.
+
 ### Step 2: Small plan (3–6 steps)
 - Track only meaningful steps.
 - Keep one active step at a time.
@@ -90,5 +99,6 @@ A task is done when:
 - Requested behavior works.
 - Boundaries and invariants remain intact.
 - Relevant tests pass.
+- `npm run token:gate` passes.
 - Documentation is updated only where necessary.
 - Final summary is concise and actionable.

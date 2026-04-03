@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_CONFIG, isSupabaseConfigured, getPublishableKey } from '../config/supabaseConfig.js';
+import { nowIsoTimestamp } from '../shared/dateTime.js';
 
 let supabaseClient = null;
+const NOT_FOUND_CODE = 'PGRST116';
 const schemaCapabilities = {
   choresMaxPerSprint: true,
   choresUnlimitedDailyCap: true,
@@ -33,13 +35,20 @@ function isMissingTableError(error, table) {
   return message.includes(tableName);
 }
 
-export async function getCurrentSession() {
-  const client = getSupabaseClient();
-  const { data, error } = await client.auth.getSession();
+function throwIfError(error) {
   if (error) {
     throw error;
   }
+}
 
+function shouldIgnoreNotFound(error) {
+  return error?.code === NOT_FOUND_CODE;
+}
+
+export async function getCurrentSession() {
+  const client = getSupabaseClient();
+  const { data, error } = await client.auth.getSession();
+  throwIfError(error);
   return data?.session || null;
 }
 
@@ -51,29 +60,21 @@ export function onAuthStateChange(callback) {
 export async function signUpWithEmail(email, password) {
   const client = getSupabaseClient();
   const { data, error } = await client.auth.signUp({ email, password });
-  if (error) {
-    throw error;
-  }
-
+  throwIfError(error);
   return data;
 }
 
 export async function signInWithEmail(email, password) {
   const client = getSupabaseClient();
   const { data, error } = await client.auth.signInWithPassword({ email, password });
-  if (error) {
-    throw error;
-  }
-
+  throwIfError(error);
   return data;
 }
 
 export async function signOutCurrentUser() {
   const client = getSupabaseClient();
   const { error } = await client.auth.signOut({ scope: 'local' });
-  if (error) {
-    throw error;
-  }
+  throwIfError(error);
 }
 
 export async function sendPasswordResetEmail(email) {
@@ -81,19 +82,13 @@ export async function sendPasswordResetEmail(email) {
   const { error } = await client.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}${window.location.pathname}#reset-password`
   });
-
-  if (error) {
-    throw error;
-  }
+  throwIfError(error);
 }
 
 export async function updateCurrentUserPassword(password) {
   const client = getSupabaseClient();
   const { data, error } = await client.auth.updateUser({ password });
-  if (error) {
-    throw error;
-  }
-
+  throwIfError(error);
   return data;
 }
 
@@ -150,212 +145,177 @@ export async function initializeSupabaseData() {
     return null;
   }
 
-  try {
-    const client = getSupabaseClient();
+  const client = getSupabaseClient();
 
-    const { data: { user } } = await client.auth.getUser();
-    if (!user?.id) {
-      return null;
+  const { data: { user } } = await client.auth.getUser();
+  if (!user?.id) {
+    return null;
+  }
+
+  const userId = user.id;
+
+  const { data: chores, error: choresError } = await client
+    .from('chores')
+    .select('*')
+    .eq('user_id', userId);
+  throwIfError(choresError);
+
+  const { data: records, error: recordsError } = await client
+    .from('records')
+    .select('*')
+    .eq('user_id', userId);
+  throwIfError(recordsError);
+
+  const { data: uiStateData, error: uiError } = await client
+    .from('ui_state')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+  if (uiError && !shouldIgnoreNotFound(uiError)) throw uiError;
+
+  let sprints = [];
+  if (schemaCapabilities.sprintsTable) {
+    const { data: sprintsData, error: sprintsError } = await client
+      .from('sprints')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (sprintsError) {
+      if (isMissingTableError(sprintsError, 'sprints')) {
+        schemaCapabilities.sprintsTable = false;
+      } else {
+        throw sprintsError;
+      }
+    } else {
+      sprints = sprintsData || [];
     }
+  }
 
-    const userId = user.id;
-
-    // Load chores
-    const { data: chores, error: choresError } = await client
-      .from('chores')
-      .select('*')
-      .eq('user_id', userId);
-
-    if (choresError) throw choresError;
-
-    // Load records
-    const { data: records, error: recordsError } = await client
-      .from('records')
-      .select('*')
-      .eq('user_id', userId);
-
-    if (recordsError) throw recordsError;
-
-    // Load UI state
-    const { data: uiStateData, error: uiError } = await client
-      .from('ui_state')
+  let settingsData = null;
+  if (schemaCapabilities.appSettingsTable) {
+    const { data: settingsRow, error: settingsError } = await client
+      .from('app_settings')
       .select('*')
       .eq('user_id', userId)
       .single();
 
-    if (uiError && uiError.code !== 'PGRST116') throw uiError; // 404 is not an error
-
-    // Load sprints
-    let sprints = [];
-    if (schemaCapabilities.sprintsTable) {
-      const { data: sprintsData, error: sprintsError } = await client
-        .from('sprints')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (sprintsError) {
-        if (isMissingTableError(sprintsError, 'sprints')) {
-          schemaCapabilities.sprintsTable = false;
-          sprints = [];
-        } else {
-          throw sprintsError;
-        }
+    if (settingsError && !shouldIgnoreNotFound(settingsError)) {
+      if (isMissingTableError(settingsError, 'app_settings')) {
+        schemaCapabilities.appSettingsTable = false;
       } else {
-        sprints = sprintsData || [];
+        throw settingsError;
       }
+    } else {
+      settingsData = settingsRow;
     }
-
-    // Load settings
-    let settingsData = null;
-    if (schemaCapabilities.appSettingsTable) {
-      const { data: settingsRow, error: settingsError } = await client
-        .from('app_settings')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (settingsError && settingsError.code !== 'PGRST116') {
-        if (isMissingTableError(settingsError, 'app_settings')) {
-          schemaCapabilities.appSettingsTable = false;
-          settingsData = null;
-        } else {
-          throw settingsError;
-        }
-      } else {
-        settingsData = settingsRow;
-      }
-    }
-
-    return {
-      chores: (chores || []).map(toAppChore),
-      records: (records || []).map(toAppRecord),
-      ui: uiStateData
-        ? { activeRole: uiStateData.active_role, updatedAt: uiStateData.updated_at || null }
-        : { activeRole: 'parent', updatedAt: null },
-      sprints: (sprints || []).map(toAppSprint),
-      settings: settingsData
-        ? {
-          sprintLengthDays: settingsData.sprint_length_days,
-          updatedAt: settingsData.updated_at || null
-        }
-        : { sprintLengthDays: 7, updatedAt: null },
-      userId
-    };
-  } catch (error) {
-    console.error('Error loading data from Supabase:', error);
-    throw error;
   }
+
+  return {
+    chores: (chores || []).map(toAppChore),
+    records: (records || []).map(toAppRecord),
+    ui: uiStateData
+      ? { activeRole: uiStateData.active_role, updatedAt: uiStateData.updated_at || null }
+      : { activeRole: 'parent', updatedAt: null },
+    sprints: (sprints || []).map(toAppSprint),
+    settings: settingsData
+      ? {
+        sprintLengthDays: settingsData.sprint_length_days,
+        updatedAt: settingsData.updated_at || null
+      }
+      : { sprintLengthDays: 7, updatedAt: null },
+    userId
+  };
 }
 
 export async function saveChores(chores, userId) {
   const client = getSupabaseClient();
 
-  try {
-    const buildPayload = () => chores.map(chore => {
-      const row = {
-        id: chore.id,
-        name: chore.name,
-        created_at: chore.createdAt,
-        assigned_to: chore.assignedTo,
-        user_id: userId,
-        value: chore.value ?? 0
-      };
+  const buildPayload = () => chores.map(chore => {
+    const row = {
+      id: chore.id,
+      name: chore.name,
+      created_at: chore.createdAt,
+      assigned_to: chore.assignedTo,
+      user_id: userId,
+      value: chore.value ?? 0
+    };
 
-      if (schemaCapabilities.choresMaxPerSprint) {
-        row.max_per_sprint = chore.maxPerSprint ?? 1;
-      }
-
-      if (schemaCapabilities.choresUnlimitedDailyCap) {
-        row.unlimited_daily_cap = chore.unlimitedDailyCap ?? 1;
-      }
-
-      return row;
-    });
-
-    const runUpsert = async () => client.from('chores').upsert(buildPayload(), { onConflict: 'id' });
-
-    let { error } = await runUpsert();
-
-    if (error && isMissingColumnError(error, 'chores', 'max_per_sprint')) {
-      schemaCapabilities.choresMaxPerSprint = false;
-      ({ error } = await runUpsert());
+    if (schemaCapabilities.choresMaxPerSprint) {
+      row.max_per_sprint = chore.maxPerSprint ?? 1;
     }
 
-    if (error && isMissingColumnError(error, 'chores', 'unlimited_daily_cap')) {
-      schemaCapabilities.choresUnlimitedDailyCap = false;
-      ({ error } = await runUpsert());
+    if (schemaCapabilities.choresUnlimitedDailyCap) {
+      row.unlimited_daily_cap = chore.unlimitedDailyCap ?? 1;
     }
 
-    if (error) {
-      throw error;
-    }
-  } catch (error) {
-    console.error('Error saving chores to Supabase:', error);
-    throw error;
+    return row;
+  });
+
+  const runUpsert = async () => client.from('chores').upsert(buildPayload(), { onConflict: 'id' });
+
+  let { error } = await runUpsert();
+
+  if (error && isMissingColumnError(error, 'chores', 'max_per_sprint')) {
+    schemaCapabilities.choresMaxPerSprint = false;
+    ({ error } = await runUpsert());
   }
+
+  if (error && isMissingColumnError(error, 'chores', 'unlimited_daily_cap')) {
+    schemaCapabilities.choresUnlimitedDailyCap = false;
+    ({ error } = await runUpsert());
+  }
+
+  throwIfError(error);
 }
 
 export async function saveRecords(records, userId) {
   const client = getSupabaseClient();
 
-  try {
-    const buildPayload = () => records.map(record => {
-      const row = {
-        id: record.id,
-        chore_id: record.choreId,
-        completed_at: record.completedAt,
-        undone_at: record.undoneAt,
-        user_id: userId
-      };
+  const buildPayload = () => records.map(record => {
+    const row = {
+      id: record.id,
+      chore_id: record.choreId,
+      completed_at: record.completedAt,
+      undone_at: record.undoneAt,
+      user_id: userId
+    };
 
-      if (schemaCapabilities.recordsSprintFields) {
-        row.sprint_id = record.sprintId || null;
-        row.completed_by = record.completedBy || null;
-        row.earned_value = typeof record.earnedValue === 'number' ? record.earnedValue : null;
-      }
-
-      return row;
-    });
-
-    const runUpsert = async () => client.from('records').upsert(buildPayload(), { onConflict: 'id' });
-
-    let { error } = await runUpsert();
-
-    if (error && (
-      isMissingColumnError(error, 'records', 'sprint_id') ||
-      isMissingColumnError(error, 'records', 'completed_by') ||
-      isMissingColumnError(error, 'records', 'earned_value')
-    )) {
-      schemaCapabilities.recordsSprintFields = false;
-      ({ error } = await runUpsert());
+    if (schemaCapabilities.recordsSprintFields) {
+      row.sprint_id = record.sprintId || null;
+      row.completed_by = record.completedBy || null;
+      row.earned_value = typeof record.earnedValue === 'number' ? record.earnedValue : null;
     }
 
-    if (error) {
-      throw error;
-    }
-  } catch (error) {
-    console.error('Error saving records to Supabase:', error);
-    throw error;
+    return row;
+  });
+
+  const runUpsert = async () => client.from('records').upsert(buildPayload(), { onConflict: 'id' });
+
+  let { error } = await runUpsert();
+
+  if (error && (
+    isMissingColumnError(error, 'records', 'sprint_id') ||
+    isMissingColumnError(error, 'records', 'completed_by') ||
+    isMissingColumnError(error, 'records', 'earned_value')
+  )) {
+    schemaCapabilities.recordsSprintFields = false;
+    ({ error } = await runUpsert());
   }
+
+  throwIfError(error);
 }
 
 export async function saveUiState(activeRole, userId) {
   const client = getSupabaseClient();
 
-  try {
-    const { error } = await client
-      .from('ui_state')
-      .upsert(
-        { id: userId, active_role: activeRole, user_id: userId },
-        { onConflict: 'id' }
-      );
-
-    if (error) throw error;
-  } catch (error) {
-    console.error('Error saving UI state to Supabase:', error);
-    throw error;
-  }
+  const { error } = await client
+    .from('ui_state')
+    .upsert(
+      { id: userId, active_role: activeRole, user_id: userId },
+      { onConflict: 'id' }
+    );
+  throwIfError(error);
 }
 
 export async function saveSprints(sprints, userId) {
@@ -365,39 +325,34 @@ export async function saveSprints(sprints, userId) {
 
   const client = getSupabaseClient();
 
-  try {
-    const { error: deleteError } = await client.from('sprints').delete().eq('user_id', userId);
-    if (deleteError) {
-      if (isMissingTableError(deleteError, 'sprints')) {
-        schemaCapabilities.sprintsTable = false;
-        return;
-      }
-      throw deleteError;
+  const { error: deleteError } = await client.from('sprints').delete().eq('user_id', userId);
+  if (deleteError) {
+    if (isMissingTableError(deleteError, 'sprints')) {
+      schemaCapabilities.sprintsTable = false;
+      return;
     }
+    throw deleteError;
+  }
 
-    if (sprints.length === 0) return;
+  if (sprints.length === 0) return;
 
-    const { error } = await client.from('sprints').insert(
-      sprints.map(sprint => ({
-        id: sprint.id,
-        user_id: userId,
-        start_date: sprint.startDate,
-        end_date: sprint.endDate,
-        status: sprint.status,
-        paid_at: sprint.paidAt || null,
-        created_at: sprint.createdAt
-      }))
-    );
+  const { error } = await client.from('sprints').insert(
+    sprints.map(sprint => ({
+      id: sprint.id,
+      user_id: userId,
+      start_date: sprint.startDate,
+      end_date: sprint.endDate,
+      status: sprint.status,
+      paid_at: sprint.paidAt || null,
+      created_at: sprint.createdAt
+    }))
+  );
 
-    if (error) {
-      if (isMissingTableError(error, 'sprints')) {
-        schemaCapabilities.sprintsTable = false;
-        return;
-      }
-      throw error;
+  if (error) {
+    if (isMissingTableError(error, 'sprints')) {
+      schemaCapabilities.sprintsTable = false;
+      return;
     }
-  } catch (error) {
-    console.error('Error saving sprints to Supabase:', error);
     throw error;
   }
 }
@@ -409,22 +364,17 @@ export async function saveSettings(settings, userId) {
 
   const client = getSupabaseClient();
 
-  try {
-    const { error } = await client.from('app_settings').upsert({
-      user_id: userId,
-      sprint_length_days: settings.sprintLengthDays,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id' });
+  const { error } = await client.from('app_settings').upsert({
+    user_id: userId,
+    sprint_length_days: settings.sprintLengthDays,
+    updated_at: nowIsoTimestamp()
+  }, { onConflict: 'user_id' });
 
-    if (error) {
-      if (isMissingTableError(error, 'app_settings')) {
-        schemaCapabilities.appSettingsTable = false;
-        return;
-      }
-      throw error;
+  if (error) {
+    if (isMissingTableError(error, 'app_settings')) {
+      schemaCapabilities.appSettingsTable = false;
+      return;
     }
-  } catch (error) {
-    console.error('Error saving settings to Supabase:', error);
     throw error;
   }
 }

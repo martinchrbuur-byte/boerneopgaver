@@ -1,25 +1,13 @@
 import { KIDS } from './storageService.js';
+import { nowIsoTimestamp } from '../shared/dateTime.js';
+import { createEntityId } from '../shared/id.js';
 
-function createId(prefix) {
-  if (globalThis.crypto?.randomUUID) {
-    return `${prefix}_${globalThis.crypto.randomUUID()}`;
-  }
-  return `${prefix}_${Math.random().toString(36).slice(2, 10)}_${Date.now()}`;
-}
-
-/**
- * Returns a YYYY-MM-DD string for a date offset by `days` from `fromDate`.
- * @param {Date} fromDate
- * @param {number} days
- * @returns {string}
- */
 function addDays(fromDate, days) {
   const d = new Date(fromDate);
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
 }
 
-/** Today as YYYY-MM-DD in local time */
 function todayString() {
   const now = new Date();
   const yyyy = now.getFullYear();
@@ -46,21 +34,15 @@ export function createSprintService({ storageService } = {}) {
     throw new Error('createSprintService requires storageService.');
   }
 
-  /** @returns {object|null} The single active sprint, or null. */
   function getActiveSprint() {
     const data = storageService.loadData();
     return data.sprints.find(s => s.status === 'active') ?? null;
   }
 
-  /** @returns {object} Current app settings. */
   function getSettings() {
     return storageService.loadData().settings;
   }
 
-  /**
-   * Create a new active sprint starting today (if none exists).
-   * Returns the sprint (existing or newly created).
-   */
   function ensureActiveSprint() {
     const existing = getActiveSprint();
     if (existing) return existing;
@@ -70,12 +52,12 @@ export function createSprintService({ storageService } = {}) {
     const end = addDays(new Date(start), settings.sprintLengthDays - 1);
 
     const sprint = {
-      id: createId('sprint'),
+      id: createEntityId('sprint'),
       startDate: start,
       endDate: end,
       status: 'active',
       paidAt: null,
-      createdAt: new Date().toISOString()
+      createdAt: nowIsoTimestamp()
     };
 
     storageService.updateData(data => ({
@@ -86,11 +68,6 @@ export function createSprintService({ storageService } = {}) {
     return sprint;
   }
 
-  /**
-   * Close the active sprint (mark as paid) and auto-start a new one.
-   * @param {string} actorRole
-   * @returns {{ ok: boolean, message: string }}
-   */
   function closeSprint(actorRole) {
     if (actorRole !== 'parent') {
       return { ok: false, message: 'Kun forældrevisning kan afslutte en sprint.' };
@@ -101,7 +78,7 @@ export function createSprintService({ storageService } = {}) {
       return { ok: false, message: 'Ingen aktiv sprint fundet.' };
     }
 
-    const paidAt = new Date().toISOString();
+    const paidAt = nowIsoTimestamp();
 
     storageService.updateData(data => ({
       ...data,
@@ -110,18 +87,11 @@ export function createSprintService({ storageService } = {}) {
       )
     }));
 
-    // Auto-start next sprint
     ensureActiveSprint();
 
     return { ok: true, message: 'Sprint afsluttet og betalt! Ny sprint er startet.' };
   }
 
-  /**
-   * Get earnings per kid for a sprint.
-   * Only counts records where undoneAt === null (undo removes earnings).
-   * @param {string} sprintId
-   * @returns {{ [kid: string]: number }}
-   */
   function getSprintEarnings(sprintId) {
     const data = storageService.loadData();
     const earnings = Object.fromEntries(KIDS.map(k => [k, 0]));
@@ -135,8 +105,6 @@ export function createSprintService({ storageService } = {}) {
       const chore = choreMap.get(record.choreId);
       if (!chore) continue;
 
-      // earnedValue is set on collaborative completions (split value)
-      // If absent, fall back to the chore's full value
       const perKidValue = typeof record.earnedValue === 'number'
         ? record.earnedValue
         : (chore.value ?? 0);
@@ -166,13 +134,6 @@ export function createSprintService({ storageService } = {}) {
     return earnings;
   }
 
-  /**
-   * Compute sprint money progress targets for sliders.
-   * Target for repeat-limited chores: value * maxPerSprint.
-   * Target for unlimited chores: value * unlimitedDailyCap * number of sprint days.
-   * @param {string} sprintId
-   * @returns {{ total: { earned: number, target: number }, byKid: { [kid: string]: { earned: number, target: number } } }}
-   */
   function getSprintMoneyProgress(sprintId) {
     const data = storageService.loadData();
     const sprint = data.sprints.find(item => item.id === sprintId) ?? null;

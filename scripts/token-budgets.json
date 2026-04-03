@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-04-03T11:05:22.453Z",
+  "targets": [
+    "src"
+  ],
+  "maxTotalTokens": 32226,
+  "maxFileTokens": {
+    "src/app.js": 6034,
+    "src/services/choreService.js": 3939,
+    "src/ui/choreView.js": 3854,
+    "src/styles.css": 3224,
+    "src/ui/mainView.js": 3166,
+    "src/services/storageService.js": 2480,
+    "src/services/supabaseService.js": 2284,
+    "src/services/syncQueueService.js": 1452,
+    "src/services/sprintService.js": 1420,
+    "src/ui/syncStatusUI.js": 1210,
+    "src/services/corruptionRecoveryService.js": 938,
+    "src/shared/choreMarker.js": 711,
+    "src/services/orphanedRecordService.js": 655,
+    "src/shared/dateTime.js": 304,
+    "src/config/supabaseConfig.js": 183,
+    "src/shared/sectionDiff.js": 174,
+    "src/config/appConfig.js": 159,
+    "src/shared/id.js": 39
+  }
+}
