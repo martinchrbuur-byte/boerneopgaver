@@ -1,6 +1,8 @@
 name: Deploy static site to GitHub Pages
 
 on:
+  push:
+    branches: ["main"]
   pull_request:
     branches: ["main"]
     types: [closed]
@@ -17,7 +19,7 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -52,10 +54,11 @@ jobs:
 
       - name: Prepare static files
         env:
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY || '' }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           mkdir -p dist/src
           cp index.html dist/
+          if [ -f favicon.svg ]; then cp favicon.svg dist/; fi
           cp -r src/* dist/src/
           cp .nojekyll dist/
           python3 - <<'PY'
