@@ -16,6 +16,21 @@
   </head>
   <body>
     <main id="app"></main>
+    <script>
+      // 🔑 Supabase Configuration
+      // Get your publishable key from: https://app.supabase.com/project/mfydufcizonxjmgyrwkj/settings/api
+      // Replace the placeholder below with your actual key
+      window.SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_PjWLuUDMIhXQx_KoX4ZhAg_bOxEQXym';
+      
+      // Or load from localStorage if already set:
+      if (!window.SUPABASE_PUBLISHABLE_KEY || 
+          window.SUPABASE_PUBLISHABLE_KEY.startsWith('__')) {
+        const storedKey = localStorage.getItem('SUPABASE_PUBLISHABLE_KEY');
+        if (storedKey && !storedKey.startsWith('__')) {
+          window.SUPABASE_PUBLISHABLE_KEY = storedKey;
+        }
+      }
+    </script>
     <script type="module" src="./src/app.js"></script>
   </body>
 </html>
