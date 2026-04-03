@@ -325,18 +325,9 @@ export async function saveSprints(sprints, userId) {
 
   const client = getSupabaseClient();
 
-  const { error: deleteError } = await client.from('sprints').delete().eq('user_id', userId);
-  if (deleteError) {
-    if (isMissingTableError(deleteError, 'sprints')) {
-      schemaCapabilities.sprintsTable = false;
-      return;
-    }
-    throw deleteError;
-  }
-
   if (sprints.length === 0) return;
 
-  const { error } = await client.from('sprints').insert(
+  const { error } = await client.from('sprints').upsert(
     sprints.map(sprint => ({
       id: sprint.id,
       user_id: userId,
@@ -345,7 +336,8 @@ export async function saveSprints(sprints, userId) {
       status: sprint.status,
       paid_at: sprint.paidAt || null,
       created_at: sprint.createdAt
-    }))
+    })),
+    { onConflict: 'id' }
   );
 
   if (error) {
