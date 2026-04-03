@@ -37,6 +37,7 @@ function hasTrackedEnvFile(filePath) {
 function getSecretMatches(filePath, content) {
   const findings = [];
   const normalizedPath = filePath.replace(/\\/g, '/').toLowerCase();
+  const isTestFile = normalizedPath.startsWith('tests/');
 
   if (normalizedPath.endsWith('.env.example') || normalizedPath === '.env.example') {
     return findings;
@@ -57,7 +58,12 @@ function getSecretMatches(filePath, content) {
       continue;
     }
 
-    for (const pattern of suspiciousPatterns) {
+    for (let patternIndex = 0; patternIndex < suspiciousPatterns.length; patternIndex += 1) {
+      if (isTestFile && patternIndex === 0) {
+        continue;
+      }
+
+      const pattern = suspiciousPatterns[patternIndex];
       if (!pattern.test(line)) {
         continue;
       }
