@@ -438,7 +438,7 @@ export function showCoinToWallet(viewRefs) {
       { transform: `translate(${dx}px, ${dy}px) scale(0.6)`, opacity: 0.2 }
     ],
     {
-      duration: 620,
+      duration: 980,
       easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
       fill: 'forwards'
     }
