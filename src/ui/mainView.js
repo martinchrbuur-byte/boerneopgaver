@@ -35,7 +35,7 @@ export function createMainView(rootElement) {
       </section>
 
       <section class="card" aria-label="Status">
-        <div class="status-row">
+        <div id="status-row" class="status-row">
           <div class="status-container">
             <p id="status-text" class="status-text">Forældretilstand</p>
             <div id="money-slider-group" class="money-slider-group" aria-live="polite">
@@ -45,7 +45,10 @@ export function createMainView(rootElement) {
               </div>
             </div>
           </div>
-          <span id="coin-icon" class="coin-icon" title="Optjente lommepenge" hidden>🪙</span>
+          <div class="status-icons" aria-hidden="true">
+            <span id="wallet-icon" class="wallet-icon" title="Lommepung">👛</span>
+            <span id="coin-icon" class="coin-icon" title="Optjente lommepenge" hidden>🪙</span>
+          </div>
         </div>
         <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
       </section>
@@ -202,6 +205,8 @@ export function createMainView(rootElement) {
     mascotOverlay: rootElement.querySelector('#mascot-overlay'),
     statusText: rootElement.querySelector('#status-text'),
     moneySliderGroup: rootElement.querySelector('#money-slider-group'),
+    statusRow: rootElement.querySelector('#status-row'),
+    walletIcon: rootElement.querySelector('#wallet-icon'),
     coinIcon: rootElement.querySelector('#coin-icon'),
     accountSection: rootElement.querySelector('#account-section'),
     accountEmail: rootElement.querySelector('#account-email'),

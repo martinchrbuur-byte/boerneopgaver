@@ -15,7 +15,7 @@ import {
   updateCurrentUserPassword
 } from './services/supabaseService.js';
 import { createAuthView, createMainView } from './ui/mainView.js';
-import { renderFeedback, renderState, showMascot, showRoleSwitchWalk } from './ui/choreView.js';
+import { renderFeedback, renderState, showCoinToWallet, showMascot, showRoleSwitchWalk } from './ui/choreView.js';
 import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
 import { hasSectionChanges } from './shared/sectionDiff.js';
 
@@ -570,6 +570,7 @@ async function init() {
     if (action === 'accept-collab') {
       const result = choreService.acceptCollaboration(collabId, { actorRole: activeRole, sprintId: ensureActiveSprintId() });
       if (result.ok) {
+        showCoinToWallet(viewRefs);
         showMascot(viewRefs.mascotOverlay, activeRole, 'Godt samarbejde! 🤝', { type: 'collab', duration: 3000 });
       }
       return result;
@@ -774,6 +775,7 @@ async function init() {
     } else if (action === 'complete') {
       result = choreService.completeChore(choreId, { actorRole: activeRole, sprintId: ensureActiveSprintId() });
       if (result.ok) {
+        showCoinToWallet(viewRefs);
         const chores = Array.isArray(result.state?.chores) ? result.state.chores : [];
         const kidChores = chores.filter(c => c.assignedTo?.includes(activeRole));
         const allDone = kidChores.length > 0 && kidChores.every(c => c.isFullyDone || c.isCompleted);

@@ -360,6 +360,7 @@ export function renderCollabInbox(viewRefs, pendingCollaborations, activeRole, c
 
 let mascotTimer = null;
 let roleSwitchWalkTimer = null;
+let walletHitTimer = null;
 
 function clearMascotTimers() {
   if (mascotTimer) {
@@ -381,6 +382,72 @@ function resetMascotAnimations(mascotOverlay) {
     'mascot-confetti',
     'mascot-role-walk'
   );
+}
+
+function triggerWalletHit(walletIcon) {
+  if (!walletIcon) {
+    return;
+  }
+
+  if (walletHitTimer) {
+    clearTimeout(walletHitTimer);
+    walletHitTimer = null;
+  }
+
+  walletIcon.classList.remove('wallet-hit');
+  void walletIcon.offsetWidth;
+  walletIcon.classList.add('wallet-hit');
+
+  walletHitTimer = setTimeout(() => {
+    walletIcon.classList.remove('wallet-hit');
+    walletHitTimer = null;
+  }, 320);
+}
+
+export function showCoinToWallet(viewRefs) {
+  const statusRow = viewRefs?.statusRow;
+  const walletIcon = viewRefs?.walletIcon;
+
+  if (!statusRow || !walletIcon || statusRow.getBoundingClientRect().width === 0) {
+    return;
+  }
+
+  const rowRect = statusRow.getBoundingClientRect();
+  const walletRect = walletIcon.getBoundingClientRect();
+  const startX = Math.max(36, rowRect.width * 0.28);
+  const startY = Math.max(24, rowRect.height * 0.62);
+  const endX = walletRect.left - rowRect.left + (walletRect.width / 2);
+  const endY = walletRect.top - rowRect.top + (walletRect.height / 2);
+
+  const coin = document.createElement('span');
+  coin.className = 'coin-flight';
+  coin.textContent = '🪙';
+  coin.setAttribute('aria-hidden', 'true');
+  coin.style.left = `${startX}px`;
+  coin.style.top = `${startY}px`;
+  statusRow.appendChild(coin);
+
+  const dx = endX - startX;
+  const dy = endY - startY;
+
+  const animation = coin.animate(
+    [
+      { transform: 'translate(-50%, -50%) scale(0.9)', opacity: 0 },
+      { transform: 'translate(-50%, -50%) scale(1.08)', opacity: 1, offset: 0.2 },
+      { transform: `translate(${dx * 0.55}px, ${dy - 16}px) scale(1.12)`, opacity: 1, offset: 0.6 },
+      { transform: `translate(${dx}px, ${dy}px) scale(0.6)`, opacity: 0.2 }
+    ],
+    {
+      duration: 620,
+      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      fill: 'forwards'
+    }
+  );
+
+  animation.onfinish = () => {
+    coin.remove();
+    triggerWalletHit(walletIcon);
+  };
 }
 
 export function showRoleSwitchWalk(mascotOverlay, role, { duration = 2000 } = {}) {
