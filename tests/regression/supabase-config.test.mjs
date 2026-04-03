@@ -38,13 +38,13 @@ test('isSupabaseConfigured accepts anon-key aliases from runtime config and stor
 
   withRuntimeEnv(
     {
-      windowValue: createWindowWithStorage({ SUPABASE_ANON_KEY: 'storage-anon-key' }),
-      appConfigValue: { supabase: { anonKey: 'runtime-anon-key' } }
+      windowValue: createWindowWithStorage({ SUPABASE_ANON_KEY: 'anon-test' }),
+      appConfigValue: { supabase: { anonKey: 'runtime-test' } }
     },
     () => {
-      assert.equal(mod.getPublishableKey(), 'runtime-anon-key');
+      assert.equal(mod.getPublishableKey(), 'runtime-test');
       assert.equal(mod.isSupabaseConfigured(), true);
-      assert.equal(globalThis.window.localStorage.getItem('SUPABASE_PUBLISHABLE_KEY'), 'runtime-anon-key');
+      assert.equal(globalThis.window.localStorage.getItem('SUPABASE_PUBLISHABLE_KEY'), 'runtime-test');
     }
   );
 });
