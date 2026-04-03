@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test",
+    "test": "node --test tests/regression/*.test.mjs",
     "test:regression": "node --test tests/regression/*.test.mjs",
+    "test:supabase": "node scripts/test-supabase-connection.mjs",
     "ci:secret-guard": "node scripts/ci-secret-guard.mjs",
     "token:report": "node scripts/token-metrics.mjs report",
     "token:baseline": "node scripts/token-metrics.mjs baseline --out scripts/token-baseline.json",
