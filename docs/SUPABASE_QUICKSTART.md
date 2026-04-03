@@ -6,19 +6,27 @@ Follow these steps to get data persistence working with Supabase:
 - [ ] Open: https://app.supabase.com/project/mfydufcizonxjmgyrwkj/settings/api
 - [ ] Copy the publishable key under "Project API keys"
 
-## 2. Set Up Environment Variable
+## 2. Set Up Publishable Key (local browser)
 Choose one option:
 
-### Option A: Development (using .env file)
-- [ ] Copy `.env.example` to `.env`: `cp .env.example .env`
-- [ ] Open `.env` and paste your API key
-- [ ] Install dotenv: `npm install dotenv`
-- [ ] The .env file is in .gitignore - won't be committed
+### Option A: Runtime config in `index.html` (recommended)
+- [ ] Add this before the app script:
+  ```html
+  <script>
+    window.SUPABASE_PUBLISHABLE_KEY = 'your_publishable_key_here';
+  </script>
+  ```
 
-### Option B: Direct Configuration (quick testing)
-- [ ] Open `src/config/supabaseConfig.js`
-- [ ] Replace the empty string with your API key
-- [ ] Remember to remove it before committing!
+### Option B: Persist in browser localStorage (one-time)
+- [ ] Open DevTools Console
+- [ ] Run:
+  ```javascript
+  localStorage.setItem('SUPABASE_PUBLISHABLE_KEY', 'your_publishable_key_here');
+  ```
+
+### Option C: Build-time injection (GitHub Pages)
+- [ ] Set `SUPABASE_PUBLISHABLE_KEY` in GitHub repository secrets
+- [ ] The deploy workflow replaces the placeholder automatically
 
 ## 3. Create Database Tables + Auth Policies
 - [ ] Open your Supabase dashboard
@@ -34,12 +42,13 @@ Choose one option:
 - [ ] Optional: disable "Confirm email" during local testing
 - [ ] Keep "Confirm email" enabled in production
 
-## 5. Load Environment Variables (if using .env)
-Add this to the top of your app initialization:
-```javascript
-import dotenv from 'dotenv';
-dotenv.config();
-```
+## 5. Confirm App Sees the Key
+- [ ] Reload the app after setting the key
+- [ ] If needed, run in DevTools Console:
+  ```javascript
+  window.SUPABASE_PUBLISHABLE_KEY
+  ```
+- [ ] It should return your publishable key (not `undefined` and not the placeholder)
 
 ## 6. Test the Integration
 - [ ] Install dependencies: `npm install`
@@ -62,8 +71,8 @@ dotenv.config();
 
 ### "Supabase is not configured" Error
 - [ ] Check API key is set correctly
-- [ ] Check environment variable name: `SUPABASE_PUBLISHABLE_KEY`
-- [ ] Verify no typos in the key
+- [ ] Check `window.SUPABASE_PUBLISHABLE_KEY` or localStorage key `SUPABASE_PUBLISHABLE_KEY`
+- [ ] Verify the key is not the placeholder value
 
 ### No data in Supabase
 - [ ] Check browser console for errors (F12 → Console)

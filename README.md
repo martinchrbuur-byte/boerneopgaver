@@ -16,29 +16,23 @@ This app integrates with Supabase for cloud data persistence while maintaining o
    - Visit: https://app.supabase.com/project/mfydufcizonxjmgyrwkj/settings/api
    - Copy the "anon public" key
 
-2. **Create `.env` file:**
-   ```bash
-   cp .env.example .env
-   ```
+2. **Set your publishable key for local browser use (choose one):**
+   - **index.html runtime config (recommended):**
+     Add this before the app script in `index.html`:
+     ```html
+     <script>
+       window.SUPABASE_PUBLISHABLE_KEY = 'your_copied_key_here';
+     </script>
+     ```
+   - **Browser storage (one-time):**
+     In DevTools Console run:
+     ```javascript
+     localStorage.setItem('SUPABASE_PUBLISHABLE_KEY', 'your_copied_key_here');
+     ```
 
-3. **Add your publishable key to `.env`:**
-   ```
-   SUPABASE_PUBLISHABLE_KEY=your_copied_key_here
-   ```
-
-4. **Set up the database:**
+3. **Set up the database:**
    - Follow the detailed instructions in [docs/supabase-setup.md](docs/supabase-setup.md)
    - Run the SQL migrations in your Supabase SQL Editor
-
-5. **Load environment variables in development:**
-   ```bash
-   npm install dotenv
-   ```
-   Then add at the top of your entry point:
-   ```javascript
-   import dotenv from 'dotenv';
-   dotenv.config();
-   ```
 
 ### Architecture
 

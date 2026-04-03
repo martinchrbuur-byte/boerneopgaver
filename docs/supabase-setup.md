@@ -146,38 +146,29 @@ UPDATE app_settings SET user_id = auth.uid()::text WHERE user_id = 'anonymous';
 
 1. Go to Project Settings (gear icon) → API
 2. Copy the publishable key under Project API keys
-3. Set it in your `.env` file:
-   ```
-  SUPABASE_PUBLISHABLE_KEY=your_copied_key_here
-   ```
+3. Set it for browser runtime using one of these options:
+   - `window.SUPABASE_PUBLISHABLE_KEY = 'your_copied_key_here'` in `index.html` before the app script
+   - `localStorage.setItem('SUPABASE_PUBLISHABLE_KEY', 'your_copied_key_here')` in DevTools Console
 
 ## Using with Environment Variables:
 
-### For Node.js/Testing:
+### For Node.js scripts/testing only:
+Use a `.env` file if you run Node scripts (for example `npm run test:supabase`).
+
 ```bash
-# Create .env file in project root
 SUPABASE_PUBLISHABLE_KEY=your_key_here
-
-# Install dotenv
-npm install dotenv
-```
-
-Then in your app initialization, load the env file:
-```javascript
-import dotenv from 'dotenv';
-dotenv.config();
 ```
 
 ### For Browser/Static Hosting:
-You have two options:
+Use one of these options:
 
-**Option 1: Build-time environment variables (GitHub Pages)**
-- Set the secret in your GitHub repository settings
-- Use a build process to inject it during deployment
+**Option 1: Build-time injection (GitHub Pages)**
+- Set `SUPABASE_PUBLISHABLE_KEY` in GitHub repository secrets
+- The deploy workflow injects it into the built artifact
 
-**Option 2: Direct API Key in code**
-- For development/learning: Replace the placeholder in [src/config/supabaseConfig.js](src/config/supabaseConfig.js)
-- WARNING: Never commit API keys to version control in production!
+**Option 2: Runtime key in browser**
+- Set `window.SUPABASE_PUBLISHABLE_KEY` in `index.html`
+- Or persist it with `localStorage.setItem('SUPABASE_PUBLISHABLE_KEY', '...')`
 
 ## Development Setup:
 
@@ -186,16 +177,13 @@ You have two options:
    npm install
    ```
 
-2. Create `.env` file from `.env.example`:
-   ```bash
-   cp .env.example .env
-   ```
+2. Set your publishable key in browser runtime:
+   - Add `window.SUPABASE_PUBLISHABLE_KEY` in `index.html`, or
+   - Run `localStorage.setItem('SUPABASE_PUBLISHABLE_KEY', '...')` in DevTools
 
-3. Add your Supabase publishable key to `.env`
+3. Reload the app and sign in
 
-4. Load environment variables in your app or import dotenv
-
-5. Data will now sync to both localStorage and Supabase automatically!
+4. Data will now sync to both localStorage and Supabase automatically!
 
 ## Architecture:
 
