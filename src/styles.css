@@ -41,6 +41,20 @@ body {
   padding: 1rem;
 }
 
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.app-logo {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+}
+
 .app-title {
   margin: 0;
   font-size: 1.75rem;
@@ -71,6 +85,17 @@ body {
   font-size: 0.85rem;
   color: #334155;
   word-break: break-all;
+}
+
+@media (max-width: 520px) {
+  .app-brand {
+    align-items: flex-start;
+  }
+
+  .app-logo {
+    width: 56px;
+    height: 56px;
+  }
 }
 
 .status-row {

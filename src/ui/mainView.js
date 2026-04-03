@@ -7,9 +7,12 @@ export function createMainView(rootElement) {
     <section class="app-shell" aria-label="Børnenes opgaveskema">
       <header class="card">
         <div class="app-header-row">
-          <div>
-            <h1 class="app-title">🌟 Opgavehelte</h1>
+          <div class="app-brand">
+            <img class="app-logo" src="./favicon.svg" alt="Opgavehelte logo" width="64" height="64" />
+            <div>
+            <h1 class="app-title">Opgavehelte</h1>
             <p class="app-subtitle">Fuldfør opgaver, optjen lommepenge, og gør samarbejdet sjovt.</p>
+            </div>
           </div>
           <div id="account-section" class="account-section" hidden>
             <span id="account-email" class="account-email"></span>
@@ -298,8 +301,13 @@ export function createAuthView(rootElement, { page = 'welcome', message = '' } =
   rootElement.innerHTML = `
     <section class="auth-shell" aria-label="Konto og login">
       <header class="card">
-        <h1 class="app-title">🌟 Opgavehelte</h1>
-        <p class="app-subtitle">Sikker cloud sync for familiens opgaver.</p>
+        <div class="app-brand">
+          <img class="app-logo" src="./favicon.svg" alt="Opgavehelte logo" width="64" height="64" />
+          <div>
+            <h1 class="app-title">Opgavehelte</h1>
+            <p class="app-subtitle">Sikker cloud sync for familiens opgaver.</p>
+          </div>
+        </div>
       </header>
       <section class="card" data-auth-page="${page}">
         <h2 class="section-title">${authPageHeading(page)}</h2>
