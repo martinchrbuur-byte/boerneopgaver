@@ -268,6 +268,13 @@ export function createStorageService({ storage = globalThis.localStorage, storag
   syncQueue.registerHandler('sprints', data => saveSprints(data, userId));
   syncQueue.registerHandler('settings', data => saveSettings(data, userId));
 
+  const isOnline = typeof navigator === 'undefined' ? true : navigator.onLine;
+  if (isSupabaseConfigured() && isOnline) {
+    syncQueue.syncNow().catch(error => {
+      console.warn('Initial queued sync failed:', error);
+    });
+  }
+
   function loadData() {
     if (!storage) {
       return createEmptyPayload();

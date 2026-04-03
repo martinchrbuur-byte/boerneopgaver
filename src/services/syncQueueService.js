@@ -120,62 +120,64 @@ export function createSyncQueue() {
     }
 
     processing = true;
-    
-    while (queue.length > 0) {
-      const item = queue[0];
-      item.lastAttemptAt = nowIsoTimestamp();
-      persistQueues();
-      
-      try {
-        await attemptSave(item);
 
-        item.processedAt = nowIsoTimestamp();
-        queue.shift();
-        syncState.lastSuccessfulSync = nowIsoTimestamp();
-        syncState.failureCount = 0;
-        syncState.lastError = null;
+    try {
+      while (queue.length > 0) {
+        const item = queue[0];
+        item.lastAttemptAt = nowIsoTimestamp();
         persistQueues();
-        
-        console.log(`✓ Sync ${item.type}:`, {
-          retries: item.retries,
-          duration: Date.now() - new Date(item.createdAt).getTime() + 'ms'
-        });
 
-      } catch (error) {
-        console.error(`✗ Sync ${item.type} failed:`, error.message);
+        try {
+          await attemptSave(item);
 
-        if (item.retries < MAX_RETRIES) {
-          const backoff = Math.min(
-            INITIAL_BACKOFF_MS * Math.pow(2, item.retries),
-            MAX_BACKOFF_MS
-          );
-          
-          item.retries++;
-          syncState.isRetrying = true;
-          syncState.lastError = error.message;
+          item.processedAt = nowIsoTimestamp();
+          queue.shift();
+          syncState.lastSuccessfulSync = nowIsoTimestamp();
+          syncState.failureCount = 0;
+          syncState.lastError = null;
           persistQueues();
 
-          console.log(`⏳ Retrying ${item.type} (attempt ${item.retries}/${MAX_RETRIES}) in ${backoff}ms`);
+          console.log(`✓ Sync ${item.type}:`, {
+            retries: item.retries,
+            duration: Date.now() - new Date(item.createdAt).getTime() + 'ms'
+          });
 
-          await new Promise(resolve => setTimeout(resolve, backoff));
+        } catch (error) {
+          console.error(`✗ Sync ${item.type} failed:`, error.message);
 
-        } else {
-          console.error(`❌ Max retries exceeded for ${item.type}`);
-          syncState.failureCount = deadLetterQueue.length + 1;
-          syncState.lastError = `Failed after ${MAX_RETRIES} retries: ${error.message}`;
-          syncState.isRetrying = false;
+          if (item.retries < MAX_RETRIES) {
+            const backoff = Math.min(
+              INITIAL_BACKOFF_MS * Math.pow(2, item.retries),
+              MAX_BACKOFF_MS
+            );
 
-          const failedItem = queue.shift();
-          failedItem.retries = 0;
-          deadLetterQueue.push(failedItem);
-          persistQueues();
+            item.retries++;
+            syncState.isRetrying = true;
+            syncState.lastError = error.message;
+            persistQueues();
+
+            console.log(`⏳ Retrying ${item.type} (attempt ${item.retries}/${MAX_RETRIES}) in ${backoff}ms`);
+
+            await new Promise(resolve => setTimeout(resolve, backoff));
+
+          } else {
+            console.error(`❌ Max retries exceeded for ${item.type}`);
+            syncState.failureCount = deadLetterQueue.length + 1;
+            syncState.lastError = `Failed after ${MAX_RETRIES} retries: ${error.message}`;
+            syncState.isRetrying = false;
+
+            const failedItem = queue.shift();
+            failedItem.retries = 0;
+            deadLetterQueue.push(failedItem);
+            persistQueues();
+          }
         }
       }
+    } finally {
+      syncState.isPending = queue.length > 0;
+      syncState.isRetrying = false;
+      processing = false;
     }
-
-    syncState.isPending = false;
-    syncState.isRetrying = false;
-    processing = false;
   }
 
   async function attemptSave(item) {

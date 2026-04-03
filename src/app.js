@@ -309,6 +309,23 @@ async function init() {
   let activeTab = 'opgaver';
   const orphanedRecordService = createOrphanedRecordService();
   let lastRemoteSnapshotKey = null;
+  let lastSyncStateSnapshot = null;
+
+  function createSyncStateSnapshot(syncState) {
+    if (!syncState) {
+      return 'none';
+    }
+
+    return JSON.stringify({
+      isPending: Boolean(syncState.isPending),
+      isRetrying: Boolean(syncState.isRetrying),
+      queueLength: Number(syncState.queueLength || 0),
+      failureCount: Number(syncState.failureCount || 0),
+      deadLetterCount: Number(syncState.deadLetterCount || 0),
+      lastError: typeof syncState.lastError === 'string' ? syncState.lastError : null,
+      lastSuccessfulSync: typeof syncState.lastSuccessfulSync === 'string' ? syncState.lastSuccessfulSync : null
+    });
+  }
 
   async function reconcileRemoteSnapshot(supabaseData) {
     storageService.setUserId(supabaseData.userId);
@@ -532,6 +549,18 @@ async function init() {
   seedStarterChores(choreService);
   persistActiveRole();
   refresh();
+
+  if (isSupabaseConfigured()) {
+    lastSyncStateSnapshot = createSyncStateSnapshot(storageService.getSyncState());
+    const syncStateIntervalId = setInterval(() => {
+      const nextSnapshot = createSyncStateSnapshot(storageService.getSyncState());
+      if (nextSnapshot !== lastSyncStateSnapshot) {
+        lastSyncStateSnapshot = nextSnapshot;
+        refresh();
+      }
+    }, 1000);
+    cleanupTasks.push(() => clearInterval(syncStateIntervalId));
+  }
 
   function handleCollabAction(action, collabId) {
     if (!collabId) {
