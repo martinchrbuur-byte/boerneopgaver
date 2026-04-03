@@ -63,3 +63,13 @@ See [docs/supabase-setup.md](docs/supabase-setup.md) for complete setup instruct
    - `npm run token:report`
 - Enforce token budget gate:
    - `npm run token:gate`
+
+## CI/CD Policy
+
+- Pull requests targeting `main` must pass:
+   - `npm test`
+   - `npm run token:gate`
+   - `npm run ci:secret-guard`
+- Deployment to GitHub Pages runs only after a PR is merged into `main`.
+- Deploy workflow auto-commits tracked file changes (if any) after all gates pass.
+- Secret safety is blocking: tracked `.env` files or obvious hardcoded secrets fail CI.

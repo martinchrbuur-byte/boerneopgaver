@@ -1,5 +1,23 @@
 # Deploying to GitHub Pages with Supabase
 
+## Current Automated Flow (Repository Standard)
+
+This repository now uses a gated GitHub Actions flow:
+
+1. PR opened against `main` runs validation in `.github/workflows/validate-pr.yml`.
+2. Required checks:
+  - `npm test`
+  - `npm run token:gate`
+  - `npm run ci:secret-guard`
+3. After PR merge to `main`, `.github/workflows/deploy-pages.yml` runs.
+4. Deploy workflow re-runs the same gates, auto-commits tracked changes (if any), then publishes to GitHub Pages.
+
+### Secret Safety Rules
+
+- Tracked `.env` files are blocked.
+- Obvious hardcoded secrets in tracked files are blocked.
+- Keep Supabase publishable key in GitHub Actions secrets as `SUPABASE_PUBLISHABLE_KEY`.
+
 Since this is a static HTML/JavaScript app (no build step), there are a few approaches to handle environment variables:
 
 ## Option 1: GitHub Secrets + Build Script (Recommended)

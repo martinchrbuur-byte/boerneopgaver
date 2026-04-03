@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-04-03T11:05:22.453Z",
+  "generatedAt": "2026-04-03T11:39:16.975Z",
   "targets": [
     "src"
   ],
-  "maxTotalTokens": 32226,
+  "maxTotalTokens": 33121,
   "maxFileTokens": {
-    "src/app.js": 6034,
+    "src/app.js": 6297,
+    "src/ui/choreView.js": 4293,
     "src/services/choreService.js": 3939,
-    "src/ui/choreView.js": 3854,
-    "src/styles.css": 3224,
-    "src/ui/mainView.js": 3166,
-    "src/services/storageService.js": 2480,
-    "src/services/supabaseService.js": 2284,
-    "src/services/syncQueueService.js": 1452,
+    "src/styles.css": 3346,
+    "src/ui/mainView.js": 3228,
+    "src/services/storageService.js": 2534,
+    "src/services/supabaseService.js": 2231,
+    "src/services/syncQueueService.js": 1460,
     "src/services/sprintService.js": 1420,
     "src/ui/syncStatusUI.js": 1210,
     "src/services/corruptionRecoveryService.js": 938,
