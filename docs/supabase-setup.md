@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS records (
   completed_at TEXT NOT NULL,
   undone_at TEXT,
   user_id TEXT NOT NULL,
-  sprint_id TEXT,
+  period_id TEXT,
   completed_by TEXT,
   earned_value NUMERIC,
   created_at_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -138,7 +138,7 @@ If you already have rows with `user_id = 'anonymous'`, run this once while logge
 UPDATE chores SET user_id = auth.uid()::text WHERE user_id = 'anonymous';
 UPDATE records SET user_id = auth.uid()::text WHERE user_id = 'anonymous';
 UPDATE ui_state SET user_id = auth.uid()::text, id = auth.uid()::text WHERE user_id = 'anonymous';
-UPDATE sprints SET user_id = auth.uid()::text WHERE user_id = 'anonymous';
+UPDATE periods SET user_id = auth.uid()::text WHERE user_id = 'anonymous';
 UPDATE app_settings SET user_id = auth.uid()::text WHERE user_id = 'anonymous';
 ```
 

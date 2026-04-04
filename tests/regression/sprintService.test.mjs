@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createChoreService } from '../../src/services/choreService.js';
-import { createSprintService } from '../../src/services/sprintService.js';
+import { createPeriodService } from '../../src/services/periodService.js';
 import { createStorageService } from '../../src/services/storageService.js';
 
 function createMemoryStorage() {
@@ -27,15 +27,15 @@ function buildServices() {
     storageService,
     nowProvider: () => '2026-01-01T10:00:00.000Z'
   });
-  const sprintService = createSprintService({ storageService });
+  const periodService = createPeriodService({ storageService });
 
-  const sprint = sprintService.ensureActiveSprint();
+  const period = periodService.ensureActivePeriod();
 
-  return { choreService, sprintService, sprintId: sprint.id };
+  return { choreService, periodService, periodId: period.id };
 }
 
 test('shared assignment pays only completing child', () => {
-  const { choreService, sprintService, sprintId } = buildServices();
+  const { choreService, periodService, periodId } = buildServices();
 
   const addResult = choreService.addChore('Shared task', {
     nowIso: '2026-01-01T08:00:00.000Z',
@@ -49,18 +49,18 @@ test('shared assignment pays only completing child', () => {
   const complete = choreService.completeChore(choreId, {
     nowIso: '2026-01-01T09:00:00.000Z',
     actorRole: 'Andrea',
-    sprintId
+    periodId
   });
 
   assert.equal(complete.ok, true);
 
-  const earnings = sprintService.getSprintEarnings(sprintId);
+  const earnings = periodService.getPeriodEarnings(periodId);
   assert.equal(earnings.Andrea, 20);
   assert.equal(earnings['Hans Jørgen'], 0);
 });
 
 test('collaboration split totals equal chore value', () => {
-  const { choreService, sprintService, sprintId } = buildServices();
+  const { choreService, periodService, periodId } = buildServices();
 
   const addResult = choreService.addChore('Team task', {
     nowIso: '2026-01-01T08:00:00.000Z',
@@ -80,27 +80,27 @@ test('collaboration split totals equal chore value', () => {
   const collabId = proposal.state.pendingCollaborations[0].id;
   const accepted = choreService.acceptCollaboration(collabId, {
     actorRole: 'Hans Jørgen',
-    sprintId,
+    periodId,
     nowIso: '2026-01-01T09:00:00.000Z'
   });
 
   assert.equal(accepted.ok, true);
 
-  const earnings = sprintService.getSprintEarnings(sprintId);
+  const earnings = periodService.getPeriodEarnings(periodId);
   assert.equal(earnings.Andrea, 15);
   assert.equal(earnings['Hans Jørgen'], 15);
   assert.equal(earnings.Andrea + earnings['Hans Jørgen'], 30);
 });
 
-test('money progress returns per-kid and total sprint targets', () => {
-  const { choreService, sprintService, sprintId } = buildServices();
+test('money progress returns per-kid and total period targets', () => {
+  const { choreService, periodService, periodId } = buildServices();
 
   const limited = choreService.addChore('Limited task', {
     nowIso: '2026-01-01T08:00:00.000Z',
     actorRole: 'parent',
     assignedTo: ['Andrea'],
     value: 10,
-    maxPerSprint: 2
+    maxPerPeriod: 2
   });
   assert.equal(limited.ok, true);
 
@@ -109,7 +109,7 @@ test('money progress returns per-kid and total sprint targets', () => {
     actorRole: 'parent',
     assignedTo: ['Hans Jørgen'],
     value: 5,
-    maxPerSprint: 0,
+    maxPerPeriod: 0,
     unlimitedDailyCap: 3
   });
   assert.equal(unlimited.ok, true);
@@ -120,15 +120,15 @@ test('money progress returns per-kid and total sprint targets', () => {
   choreService.completeChore(limitedId, {
     nowIso: '2026-01-01T09:00:00.000Z',
     actorRole: 'Andrea',
-    sprintId
+    periodId
   });
   choreService.completeChore(unlimitedId, {
     nowIso: '2026-01-01T09:30:00.000Z',
     actorRole: 'Hans Jørgen',
-    sprintId
+    periodId
   });
 
-  const progress = sprintService.getSprintMoneyProgress(sprintId);
+  const progress = periodService.getPeriodMoneyProgress(periodId);
 
   assert.equal(progress.byKid.Andrea.earned, 10);
   assert.equal(progress.byKid.Andrea.target, 20);

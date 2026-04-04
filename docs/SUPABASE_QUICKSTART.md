@@ -33,7 +33,7 @@ Choose one option:
 - [ ] Go to SQL Editor
 - [ ] Copy all SQL from [docs/supabase-setup.md](supabase-setup.md)
 - [ ] Run the SQL in your project
-- [ ] Verify tables are created (chores, records, ui_state, sprints, app_settings)
+- [ ] Verify tables are created (chores, records, ui_state, periods, app_settings)
 - [ ] Confirm RLS policies are auth-based (`auth.uid()::text = user_id`)
 
 ## 4. Enable Auth (Email + Password)

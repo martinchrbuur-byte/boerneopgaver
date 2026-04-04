@@ -220,29 +220,29 @@ test('kid cannot submit parent feedback from UI submit', async () => {
   });
 });
 
-test('sprint tab is parent-only and falls back to chores for child view', async () => {
+test('period tab is parent-only and falls back to chores for child view', async () => {
   await withBootstrappedApp(async ({ window, roleSwitch, tabNav }) => {
-    const sprintTab = tabNav.querySelector('button[data-tab="sprint"]');
+    const periodTab = tabNav.querySelector('button[data-tab="periode"]');
     const choresTab = tabNav.querySelector('button[data-tab="opgaver"]');
     const choresPanel = document.querySelector('#tab-opgaver');
-    const sprintPanel = document.querySelector('#tab-sprint');
+    const periodPanel = document.querySelector('#tab-periode');
 
-    assert.ok(sprintTab);
+    assert.ok(periodTab);
     assert.ok(choresTab);
     assert.ok(choresPanel);
-    assert.ok(sprintPanel);
-    assert.equal(sprintTab.hidden, false);
+    assert.ok(periodPanel);
+    assert.equal(periodTab.hidden, false);
 
-    click(window, sprintTab);
-    assert.equal(sprintPanel.hidden, false);
+    click(window, periodTab);
+    assert.equal(periodPanel.hidden, false);
     assert.equal(choresPanel.hidden, true);
 
     const andreaButton = roleSwitch.querySelector('button[data-role="Andrea"]');
     assert.ok(andreaButton);
     click(window, andreaButton);
 
-    assert.equal(sprintTab.hidden, true);
-    assert.equal(sprintPanel.hidden, true);
+    assert.equal(periodTab.hidden, true);
+    assert.equal(periodPanel.hidden, true);
     assert.equal(choresPanel.hidden, false);
     assert.equal(choresTab.getAttribute('aria-selected'), 'true');
   });

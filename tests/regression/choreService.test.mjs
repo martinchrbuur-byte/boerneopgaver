@@ -64,7 +64,7 @@ test('parent can update chore name, value, assignees and limits', () => {
     actorRole: 'parent',
     assignedTo: ['Andrea'],
     value: 5,
-    maxPerSprint: 1,
+    maxPerPeriod: 1,
     unlimitedDailyCap: 1
   });
 
@@ -74,7 +74,7 @@ test('parent can update chore name, value, assignees and limits', () => {
     name: 'New name',
     value: 12,
     assignedTo: ['Hans Jørgen'],
-    maxPerSprint: 0,
+    maxPerPeriod: 0,
     unlimitedDailyCap: 3
   });
 
@@ -82,7 +82,7 @@ test('parent can update chore name, value, assignees and limits', () => {
   assert.equal(updateResult.state.chores[0].name, 'New name');
   assert.equal(updateResult.state.chores[0].value, 12);
   assert.deepEqual(updateResult.state.chores[0].assignedTo, ['Hans Jørgen']);
-  assert.equal(updateResult.state.chores[0].maxPerSprint, 0);
+  assert.equal(updateResult.state.chores[0].maxPerPeriod, 0);
   assert.equal(updateResult.state.chores[0].unlimitedDailyCap, 3);
 });
 
@@ -309,12 +309,12 @@ test('unlimited chore stores custom unlimitedDailyCap', () => {
   const result = choreService.addChore('Unlimited repeat task', {
     nowIso: '2026-01-01T08:00:00.000Z',
     actorRole: 'parent',
-    maxPerSprint: 0,
+    maxPerPeriod: 0,
     unlimitedDailyCap: 4
   });
 
   assert.equal(result.ok, true);
-  assert.equal(result.state.chores[0].maxPerSprint, 0);
+  assert.equal(result.state.chores[0].maxPerPeriod, 0);
   assert.equal(result.state.chores[0].unlimitedDailyCap, 4);
 });
 
@@ -324,7 +324,7 @@ test('invalid unlimitedDailyCap is rejected', () => {
   const result = choreService.addChore('Invalid unlimited cap', {
     nowIso: '2026-01-01T08:00:00.000Z',
     actorRole: 'parent',
-    maxPerSprint: 0,
+    maxPerPeriod: 0,
     unlimitedDailyCap: 0
   });
 
@@ -332,10 +332,10 @@ test('invalid unlimitedDailyCap is rejected', () => {
   assert.match(result.message, /Dagligt loft/i);
 });
 
-test('isCompleted is scoped to active sprint in state', () => {
+test('isCompleted is scoped to active period in state', () => {
   const { choreService } = buildService();
 
-  const addResult = choreService.addChore('Sprint scoped task', {
+  const addResult = choreService.addChore('Period scoped task', {
     nowIso: '2026-01-01T08:00:00.000Z',
     actorRole: 'parent',
     assignedTo: ['Hans Jørgen']
@@ -345,15 +345,15 @@ test('isCompleted is scoped to active sprint in state', () => {
   const completeResult = choreService.completeChore(choreId, {
     nowIso: '2026-01-01T09:00:00.000Z',
     actorRole: 'Hans Jørgen',
-    sprintId: 'sprint_A'
+    periodId: 'period_A'
   });
   assert.equal(completeResult.ok, true);
 
-  const sprintAState = choreService.getState({ activeSprintId: 'sprint_A' });
-  const sprintBState = choreService.getState({ activeSprintId: 'sprint_B' });
+  const periodAState = choreService.getState({ activePeriodId: 'period_A' });
+  const periodBState = choreService.getState({ activePeriodId: 'period_B' });
 
-  assert.equal(sprintAState.chores[0].isCompleted, true);
-  assert.equal(sprintAState.chores[0].sprintCompletionCount, 1);
-  assert.equal(sprintBState.chores[0].isCompleted, false);
-  assert.equal(sprintBState.chores[0].sprintCompletionCount, 0);
+  assert.equal(periodAState.chores[0].isCompleted, true);
+  assert.equal(periodAState.chores[0].periodCompletionCount, 1);
+  assert.equal(periodBState.chores[0].isCompleted, false);
+  assert.equal(periodBState.chores[0].periodCompletionCount, 0);
 });

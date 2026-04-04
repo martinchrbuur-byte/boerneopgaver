@@ -5,11 +5,14 @@ import { nowIsoTimestamp } from '../shared/dateTime.js';
 let supabaseClient = null;
 const NOT_FOUND_CODE = 'PGRST116';
 const schemaCapabilities = {
+  choresMaxPerPeriod: true,
   choresMaxPerSprint: true,
   choresUnlimitedDailyCap: true,
+  recordsPeriodFields: true,
   recordsSprintFields: true,
   feedbackTable: true,
   appSettingsTable: true,
+  periodsTable: true,
   sprintsTable: true
 };
 
@@ -100,7 +103,9 @@ function toAppChore(chore) {
     createdAt: chore.created_at,
     assignedTo: chore.assigned_to,
     value: typeof chore.value === 'number' ? chore.value : 0,
-    maxPerSprint: typeof chore.max_per_sprint === 'number' ? chore.max_per_sprint : 1,
+    maxPerPeriod: typeof chore.max_per_period === 'number'
+      ? chore.max_per_period
+      : (typeof chore.max_per_sprint === 'number' ? chore.max_per_sprint : 1),
     unlimitedDailyCap: Number.isInteger(chore.unlimited_daily_cap) && chore.unlimited_daily_cap >= 1
       ? chore.unlimited_daily_cap
       : 1
@@ -113,20 +118,20 @@ function toAppRecord(record) {
     choreId: record.chore_id,
     completedAt: record.completed_at,
     undoneAt: record.undone_at,
-    sprintId: record.sprint_id || null,
+    periodId: record.period_id || record.sprint_id || null,
     completedBy: record.completed_by || undefined,
     earnedValue: typeof record.earned_value === 'number' ? record.earned_value : undefined
   };
 }
 
-function toAppSprint(sprint) {
+function toAppPeriod(period) {
   return {
-    id: sprint.id,
-    startDate: sprint.start_date,
-    endDate: sprint.end_date,
-    status: sprint.status,
-    paidAt: sprint.paid_at || null,
-    createdAt: sprint.created_at
+    id: period.id,
+    startDate: period.start_date,
+    endDate: period.end_date,
+    status: period.status,
+    paidAt: period.paid_at || null,
+    createdAt: period.created_at
   };
 }
 
@@ -206,8 +211,26 @@ export async function initializeSupabaseData() {
     }
   }
 
-  let sprints = [];
-  if (schemaCapabilities.sprintsTable) {
+  let periods = [];
+  if (schemaCapabilities.periodsTable) {
+    const { data: periodsData, error: periodsError } = await client
+      .from('periods')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (periodsError) {
+      if (isMissingTableError(periodsError, 'periods')) {
+        schemaCapabilities.periodsTable = false;
+      } else {
+        throw periodsError;
+      }
+    } else {
+      periods = periodsData || [];
+    }
+  }
+
+  if (periods.length === 0 && schemaCapabilities.sprintsTable) {
     const { data: sprintsData, error: sprintsError } = await client
       .from('sprints')
       .select('*')
@@ -221,7 +244,7 @@ export async function initializeSupabaseData() {
         throw sprintsError;
       }
     } else {
-      sprints = sprintsData || [];
+      periods = sprintsData || [];
     }
   }
 
@@ -251,13 +274,13 @@ export async function initializeSupabaseData() {
       ? { activeRole: uiStateData.active_role, updatedAt: uiStateData.updated_at || null }
       : { activeRole: 'parent', updatedAt: null },
     feedback: (feedback || []).map(toAppFeedback),
-    sprints: (sprints || []).map(toAppSprint),
+    periods: (periods || []).map(toAppPeriod),
     settings: settingsData
       ? {
-        sprintLengthDays: settingsData.sprint_length_days,
+        periodLengthDays: settingsData.period_length_days ?? settingsData.sprint_length_days ?? 7,
         updatedAt: settingsData.updated_at || null
       }
-      : { sprintLengthDays: 7, updatedAt: null },
+      : { periodLengthDays: 7, updatedAt: null },
     userId
   };
 }
@@ -275,8 +298,10 @@ export async function saveChores(chores, userId) {
       value: chore.value ?? 0
     };
 
-    if (schemaCapabilities.choresMaxPerSprint) {
-      row.max_per_sprint = chore.maxPerSprint ?? 1;
+    if (schemaCapabilities.choresMaxPerPeriod) {
+      row.max_per_period = chore.maxPerPeriod ?? 1;
+    } else if (schemaCapabilities.choresMaxPerSprint) {
+      row.max_per_sprint = chore.maxPerPeriod ?? 1;
     }
 
     if (schemaCapabilities.choresUnlimitedDailyCap) {
@@ -289,6 +314,11 @@ export async function saveChores(chores, userId) {
   const runUpsert = async () => client.from('chores').upsert(buildPayload(), { onConflict: 'id' });
 
   let { error } = await runUpsert();
+
+  if (error && isMissingColumnError(error, 'chores', 'max_per_period')) {
+    schemaCapabilities.choresMaxPerPeriod = false;
+    ({ error } = await runUpsert());
+  }
 
   if (error && isMissingColumnError(error, 'chores', 'max_per_sprint')) {
     schemaCapabilities.choresMaxPerSprint = false;
@@ -315,8 +345,12 @@ export async function saveRecords(records, userId) {
       user_id: userId
     };
 
-    if (schemaCapabilities.recordsSprintFields) {
-      row.sprint_id = record.sprintId || null;
+    if (schemaCapabilities.recordsPeriodFields) {
+      row.period_id = record.periodId || null;
+      row.completed_by = record.completedBy || null;
+      row.earned_value = typeof record.earnedValue === 'number' ? record.earnedValue : null;
+    } else if (schemaCapabilities.recordsSprintFields) {
+      row.sprint_id = record.periodId || null;
       row.completed_by = record.completedBy || null;
       row.earned_value = typeof record.earnedValue === 'number' ? record.earnedValue : null;
     }
@@ -327,6 +361,15 @@ export async function saveRecords(records, userId) {
   const runUpsert = async () => client.from('records').upsert(buildPayload(), { onConflict: 'id' });
 
   let { error } = await runUpsert();
+
+  if (error && (
+    isMissingColumnError(error, 'records', 'period_id') ||
+    isMissingColumnError(error, 'records', 'completed_by') ||
+    isMissingColumnError(error, 'records', 'earned_value')
+  )) {
+    schemaCapabilities.recordsPeriodFields = false;
+    ({ error } = await runUpsert());
+  }
 
   if (error && (
     isMissingColumnError(error, 'records', 'sprint_id') ||
@@ -382,27 +425,37 @@ export async function saveFeedback(entries, userId) {
   }
 }
 
-export async function saveSprints(sprints, userId) {
+export async function savePeriods(periods, userId) {
+  const client = getSupabaseClient();
+
+  if (periods.length === 0) return;
+
+  const payload = periods.map(period => ({
+    id: period.id,
+    user_id: userId,
+    start_date: period.startDate,
+    end_date: period.endDate,
+    status: period.status,
+    paid_at: period.paidAt || null,
+    created_at: period.createdAt
+  }));
+
+  if (schemaCapabilities.periodsTable) {
+    const { error } = await client.from('periods').upsert(payload, { onConflict: 'id' });
+    if (!error) {
+      return;
+    }
+    if (!isMissingTableError(error, 'periods')) {
+      throw error;
+    }
+    schemaCapabilities.periodsTable = false;
+  }
+
   if (!schemaCapabilities.sprintsTable) {
     return;
   }
 
-  const client = getSupabaseClient();
-
-  if (sprints.length === 0) return;
-
-  const { error } = await client.from('sprints').upsert(
-    sprints.map(sprint => ({
-      id: sprint.id,
-      user_id: userId,
-      start_date: sprint.startDate,
-      end_date: sprint.endDate,
-      status: sprint.status,
-      paid_at: sprint.paidAt || null,
-      created_at: sprint.createdAt
-    })),
-    { onConflict: 'id' }
-  );
+  const { error } = await client.from('sprints').upsert(payload, { onConflict: 'id' });
 
   if (error) {
     if (isMissingTableError(error, 'sprints')) {
@@ -413,6 +466,10 @@ export async function saveSprints(sprints, userId) {
   }
 }
 
+export async function saveSprints(sprints, userId) {
+  return savePeriods(sprints, userId);
+}
+
 export async function saveSettings(settings, userId) {
   if (!schemaCapabilities.appSettingsTable) {
     return;
@@ -420,11 +477,25 @@ export async function saveSettings(settings, userId) {
 
   const client = getSupabaseClient();
 
-  const { error } = await client.from('app_settings').upsert({
+  const basePayload = {
     user_id: userId,
-    sprint_length_days: settings.sprintLengthDays,
     updated_at: nowIsoTimestamp()
-  }, { onConflict: 'user_id' });
+  };
+
+  let payload = {
+    ...basePayload,
+    period_length_days: settings.periodLengthDays
+  };
+
+  let { error } = await client.from('app_settings').upsert(payload, { onConflict: 'user_id' });
+
+  if (error && isMissingColumnError(error, 'app_settings', 'period_length_days')) {
+    payload = {
+      ...basePayload,
+      sprint_length_days: settings.periodLengthDays
+    };
+    ({ error } = await client.from('app_settings').upsert(payload, { onConflict: 'user_id' }));
+  }
 
   if (error) {
     if (isMissingTableError(error, 'app_settings')) {

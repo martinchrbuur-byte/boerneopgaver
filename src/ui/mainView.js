@@ -58,7 +58,7 @@ export function createMainView(rootElement) {
 
       <nav class="tab-nav app-tab-nav" role="tablist" aria-label="Sektioner">
         <button class="tab-btn tab-active" role="tab" data-tab="opgaver" aria-selected="true">📋 Opgaver</button>
-        <button class="tab-btn tab-parent-only" role="tab" data-tab="sprint" aria-selected="false">🏃 Sprint</button>
+        <button class="tab-btn tab-parent-only" role="tab" data-tab="periode" aria-selected="false">🗓️ Periode</button>
         <button class="tab-btn tab-parent-only" role="tab" data-tab="feedback" aria-selected="false">💬 Feedback</button>
         <button class="tab-btn tab-parent-only" role="tab" data-tab="historik" aria-selected="false">📜 Historik</button>
       </nav>
@@ -104,7 +104,7 @@ export function createMainView(rootElement) {
               </div>
             </div>
             <div class="form-row form-row-max">
-              <label class="assign-label" for="chore-max-input">Maks gange pr. sprint (0&nbsp;=&nbsp;ubegrænset):</label>
+              <label class="assign-label" for="chore-max-input">Maks gange pr. periode (0&nbsp;=&nbsp;ubegrænset):</label>
               <input
                 id="chore-max-input"
                 class="input input-narrow"
@@ -145,24 +145,24 @@ export function createMainView(rootElement) {
         </div>
       </div>
 
-      <div id="tab-sprint" class="tab-panel" role="tabpanel" hidden>
-        <section class="card" aria-label="Aktuel sprint">
-          <div class="sprint-header">
+      <div id="tab-periode" class="tab-panel" role="tabpanel" hidden>
+        <section class="card" aria-label="Aktuel periode">
+          <div class="period-header">
             <div>
-              <h2 class="section-title" id="sprint-title">Aktuel sprint</h2>
-              <p id="sprint-dates" class="sprint-dates"></p>
+              <h2 class="section-title" id="period-title">Aktuel periode</h2>
+              <p id="period-dates" class="period-dates"></p>
             </div>
-            <span id="sprint-days-left" class="sprint-days-badge"></span>
+            <span id="period-days-left" class="period-days-badge"></span>
           </div>
-          <div id="sprint-earnings" class="sprint-earnings"></div>
-          <div id="sprint-parent-actions" class="sprint-parent-actions" hidden>
+          <div id="period-earnings" class="period-earnings"></div>
+          <div id="period-parent-actions" class="period-parent-actions" hidden>
             <hr class="divider" />
-            <div class="sprint-settings-row">
-              <label class="assign-label" for="sprint-length-input">Sprint-længde (dage):</label>
-              <input id="sprint-length-input" class="input input-narrow" type="number" min="1" max="365" value="7" />
-              <button id="sprint-length-save" class="button button-secondary" type="button">Gem</button>
+            <div class="period-settings-row">
+              <label class="assign-label" for="period-length-input">Periode-længde (dage):</label>
+              <input id="period-length-input" class="input input-narrow" type="number" min="1" max="365" value="7" />
+              <button id="period-length-save" class="button button-secondary" type="button">Gem</button>
             </div>
-            <button id="close-sprint-btn" class="button button-danger" type="button">✅ Luk sprint og marker som betalt</button>
+            <button id="close-period-btn" class="button button-danger" type="button">✅ Luk periode og marker som betalt</button>
           </div>
         </section>
       </div>
@@ -212,9 +212,9 @@ export function createMainView(rootElement) {
       </div>
 
       <div id="tab-historik" class="tab-panel" role="tabpanel" hidden>
-        <section class="card" aria-label="Sprint-historik">
-          <h2 class="section-title">📜 Sprint-historik</h2>
-          <div id="sprint-history"></div>
+        <section class="card" aria-label="Periode-historik">
+          <h2 class="section-title">📜 Periode-historik</h2>
+          <div id="period-history"></div>
         </section>
       </div>
 
@@ -237,7 +237,7 @@ export function createMainView(rootElement) {
     feedback: rootElement.querySelector('#feedback'),
     tabNav: rootElement.querySelector('.tab-nav'),
     tabOpgaver: rootElement.querySelector('#tab-opgaver'),
-    tabSprint: rootElement.querySelector('#tab-sprint'),
+    tabPeriode: rootElement.querySelector('#tab-periode'),
     tabFeedback: rootElement.querySelector('#tab-feedback'),
     tabHistorik: rootElement.querySelector('#tab-historik'),
     feedbackForm: rootElement.querySelector('#feedback-form'),
@@ -245,15 +245,15 @@ export function createMainView(rootElement) {
     feedbackCategoryInput: rootElement.querySelector('#feedback-category-input'),
     feedbackMessageInput: rootElement.querySelector('#feedback-message-input'),
     feedbackHistory: rootElement.querySelector('#feedback-history'),
-    sprintTitle: rootElement.querySelector('#sprint-title'),
-    sprintDates: rootElement.querySelector('#sprint-dates'),
-    sprintDaysLeft: rootElement.querySelector('#sprint-days-left'),
-    sprintEarnings: rootElement.querySelector('#sprint-earnings'),
-    sprintParentActions: rootElement.querySelector('#sprint-parent-actions'),
-    sprintLengthInput: rootElement.querySelector('#sprint-length-input'),
-    sprintLengthSave: rootElement.querySelector('#sprint-length-save'),
-    closeSprintBtn: rootElement.querySelector('#close-sprint-btn'),
-    sprintHistory: rootElement.querySelector('#sprint-history'),
+    periodTitle: rootElement.querySelector('#period-title'),
+    periodDates: rootElement.querySelector('#period-dates'),
+    periodDaysLeft: rootElement.querySelector('#period-days-left'),
+    periodEarnings: rootElement.querySelector('#period-earnings'),
+    periodParentActions: rootElement.querySelector('#period-parent-actions'),
+    periodLengthInput: rootElement.querySelector('#period-length-input'),
+    periodLengthSave: rootElement.querySelector('#period-length-save'),
+    closePeriodBtn: rootElement.querySelector('#close-period-btn'),
+    periodHistory: rootElement.querySelector('#period-history'),
     tabParentOnlyBtns: rootElement.querySelectorAll('.tab-parent-only'),
     choreMaxInput: rootElement.querySelector('#chore-max-input'),
     choreUnlimitedCapInput: rootElement.querySelector('#chore-unlimited-cap-input'),
@@ -281,7 +281,7 @@ function authPageHeading(page) {
 
 function authPageSubheading(page) {
   if (page === 'signup') return 'Lav én konto til familien for sikker cloud sync på tværs af enheder.';
-  if (page === 'login') return 'Log ind for at fortsætte med jeres opgaver og sprintdata.';
+  if (page === 'login') return 'Log ind for at fortsætte med jeres opgaver og periodedata.';
   if (page === 'forgot-password') return 'Vi sender et link, så du kan vælge en ny adgangskode.';
   if (page === 'reset-password') return 'Vælg en ny adgangskode til jeres familiekonto.';
   return 'Vælg hvordan du vil komme i gang med cloud sync.';

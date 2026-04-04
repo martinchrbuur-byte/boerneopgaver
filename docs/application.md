@@ -1,26 +1,26 @@
 # Chore Champions — Application Documentation
 
 ## Purpose
-Chore Champions is a chore and pocket-money tracker for a family with sprint-based payout.
+Chore Champions is a chore and pocket-money tracker for a family with period-based payout.
 
 It allows:
 - Parents to add chores and set a value (`kr`) for each chore.
-- Parents to configure repeat limits per sprint (`maxPerSprint`) and unlimited-mode daily cap.
+- Parents to configure repeat limits per period (`maxPerPeriod`) and unlimited-mode daily cap.
 - Kids to complete and undo chores.
 - Kids to propose/accept/decline collaboration on shared chores.
-- Everyone (Parent, Andrea, Hans Jørgen) to see current sprint earnings.
-- Parents to close a sprint and mark it as paid.
-- Parents to review historic paid sprints.
+- Everyone (Parent, Andrea, Hans Jørgen) to see current period earnings.
+- Parents to close a period and mark it as paid.
+- Parents to review historic paid periods.
 
 ## Core Features
 - Role switcher (Parent View / Kid View).
 - Chore list with complete/undo (kids) and delete (parent).
 - Per-chore value in DKK.
-- Repeat chores with sprint-aware completion counts.
+- Repeat chores with period-aware completion counts.
 - Collaboration flow with split earnings.
-- Sprint tab with current totals per kid.
-- Parent controls for sprint length and sprint close/payout.
-- History tab (parent-only) showing prior paid sprints.
+- Periode tab with current totals per kid.
+- Parent controls for period length and period close/payout.
+- History tab (parent-only) showing prior paid periods.
 - Recent completion feed.
 - Dynamic chore markers (emoji) for instant visual recognition.
 - Role-switch mascot walk animation (🦕 for Hans Jørgen, 🦄 for Andrea).
@@ -128,8 +128,8 @@ Current providers:
 
 ## Domain Invariants
 The app enforces these rules:
-- For single-completion chores (`maxPerSprint <= 1`), a chore cannot be completed twice without undo/reset.
-- For multi-repeat chores (`maxPerSprint > 1`), multiple active records can exist up to sprint limit.
+- For single-completion chores (`maxPerPeriod <= 1`), a chore cannot be completed twice without undo/reset.
+- For multi-repeat chores (`maxPerPeriod > 1`), multiple active records can exist up to period limit.
 - Undo timestamp must be on or after completion timestamp.
 - For single-completion chores, completion intervals for the same chore cannot overlap.
 - Persisted record shape remains compatible with storage guards.
@@ -138,8 +138,8 @@ The app enforces these rules:
 - A child can only complete chores they are assigned to.
 - Allowance is credited to the child who actually completed the chore.
 - Collaboration splits one chore value across participants (sum equals chore value).
-- Undo removes earnings from sprint totals.
-- `isCompleted` in view state is scoped to the active sprint when `activeSprintId` is provided.
+- Undo removes earnings from period totals.
+- `isCompleted` in view state is scoped to the active period when `activePeriodId` is provided.
 - History tab is parent-only.
 
 ## Data Model (MVP)
@@ -149,7 +149,7 @@ The app enforces these rules:
 - `createdAt: ISO timestamp`
 - `assignedTo: string[]`
 - `value: number` (kr per completion)
-- `maxPerSprint: number` (`0` = unlimited)
+- `maxPerPeriod: number` (`0` = unlimited)
 - `unlimitedDailyCap: number` (>= 1)
 
 ### Completion Record
@@ -157,11 +157,11 @@ The app enforces these rules:
 - `choreId: string`
 - `completedAt: ISO timestamp`
 - `undoneAt: ISO timestamp | null`
-- `sprintId: string | null`
+- `periodId: string | null`
 - `completedBy?: string`
 - `earnedValue?: number`
 
-### Sprint
+### Period
 - `id: string`
 - `startDate: YYYY-MM-DD`
 - `endDate: YYYY-MM-DD`
@@ -170,7 +170,7 @@ The app enforces these rules:
 - `createdAt: ISO timestamp`
 
 ### Settings
-- `sprintLengthDays: number`
+- `periodLengthDays: number`
 
 ### Persisted Payload
 ```json
@@ -180,9 +180,9 @@ The app enforces these rules:
    "ui": {
       "activeRole": "parent"
    },
-   "sprints": [],
+   "periods": [],
    "settings": {
-      "sprintLengthDays": 7
+      "periodLengthDays": 7
    }
 }
 ```
@@ -204,20 +204,20 @@ Legacy payloads without `ui` are automatically normalized at load time.
 3. **Complete chore (child action)**
    - Kid view is active.
    - Service validates no active completion exists for chore.
-   - New completion record is stored and tied to active sprint.
+   - New completion record is stored and tied to active period.
    - UI updates status + history.
 
 4. **Undo chore (child action)**
    - Kid view is active.
    - Service validates active completion exists.
    - Active record receives `undoneAt` timestamp.
-   - Sprint earnings update (undone completions no longer count).
+   - Period earnings update (undone completions no longer count).
 
-5. **Sprint close + payout (parent action)**
-   - Parent clicks “Luk sprint og marker som betalt”.
-   - Active sprint is marked as `paid`.
-   - A new active sprint is created automatically.
-   - Closed sprint appears in Historik.
+5. **Period close + payout (parent action)**
+   - Parent clicks “Luk periode og marker som betalt”.
+   - Active period is marked as `paid`.
+   - A new active period is created automatically.
+   - Closed period appears in Historik.
 
 6. **Switch role view**
    - User toggles between Parent and Kid mode in-app.
@@ -252,7 +252,7 @@ Current coverage focus:
 - Undo timestamp validation.
 - Overlap prevention for single-completion intervals.
 - Storage record shape compatibility.
-- Sprint-scoped `isCompleted` behavior.
+- Period-scoped `isCompleted` behavior.
 - Dynamic chore marker behavior (keyword and deterministic fallback).
 - Role-switch mascot walk animation for Hans Jørgen and Andrea.
 

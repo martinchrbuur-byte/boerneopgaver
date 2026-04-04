@@ -2,7 +2,7 @@ import { createOrphanedRecordService } from './services/orphanedRecordService.js
 import { resolveAppConfig } from './config/appConfig.js';
 import { isSupabaseConfigured } from './config/supabaseConfig.js';
 import { createChoreService } from './services/choreService.js';
-import { createSprintService } from './services/sprintService.js';
+import { createPeriodService } from './services/periodService.js';
 import { createFeedbackService } from './services/feedbackService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
 import {
@@ -71,14 +71,14 @@ function maxIsoTimestamp(values) {
 function resolveRemoteSectionTimestamps(supabaseData) {
   const choresUpdatedAt = maxIsoTimestamp((supabaseData.chores || []).map(item => item.createdAt));
   const recordsUpdatedAt = maxIsoTimestamp((supabaseData.records || []).flatMap(item => [item.completedAt, item.undoneAt]));
-  const sprintsUpdatedAt = maxIsoTimestamp((supabaseData.sprints || []).flatMap(item => [item.createdAt, item.paidAt]));
+  const periodsUpdatedAt = maxIsoTimestamp((supabaseData.periods || []).flatMap(item => [item.createdAt, item.paidAt]));
 
   return {
     choresUpdatedAt,
     recordsUpdatedAt,
     uiUpdatedAt: supabaseData.ui?.updatedAt || null,
     feedbackUpdatedAt: maxIsoTimestamp((supabaseData.feedback || []).map(item => item.createdAt)),
-    sprintsUpdatedAt,
+    periodsUpdatedAt,
     settingsUpdatedAt: supabaseData.settings?.updatedAt || null
   };
 }
@@ -108,8 +108,8 @@ function toRemoteStorageShape(supabaseData) {
     records: supabaseData.records,
     ui: { activeRole: supabaseData.ui.activeRole },
     feedback: supabaseData.feedback,
-    sprints: supabaseData.sprints,
-    settings: { sprintLengthDays: supabaseData.settings.sprintLengthDays }
+    periods: supabaseData.periods,
+    settings: { periodLengthDays: supabaseData.settings.periodLengthDays }
   };
 }
 
@@ -259,8 +259,8 @@ function hasMeaningfulLocalData(data) {
     (data.chores || []).length > 0 ||
     (data.records || []).length > 0 ||
     (data.feedback || []).length > 0 ||
-    (data.sprints || []).length > 0 ||
-    (data.settings?.sprintLengthDays || 7) !== 7
+    (data.periods || []).length > 0 ||
+    (data.settings?.periodLengthDays || 7) !== 7
   );
 }
 
@@ -309,7 +309,7 @@ async function init() {
   }
 
   const storageService = createStorageService();
-  const sprintService = createSprintService({ storageService });
+  const periodService = createPeriodService({ storageService });
   const feedbackService = createFeedbackService({ storageService });
   let activeTab = 'opgaver';
   const orphanedRecordService = createOrphanedRecordService();
@@ -346,8 +346,8 @@ async function init() {
       supabaseData.chores.length > 0 ||
       supabaseData.records.length > 0 ||
       supabaseData.feedback.length > 0 ||
-      supabaseData.sprints.length > 0 ||
-      supabaseData.settings.sprintLengthDays !== 7;
+      supabaseData.periods.length > 0 ||
+      supabaseData.settings.periodLengthDays !== 7;
 
     if (!hasRemoteData) {
       if (hasMeaningfulLocalData(localData)) {
@@ -398,11 +398,11 @@ async function init() {
         localSyncMeta.feedbackUpdatedAt,
         remoteSectionTimestamps.feedbackUpdatedAt
       ),
-      sprints: pickNewerSection(
-        localData.sprints,
-        remoteShape.sprints,
-        localSyncMeta.sprintsUpdatedAt,
-        remoteSectionTimestamps.sprintsUpdatedAt
+      periods: pickNewerSection(
+        localData.periods,
+        remoteShape.periods,
+        localSyncMeta.periodsUpdatedAt,
+        remoteSectionTimestamps.periodsUpdatedAt
       ),
       settings: pickNewerSection(
         localData.settings,
@@ -439,7 +439,7 @@ async function init() {
   }
 
   const choreService = createChoreService({ storageService });
-  sprintService.ensureActiveSprint();
+  periodService.ensureActivePeriod();
   const storedRole = storageService.loadData().ui.activeRole;
   let activeRole = resolveInitialRole(storedRole, appConfig.defaultRole);
   let editingChoreId = null;
@@ -456,7 +456,7 @@ async function init() {
     editDraft = {
       name: chore.name,
       value: String(chore.value ?? 0),
-      maxPerSprint: String(chore.maxPerSprint ?? 1),
+      maxPerPeriod: String(chore.maxPerPeriod ?? 1),
       unlimitedDailyCap: String(chore.unlimitedDailyCap ?? 1),
       assignedTo: Array.isArray(chore.assignedTo) ? [...chore.assignedTo] : []
     };
@@ -477,9 +477,9 @@ async function init() {
   }
 
   function refresh(message = '') {
-    const activeSprint = sprintService.getActiveSprint();
-    const activeSprintId = activeSprint?.id ?? null;
-    const choreState = choreService.getState({ activeSprintId });
+    const activePeriod = periodService.getActivePeriod();
+    const activePeriodId = activePeriod?.id ?? null;
+    const choreState = choreService.getState({ activePeriodId });
 
     if (activeRole !== 'parent') {
       clearEditState();
@@ -494,18 +494,18 @@ async function init() {
 
     latestChoreState = choreState;
 
-    const sprintUi = {
-      activeSprint,
-      settings: sprintService.getSettings(),
-      earnings: activeSprint ? sprintService.getSprintEarnings(activeSprint.id) : {},
-      moneyProgress: activeSprint
-        ? sprintService.getSprintMoneyProgress(activeSprint.id)
+    const periodUi = {
+      activePeriod,
+      settings: periodService.getSettings(),
+      earnings: activePeriod ? periodService.getPeriodEarnings(activePeriod.id) : {},
+      moneyProgress: activePeriod
+        ? periodService.getPeriodMoneyProgress(activePeriod.id)
         : {
           total: { earned: 0, target: 0 },
           byKid: Object.fromEntries(KIDS.map(kid => [kid, { earned: 0, target: 0 }]))
         },
-      history: sprintService.getSprintHistory(),
-      daysLeft: activeSprint ? calculateDaysLeft(activeSprint.endDate) : 0,
+      history: periodService.getPeriodHistory(),
+      daysLeft: activePeriod ? calculateDaysLeft(activePeriod.endDate) : 0,
       editState: editingChoreId && editDraft
         ? { choreId: editingChoreId, draft: editDraft }
         : null
@@ -515,7 +515,7 @@ async function init() {
       entries: feedbackService.listEntries()
     };
 
-  renderState(viewRefs, choreState, { activeRole, activeTab, sprintUi, feedbackUi, editState: sprintUi.editState });
+  renderState(viewRefs, choreState, { activeRole, activeTab, periodUi, feedbackUi, editState: periodUi.editState });
     renderFeedback(viewRefs, message);
 
     const feedbackEl = viewRefs.feedback;
@@ -584,7 +584,7 @@ async function init() {
     }
 
     if (action === 'accept-collab') {
-      const result = choreService.acceptCollaboration(collabId, { actorRole: activeRole, sprintId: ensureActiveSprintId() });
+      const result = choreService.acceptCollaboration(collabId, { actorRole: activeRole, periodId: ensureActivePeriodId() });
       if (result.ok) {
         showCoinToWallet(viewRefs);
         showMascot(viewRefs.mascotOverlay, activeRole, 'Godt samarbejde! 🤝', { type: 'collab', duration: 3000 });
@@ -605,9 +605,9 @@ async function init() {
     });
   }
 
-  function ensureActiveSprintId() {
-    const activeSprint = sprintService.getActiveSprint() || sprintService.ensureActiveSprint();
-    return activeSprint.id;
+  function ensureActivePeriodId() {
+    const activePeriod = periodService.getActivePeriod() || periodService.ensureActivePeriod();
+    return activePeriod.id;
   }
 
   if (isSupabaseConfigured()) {
@@ -694,7 +694,7 @@ async function init() {
 
     activeRole = nextRole;
     persistActiveRole();
-    if (activeRole !== 'parent' && (activeTab === 'historik' || activeTab === 'sprint' || activeTab === 'feedback')) {
+    if (activeRole !== 'parent' && (activeTab === 'historik' || activeTab === 'periode' || activeTab === 'feedback')) {
       activeTab = 'opgaver';
     }
     if (activeRole !== 'parent') {
@@ -712,7 +712,7 @@ async function init() {
     }
 
     const nextTab = button.getAttribute('data-tab');
-    if ((nextTab === 'historik' || nextTab === 'sprint' || nextTab === 'feedback') && activeRole !== 'parent') {
+    if ((nextTab === 'historik' || nextTab === 'periode' || nextTab === 'feedback') && activeRole !== 'parent') {
       return;
     }
 
@@ -733,7 +733,7 @@ async function init() {
       actorRole: activeRole,
       assignedTo,
       value: choreValue,
-      maxPerSprint: choreMax,
+      maxPerPeriod: choreMax,
       unlimitedDailyCap: choreUnlimitedCap
     });
     if (result.ok) {
@@ -798,7 +798,7 @@ async function init() {
         name: editDraft?.name,
         value: editDraft?.value,
         assignedTo: editDraft?.assignedTo,
-        maxPerSprint: editDraft?.maxPerSprint,
+        maxPerPeriod: editDraft?.maxPerPeriod,
         unlimitedDailyCap: editDraft?.unlimitedDailyCap
       });
       if (result.ok) {
@@ -813,7 +813,7 @@ async function init() {
       }
       result = choreService.deleteChore(choreId, { actorRole: activeRole });
     } else if (action === 'complete') {
-      result = choreService.completeChore(choreId, { actorRole: activeRole, sprintId: ensureActiveSprintId() });
+      result = choreService.completeChore(choreId, { actorRole: activeRole, periodId: ensureActivePeriodId() });
       if (result.ok) {
         showCoinToWallet(viewRefs);
         const chores = Array.isArray(result.state?.chores) ? result.state.chores : [];
@@ -826,8 +826,8 @@ async function init() {
         }
       }
     } else if (action === 'undo') {
-      const activeSprint = sprintService.getActiveSprint();
-      result = choreService.undoChore(choreId, { actorRole: activeRole, sprintId: activeSprint?.id ?? null });
+      const activePeriod = periodService.getActivePeriod();
+      result = choreService.undoChore(choreId, { actorRole: activeRole, periodId: activePeriod?.id ?? null });
     } else if (action === 'propose-collab') {
       result = choreService.proposeCollaboration(choreId, { actorRole: activeRole });
     } else if (action === 'accept-collab' || action === 'decline-collab') {
@@ -888,15 +888,15 @@ async function init() {
     });
   }
 
-  viewRefs.sprintLengthSave.addEventListener('click', () => {
-    const result = sprintService.setSprintLength(viewRefs.sprintLengthInput.value, activeRole);
+  viewRefs.periodLengthSave.addEventListener('click', () => {
+    const result = periodService.setPeriodLength(viewRefs.periodLengthInput.value, activeRole);
     refresh(result.message);
   });
 
-  viewRefs.closeSprintBtn.addEventListener('click', () => {
-    const result = sprintService.closeSprint(activeRole);
+  viewRefs.closePeriodBtn.addEventListener('click', () => {
+    const result = periodService.closePeriod(activeRole);
     if (result.ok) {
-      showMascot(viewRefs.mascotOverlay, 'parent', 'Sprint betalt! 🎉', { type: 'confetti', duration: 4000 });
+      showMascot(viewRefs.mascotOverlay, 'parent', 'Periode betalt! 🎉', { type: 'confetti', duration: 4000 });
     }
     refresh(result.message);
   });

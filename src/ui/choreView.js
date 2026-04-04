@@ -129,9 +129,9 @@ function renderParentEditFields(chore, draft) {
           class="input input-narrow"
           type="number"
           min="0"
-          data-edit-field="maxPerSprint"
+          data-edit-field="maxPerPeriod"
           data-chore-id="${chore.id}"
-          value="${escapeAttribute(draft.maxPerSprint)}"
+          value="${escapeAttribute(draft.maxPerPeriod)}"
         />
       </div>
       <div class="assign-to-section">
@@ -153,11 +153,11 @@ function renderChoreMarker(choreName) {
   return `<span class="chore-marker" role="img" aria-label="${visual.label} opgave">${visual.emoji}</span>`;
 }
 
-function renderMoneySliders(viewRefs, activeRole, sprintUi) {
+function renderMoneySliders(viewRefs, activeRole, periodUi) {
   const statusText = viewRefs.statusText;
   const sliderGroup = viewRefs.moneySliderGroup;
   const coinIcon = viewRefs.coinIcon;
-  const moneyProgress = sprintUi?.moneyProgress;
+  const moneyProgress = periodUi?.moneyProgress;
   const byKid = moneyProgress?.byKid ?? {};
   const total = moneyProgress?.total ?? { earned: 0, target: 0 };
 
@@ -185,7 +185,7 @@ function renderMoneySliders(viewRefs, activeRole, sprintUi) {
 
   if (statusText) {
     const roleLabel = activeRole === 'parent' ? 'Forældretilstand' : `${activeRole}s visning`;
-    statusText.textContent = `${roleLabel} • Sprintmål:`;
+    statusText.textContent = `${roleLabel} • Periodemål:`;
   }
 
   if (sliderGroup) {
@@ -241,14 +241,14 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
 
   return filteredChores
     .map((chore) => {
-      const maxPerSprint = chore.maxPerSprint ?? 1;
-      const sprintCount = chore.sprintCompletionCount ?? 0;
+      const maxPerPeriod = chore.maxPerPeriod ?? 1;
+      const periodCount = chore.periodCompletionCount ?? 0;
       const isFullyDone = chore.isFullyDone ?? false;
       const choreMarker = renderChoreMarker(chore.name);
 
-      const repeatBadge = maxPerSprint > 1
-        ? `<span class="repeat-badge">${sprintCount}/${maxPerSprint} gange</span>`
-        : (maxPerSprint === 0 && sprintCount > 0 ? `<span class="repeat-badge">${sprintCount}× gjort</span>` : '');
+      const repeatBadge = maxPerPeriod > 1
+        ? `<span class="repeat-badge">${periodCount}/${maxPerPeriod} gange</span>`
+        : (maxPerPeriod === 0 && periodCount > 0 ? `<span class="repeat-badge">${periodCount}× gjort</span>` : '');
 
       const isBothKidsChore = BOTH_KIDS.every(k => chore.assignedTo?.includes(k));
       const pendingCollab = pendingCollaborations.find(c => c.choreId === chore.id);
@@ -265,7 +265,7 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
             actionButtons += ` <button class="button button-collab" data-action="propose-collab" data-chore-id="${chore.id}">🤝 Gør det sammen</button>`;
           }
 
-          if (sprintCount > 0) {
+          if (periodCount > 0) {
             actionButtons += ` <button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">↩️ Fortryd</button>`;
           }
         }
@@ -530,30 +530,30 @@ function renderTabs(viewRefs, activeTab, activeRole) {
   }
 
   viewRefs.tabOpgaver.hidden = activeTab !== 'opgaver';
-  viewRefs.tabSprint.hidden = activeTab !== 'sprint' || !isParent;
+  viewRefs.tabPeriode.hidden = activeTab !== 'periode' || !isParent;
   viewRefs.tabFeedback.hidden = activeTab !== 'feedback' || !isParent;
   viewRefs.tabHistorik.hidden = activeTab !== 'historik' || !isParent;
 }
 
-function renderSprint(viewRefs, sprintUi, activeRole) {
+function renderPeriod(viewRefs, periodUi, activeRole) {
   const isParent = activeRole === 'parent';
 
-  if (!sprintUi?.activeSprint) {
-    viewRefs.sprintTitle.textContent = 'Ingen aktiv sprint';
-    viewRefs.sprintDates.textContent = '';
-    viewRefs.sprintDaysLeft.textContent = '';
-    viewRefs.sprintEarnings.innerHTML = '<p class="chore-meta">Ingen aktiv sprint fundet.</p>';
-    viewRefs.sprintParentActions.hidden = true;
+  if (!periodUi?.activePeriod) {
+    viewRefs.periodTitle.textContent = 'Ingen aktiv periode';
+    viewRefs.periodDates.textContent = '';
+    viewRefs.periodDaysLeft.textContent = '';
+    viewRefs.periodEarnings.innerHTML = '<p class="chore-meta">Ingen aktiv periode fundet.</p>';
+    viewRefs.periodParentActions.hidden = true;
     return;
   }
 
-  const { activeSprint, earnings, settings, daysLeft } = sprintUi;
+  const { activePeriod, earnings, settings, daysLeft } = periodUi;
 
-  viewRefs.sprintTitle.textContent = 'Aktuel sprint';
-  viewRefs.sprintDates.textContent = `${activeSprint.startDate} → ${activeSprint.endDate}`;
-  viewRefs.sprintDaysLeft.textContent = `${daysLeft} dage tilbage`;
+  viewRefs.periodTitle.textContent = 'Aktuel periode';
+  viewRefs.periodDates.textContent = `${activePeriod.startDate} → ${activePeriod.endDate}`;
+  viewRefs.periodDaysLeft.textContent = `${daysLeft} dage tilbage`;
 
-  viewRefs.sprintEarnings.innerHTML = `
+  viewRefs.periodEarnings.innerHTML = `
     <div class="earnings-grid">
       <div class="earning-card">
         <h3>👦 Hans Jørgen</h3>
@@ -566,25 +566,25 @@ function renderSprint(viewRefs, sprintUi, activeRole) {
     </div>
   `;
 
-  viewRefs.sprintParentActions.hidden = !isParent;
+  viewRefs.periodParentActions.hidden = !isParent;
   if (isParent) {
-    viewRefs.sprintLengthInput.value = String(settings.sprintLengthDays ?? 7);
+    viewRefs.periodLengthInput.value = String(settings.periodLengthDays ?? 7);
   }
 }
 
 function renderHistory(viewRefs, history) {
   if (!history || history.length === 0) {
-    viewRefs.sprintHistory.innerHTML = '<p class="chore-meta">Ingen afsluttede sprints endnu.</p>';
+    viewRefs.periodHistory.innerHTML = '<p class="chore-meta">Ingen afsluttede perioder endnu.</p>';
     return;
   }
 
-  viewRefs.sprintHistory.innerHTML = history.map(sprint => `
+  viewRefs.periodHistory.innerHTML = history.map(period => `
     <article class="history-item">
-      <h3>${sprint.startDate} → ${sprint.endDate}</h3>
-      <p class="chore-meta">Betalt: ${sprint.paidAt ? toDateTimeLabel(sprint.paidAt) : 'Ukendt'}</p>
+      <h3>${period.startDate} → ${period.endDate}</h3>
+      <p class="chore-meta">Betalt: ${period.paidAt ? toDateTimeLabel(period.paidAt) : 'Ukendt'}</p>
       <div class="history-earnings">
-        <p>👦 Hans Jørgen: <strong>${formatMoney(sprint.earnings['Hans Jørgen'] ?? 0)}</strong></p>
-        <p>👱‍♀️ Andrea: <strong>${formatMoney(sprint.earnings.Andrea ?? 0)}</strong></p>
+        <p>👦 Hans Jørgen: <strong>${formatMoney(period.earnings['Hans Jørgen'] ?? 0)}</strong></p>
+        <p>👱‍♀️ Andrea: <strong>${formatMoney(period.earnings.Andrea ?? 0)}</strong></p>
       </div>
     </article>
   `).join('');
@@ -612,17 +612,17 @@ function renderFeedbackHistory(viewRefs, entries) {
   `).join('');
 }
 
-export function renderState(viewRefs, state, { activeRole, activeTab, sprintUi, feedbackUi, editState = null }) {
-  renderMoneySliders(viewRefs, activeRole, sprintUi);
+export function renderState(viewRefs, state, { activeRole, activeTab, periodUi, feedbackUi, editState = null }) {
+  renderMoneySliders(viewRefs, activeRole, periodUi);
 
   viewRefs.addChoreSection.hidden = activeRole !== 'parent';
   viewRefs.choreList.innerHTML = renderChoreList(state.chores, activeRole, state.pendingCollaborations ?? [], editState);
   viewRefs.recentCompletions.innerHTML = renderRecentCompletions(state.recentCompletions);
   renderRoleSwitch(viewRefs, activeRole);
   renderTabs(viewRefs, activeTab, activeRole);
-  renderSprint(viewRefs, sprintUi, activeRole);
+  renderPeriod(viewRefs, periodUi, activeRole);
   renderFeedbackHistory(viewRefs, feedbackUi?.entries || []);
-  renderHistory(viewRefs, sprintUi?.history || []);
+  renderHistory(viewRefs, periodUi?.history || []);
   renderCollabInbox(viewRefs, state.pendingCollaborations ?? [], activeRole, state.chores);
 }
 

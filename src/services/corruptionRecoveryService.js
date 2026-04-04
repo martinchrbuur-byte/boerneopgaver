@@ -107,9 +107,9 @@ export function createCorruptionRecoveryService() {
     const recovered = {
       chores: [],
       records: [],
-      ui: { activeRole: 'parent', sprintHistory: [] },
-      sprints: [],
-      settings: { sprintLengthDays: 7 },
+      ui: { activeRole: 'parent', periodHistory: [] },
+      periods: [],
+      settings: { periodLengthDays: 7 },
       pendingCollaborations: []
     };
 
@@ -123,8 +123,10 @@ export function createCorruptionRecoveryService() {
       if (corruptedData.ui && typeof corruptedData.ui === 'object') {
         recovered.ui = corruptedData.ui;
       }
-      if (Array.isArray(corruptedData.sprints)) {
-        recovered.sprints = corruptedData.sprints.filter(s => s && typeof s === 'object');
+      if (Array.isArray(corruptedData.periods)) {
+        recovered.periods = corruptedData.periods.filter(period => period && typeof period === 'object');
+      } else if (Array.isArray(corruptedData.sprints)) {
+        recovered.periods = corruptedData.sprints.filter(period => period && typeof period === 'object');
       }
     }
 

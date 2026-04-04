@@ -14,7 +14,7 @@ export const CHORE_MESSAGES = Object.freeze({
   invalidUnlimitedDailyCap: 'Dagligt loft for ubegrænset opgave skal være et helt tal (1 eller mere).',
   missingChore: 'Den opgave kunne ikke findes.',
   alreadyCompleted: 'Opgaven er allerede fuldført. Fortryd først for at fuldføre igen.',
-  atRepeatLimit: 'Opgaven er nået sit maksimum antal gange i dette sprint.',
+  atRepeatLimit: 'Opgaven er nået sit maksimum antal gange i denne periode.',
   missingActiveCompletion: 'Opgaven er ikke markeret som fuldført lige nu.',
   invalidTimestamp: 'Tidsstemplet er ugyldigt for denne handling.',
   collabProposed: 'Forslag sendt — vent på at den anden accepterer!',
@@ -69,7 +69,7 @@ function hasOverlap(records, { treatActiveAsInfinite = true } = {}) {
   return false;
 }
 
-function buildViewState(data, { activeSprintId = null } = {}) {
+function buildViewState(data, { activePeriodId = null } = {}) {
   const recordsByChoreId = new Map();
   for (const record of data.records) {
     if (!recordsByChoreId.has(record.choreId)) {
@@ -81,15 +81,15 @@ function buildViewState(data, { activeSprintId = null } = {}) {
   const chores = data.chores.map((chore) => {
     const records = recordsByChoreId.get(chore.id) ?? [];
     const activeRecords = records.filter((record) => record.undoneAt === null);
-    const scopedActiveRecords = activeSprintId
-      ? activeRecords.filter((record) => record.sprintId === activeSprintId)
+    const scopedActiveRecords = activePeriodId
+      ? activeRecords.filter((record) => record.periodId === activePeriodId)
       : activeRecords;
     const lastRecord = sortByCompletedAtDescending(records)[0] ?? null;
 
-    const sprintCompletionCount = scopedActiveRecords.length;
+    const periodCompletionCount = scopedActiveRecords.length;
 
-    const maxPerSprint = chore.maxPerSprint ?? 1;
-    const isFullyDone = maxPerSprint > 0 && sprintCompletionCount >= maxPerSprint;
+    const maxPerPeriod = chore.maxPerPeriod ?? 1;
+    const isFullyDone = maxPerPeriod > 0 && periodCompletionCount >= maxPerPeriod;
 
     return {
       id: chore.id,
@@ -97,11 +97,11 @@ function buildViewState(data, { activeSprintId = null } = {}) {
       createdAt: chore.createdAt,
       assignedTo: chore.assignedTo,
       value: chore.value ?? 0,
-      maxPerSprint,
+      maxPerPeriod,
       unlimitedDailyCap: Number.isInteger(chore.unlimitedDailyCap) && chore.unlimitedDailyCap >= 1
         ? chore.unlimitedDailyCap
         : 1,
-      sprintCompletionCount,
+      periodCompletionCount,
       isFullyDone,
       isCompleted: scopedActiveRecords.length > 0,
       activeCompletedAt: scopedActiveRecords.length > 0
@@ -159,9 +159,9 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     throw new Error('createChoreService requires storageService.');
   }
 
-  function getState({ activeSprintId = null } = {}) {
+  function getState({ activePeriodId = null } = {}) {
     const data = storageService.loadData();
-    return buildViewState(data, { activeSprintId });
+    return buildViewState(data, { activePeriodId });
   }
 
   function addChore(name, {
@@ -169,7 +169,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     actorRole,
     assignedTo,
     value = 0,
-    maxPerSprint = 1,
+    maxPerPeriod = 1,
     unlimitedDailyCap = 1
   } = {}) {
     if (!isRoleAllowed(actorRole, ['parent'])) {
@@ -186,7 +186,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       return asResult(false, CHORE_MESSAGES.invalidValue, getState());
     }
 
-    const parsedMax = parseInt(maxPerSprint, 10);
+    const parsedMax = parseInt(maxPerPeriod, 10);
     if (!Number.isInteger(parsedMax) || parsedMax < 0) {
       return asResult(false, CHORE_MESSAGES.invalidMax, getState());
     }
@@ -208,7 +208,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
           createdAt: nowIso,
           assignedTo: validAssignedTo,
           value: parsedValue,
-          maxPerSprint: parsedMax,
+          maxPerPeriod: parsedMax,
           unlimitedDailyCap: parsedUnlimitedDailyCap
         }
       ]
@@ -222,7 +222,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     name,
     value,
     assignedTo,
-    maxPerSprint,
+    maxPerPeriod,
     unlimitedDailyCap
   } = {}) {
     if (!isRoleAllowed(actorRole, ['parent'])) {
@@ -245,7 +245,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       return asResult(false, CHORE_MESSAGES.invalidValue, buildViewState(data));
     }
 
-    const parsedMax = maxPerSprint === undefined ? chore.maxPerSprint : parseInt(maxPerSprint, 10);
+    const parsedMax = maxPerPeriod === undefined ? chore.maxPerPeriod : parseInt(maxPerPeriod, 10);
     if (!Number.isInteger(parsedMax) || parsedMax < 0) {
       return asResult(false, CHORE_MESSAGES.invalidMax, buildViewState(data));
     }
@@ -273,7 +273,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
           name: nextName,
           assignedTo: nextAssignedTo,
           value: parsedValue,
-          maxPerSprint: parsedMax,
+          maxPerPeriod: parsedMax,
           unlimitedDailyCap: parsedUnlimitedDailyCap
         };
       })
@@ -282,7 +282,8 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     return asResult(true, CHORE_MESSAGES.choreUpdated, getState());
   }
 
-  function completeChore(choreId, { nowIso = nowProvider(), actorRole, sprintId = null } = {}) {
+  function completeChore(choreId, { nowIso = nowProvider(), actorRole, periodId = null, sprintId = undefined } = {}) {
+    const activePeriodId = periodId ?? sprintId ?? null;
     if (!isKidRole(actorRole)) {
       return asResult(false, CHORE_MESSAGES.kidOnlyActions, getState());
     }
@@ -294,20 +295,20 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     }
 
     if (!Array.isArray(chore.assignedTo) || !chore.assignedTo.includes(actorRole)) {
-      return asResult(false, CHORE_MESSAGES.notAssigned, buildViewState(data, { activeSprintId: sprintId }));
+      return asResult(false, CHORE_MESSAGES.notAssigned, buildViewState(data, { activePeriodId }));
     }
 
-    const maxPerSprint = chore.maxPerSprint ?? 1;
+    const maxPerPeriod = chore.maxPerPeriod ?? 1;
     const records = getChoreRecords(data, choreId);
 
     const activeRecords = records.filter((r) => r.undoneAt === null);
-    const sprintCount = sprintId
-      ? activeRecords.filter((r) => r.sprintId === sprintId).length
+    const periodCount = activePeriodId
+      ? activeRecords.filter((r) => r.periodId === activePeriodId).length
       : activeRecords.length;
 
-    if (maxPerSprint > 0 && sprintCount >= maxPerSprint) {
-      const msg = maxPerSprint === 1 ? CHORE_MESSAGES.alreadyCompleted : CHORE_MESSAGES.atRepeatLimit;
-      return asResult(false, msg, buildViewState(data, { activeSprintId: sprintId }));
+    if (maxPerPeriod > 0 && periodCount >= maxPerPeriod) {
+      const msg = maxPerPeriod === 1 ? CHORE_MESSAGES.alreadyCompleted : CHORE_MESSAGES.atRepeatLimit;
+      return asResult(false, msg, buildViewState(data, { activePeriodId }));
     }
 
     const nextRecord = {
@@ -315,16 +316,16 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       choreId,
       completedAt: nowIso,
       undoneAt: null,
-      sprintId,
+      periodId: activePeriodId,
       completedBy: actorRole,
       earnedValue: chore.value ?? 0
     };
 
     const withNewRecord = [...records, nextRecord];
 
-    const treatActiveAsInfinite = maxPerSprint <= 1;
+    const treatActiveAsInfinite = maxPerPeriod <= 1;
     if (hasOverlap(withNewRecord, { treatActiveAsInfinite })) {
-      return asResult(false, CHORE_MESSAGES.invalidTimestamp, buildViewState(data, { activeSprintId: sprintId }));
+      return asResult(false, CHORE_MESSAGES.invalidTimestamp, buildViewState(data, { activePeriodId }));
     }
 
     storageService.saveData({
@@ -332,10 +333,11 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       records: [...data.records, nextRecord]
     });
 
-    return asResult(true, CHORE_MESSAGES.choreCompleted, getState({ activeSprintId: sprintId }));
+    return asResult(true, CHORE_MESSAGES.choreCompleted, getState({ activePeriodId }));
   }
 
-  function undoChore(choreId, { nowIso = nowProvider(), actorRole, sprintId = null } = {}) {
+  function undoChore(choreId, { nowIso = nowProvider(), actorRole, periodId = null, sprintId = undefined } = {}) {
+    const activePeriodId = periodId ?? sprintId ?? null;
     if (!isKidRole(actorRole)) {
       return asResult(false, CHORE_MESSAGES.kidOnlyActions, getState());
     }
@@ -364,15 +366,15 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       return { ...record, undoneAt: nowIso };
     });
 
-    const maxPerSprint = chore.maxPerSprint ?? 1;
-    const treatActiveAsInfinite = maxPerSprint <= 1;
+    const maxPerPeriod = chore.maxPerPeriod ?? 1;
+    const treatActiveAsInfinite = maxPerPeriod <= 1;
     if (hasOverlap(getChoreRecords({ ...data, records: nextRecords }, choreId), { treatActiveAsInfinite })) {
       return asResult(false, CHORE_MESSAGES.invalidTimestamp, buildViewState(data));
     }
 
     storageService.saveData({ ...data, records: nextRecords });
 
-    return asResult(true, CHORE_MESSAGES.choreUndone, getState({ activeSprintId: sprintId }));
+    return asResult(true, CHORE_MESSAGES.choreUndone, getState({ activePeriodId }));
   }
 
   function deleteChore(choreId, { actorRole } = {}) {
@@ -432,7 +434,8 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
     return asResult(true, CHORE_MESSAGES.collabProposed, getState());
   }
 
-  function acceptCollaboration(collabId, { actorRole, sprintId = null, nowIso = nowProvider() } = {}) {
+  function acceptCollaboration(collabId, { actorRole, periodId = null, sprintId = undefined, nowIso = nowProvider() } = {}) {
+    const activePeriodId = periodId ?? sprintId ?? null;
     if (!isKidRole(actorRole)) {
       return asResult(false, CHORE_MESSAGES.kidOnlyActions, getState());
     }
@@ -466,7 +469,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       choreId: chore.id,
       completedAt: nowIso,
       undoneAt: null,
-      sprintId,
+      periodId: activePeriodId,
       completedBy: collab.proposedBy,
       earnedValue: splitValue
     };
@@ -475,7 +478,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       choreId: chore.id,
       completedAt: nowIso,
       undoneAt: null,
-      sprintId,
+      periodId: activePeriodId,
       completedBy: actorRole,
       earnedValue: splitValue
     };
@@ -486,7 +489,7 @@ export function createChoreService({ storageService, nowProvider = nowIsoTimesta
       pendingCollaborations: pending.filter((c) => c.id !== collabId)
     });
 
-    return asResult(true, CHORE_MESSAGES.collabAccepted, getState({ activeSprintId: sprintId }));
+    return asResult(true, CHORE_MESSAGES.collabAccepted, getState({ activePeriodId }));
   }
 
   function declineCollaboration(collabId, { actorRole } = {}) {

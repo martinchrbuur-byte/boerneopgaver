@@ -591,7 +591,7 @@ body {
   background: #b91c1c;
 }
 
-.sprint-header {
+.period-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -599,12 +599,12 @@ body {
   flex-wrap: wrap;
 }
 
-.sprint-dates {
+.period-dates {
   margin: 0;
   color: #334155;
 }
 
-.sprint-days-badge {
+.period-days-badge {
   border-radius: 999px;
   background: #eff6ff;
   color: #1d4ed8;
@@ -612,7 +612,7 @@ body {
   font-weight: 600;
 }
 
-.sprint-earnings {
+.period-earnings {
   margin-top: 0.6rem;
 }
 
@@ -645,14 +645,14 @@ body {
   border-top: 1px solid #e2e8f0;
 }
 
-.sprint-settings-row {
+.period-settings-row {
   display: flex;
   align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
 }
 
-.sprint-parent-actions {
+.period-parent-actions {
   margin-top: 0.4rem;
   display: grid;
   gap: 0.7rem;
@@ -923,7 +923,7 @@ body {
     gap: 0.85rem;
   }
 
-  #sprint-history {
+  #period-history {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 0.85rem;
@@ -947,7 +947,7 @@ body {
   }
 }
 
-/* ─── Max-per-sprint form row ────────────────────────────────── */
+/* ─── Max-per-period form row ────────────────────────────────── */
 .form-row-max {
   display: flex;
   align-items: center;
@@ -1086,7 +1086,7 @@ body {
   animation: mascotCollab 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
 }
 
-/* Confetti: spin + scale on sprint paid */
+/* Confetti: spin + scale on period paid */
 .mascot-confetti .mascot-emoji {
   animation: mascotConfetti 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
 }
