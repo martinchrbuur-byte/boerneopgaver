@@ -24,26 +24,26 @@ export function renderSyncStatusIndicator(syncState) {
   const { isPending, isRetrying, queueLength, lastError, lastSuccessfulSync, failureCount } = syncState;
 
   // Determine status message and styling
-  let html = '<div id="sync-status" class="sync-status-container" style="';
+  let html = '<div id="sync-status" class="sync-status-container';
   let statusText = '';
 
   if (lastError) {
     const safeError = escapeHtml(lastError);
     const failedItemsLabel = failureCount > 0 ? `${failureCount} items failed` : 'sync issue detected';
     statusText = isRetrying ? `⚠️ Sync Retry (${queueLength} pending)` : `⚠️ Sync Error (${failedItemsLabel})`;
-    html += 'background-color: #fee; color: #c33; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin: 8px 0;">';
-    html += `${statusText}<span style="margin-left: 8px; font-size: 10px; opacity: 0.7;">${safeError}</span>`;
+    html += ' sync-status-error">';
+    html += `<span class="sync-status-text">${statusText}</span><span class="sync-status-note">${safeError}</span>`;
     if (failureCount > 0) {
-      html += '<button type="button" onclick="retryFailedSync()" style="margin-left: 12px; border: none; border-radius: 6px; padding: 4px 8px; background: #c33; color: #fff; font-size: 11px; cursor: pointer;">Retry failed</button>';
+      html += '<button type="button" onclick="retryFailedSync()" class="sync-status-button sync-status-button-error">Retry failed</button>';
     }
   } else if (isRetrying) {
     statusText = `⏳ Syncing (Retry ${queueLength})`;
-    html += 'background-color: #ffa; color: #663; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin: 8px 0; animation: pulse 1s infinite;">';
-    html += statusText;
+    html += ' sync-status-warning sync-status-pulse">';
+    html += `<span class="sync-status-text">${statusText}</span>`;
   } else if (isPending) {
     statusText = `🔄 Syncing (${queueLength} items)`;
-    html += 'background-color: #eef; color: #336; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin: 8px 0; animation: pulse 1s infinite;">';
-    html += statusText;
+    html += ' sync-status-info sync-status-pulse">';
+    html += `<span class="sync-status-text">${statusText}</span>`;
   } else if (lastSuccessfulSync) {
     const syncTime = new Date(lastSuccessfulSync);
     const now = new Date();
@@ -54,10 +54,10 @@ export function renderSyncStatusIndicator(syncState) {
       timeStr = diffMin === 1 ? '1 min ago' : `${diffMin} mins ago`;
     }
     statusText = `✓ Synced ${timeStr}`;
-    html += 'background-color: #efe; color: #363; padding: 6px 10px; border-radius: 4px; font-size: 11px; margin: 4px 0; opacity: 0.7;">';
-    html += statusText;
+    html += ' sync-status-success sync-status-muted">';
+    html += `<span class="sync-status-text">${statusText}</span>`;
   } else {
-    html += 'display: none;">';
+    html += '" hidden>';
   }
 
   html += '</div>';
@@ -85,7 +85,7 @@ export function renderLocalOnlyIndicator({ reason = 'missing-config' } = {}) {
     message = 'You are offline. Changes are saved locally and will sync once online.';
   }
 
-  return `<div id="local-only-status" class="sync-status-container" style="background-color: #fff4e5; color: #7c4700; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin: 8px 0;">
+  return `<div id="local-only-status" class="sync-status-container sync-status-local-only">
     ⚠️ ${message}
   </div>`;
 }
@@ -136,16 +136,7 @@ export function renderSyncControlPanel(syncState, onSyncClick) {
  * Show offline mode indicator
  */
 export function renderOfflineIndicator() {
-  return `<div class="offline-indicator" style="
-    background-color: #333;
-    color: #fff;
-    padding: 10px;
-    text-align: center;
-    font-size: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  ">
+  return `<div class="offline-indicator">
     🔌 Offline Mode - Your changes are saved locally and will sync when online
   </div>`;
 }
