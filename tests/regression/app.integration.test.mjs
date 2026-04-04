@@ -48,6 +48,7 @@ async function withBootstrappedApp(run) {
     const choreNameInput = document.querySelector('#chore-name-input');
     const choreValueInput = document.querySelector('#chore-value-input');
     const choreList = document.querySelector('#chore-list');
+    const tabNav = document.querySelector('.tab-nav');
     const feedback = document.querySelector('#feedback');
     const moneySliderCount = document.querySelector('.money-slider-count');
     const mascotOverlay = document.querySelector('#mascot-overlay');
@@ -56,6 +57,7 @@ async function withBootstrappedApp(run) {
     assert.ok(addChoreForm);
     assert.ok(choreNameInput);
     assert.ok(choreList);
+    assert.ok(tabNav);
     assert.ok(feedback);
     assert.ok(choreValueInput);
     assert.ok(moneySliderCount);
@@ -68,6 +70,7 @@ async function withBootstrappedApp(run) {
       choreNameInput,
       choreValueInput,
       choreList,
+      tabNav,
       feedback,
       moneySliderCount,
       mascotOverlay
@@ -156,6 +159,34 @@ test('kid cannot add chores from UI submit', async () => {
     assert.match(feedback.textContent, /Kun forældrevisning kan tilføje opgaver/i);
     const afterCount = choreList.querySelectorAll('.chore-item').length;
     assert.equal(afterCount, beforeCount);
+  });
+});
+
+test('sprint tab is parent-only and falls back to chores for child view', async () => {
+  await withBootstrappedApp(async ({ window, roleSwitch, tabNav }) => {
+    const sprintTab = tabNav.querySelector('button[data-tab="sprint"]');
+    const choresTab = tabNav.querySelector('button[data-tab="opgaver"]');
+    const choresPanel = document.querySelector('#tab-opgaver');
+    const sprintPanel = document.querySelector('#tab-sprint');
+
+    assert.ok(sprintTab);
+    assert.ok(choresTab);
+    assert.ok(choresPanel);
+    assert.ok(sprintPanel);
+    assert.equal(sprintTab.hidden, false);
+
+    click(window, sprintTab);
+    assert.equal(sprintPanel.hidden, false);
+    assert.equal(choresPanel.hidden, true);
+
+    const andreaButton = roleSwitch.querySelector('button[data-role="Andrea"]');
+    assert.ok(andreaButton);
+    click(window, andreaButton);
+
+    assert.equal(sprintTab.hidden, true);
+    assert.equal(sprintPanel.hidden, true);
+    assert.equal(choresPanel.hidden, false);
+    assert.equal(choresTab.getAttribute('aria-selected'), 'true');
   });
 });
 

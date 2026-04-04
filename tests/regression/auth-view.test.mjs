@@ -82,3 +82,27 @@ test('main view renders hidden account controls for authenticated mode', () => {
     env.restore();
   }
 });
+
+test('main view stacks recent completions below chores and marks sprint tab as parent-only', () => {
+  const env = setupDom();
+
+  try {
+    createMainView(env.root);
+
+    const choreGrid = env.root.querySelector('.chore-content-grid');
+    const choreList = env.root.querySelector('#chore-list');
+    const recentCompletions = env.root.querySelector('#recent-completions');
+    const sprintTab = env.root.querySelector('button[data-tab="sprint"]');
+
+    assert.ok(choreGrid);
+    assert.ok(choreList);
+    assert.ok(recentCompletions);
+    assert.ok(sprintTab);
+    assert.ok(sprintTab.classList.contains('tab-parent-only'));
+    assert.equal(choreGrid.children.length, 3);
+    assert.equal(choreGrid.children[1]?.querySelector('#chore-list'), choreList);
+    assert.equal(choreGrid.children[2]?.querySelector('#recent-completions'), recentCompletions);
+  } finally {
+    env.restore();
+  }
+});

@@ -508,7 +508,7 @@ function renderTabs(viewRefs, activeTab, activeRole) {
   }
 
   viewRefs.tabOpgaver.hidden = activeTab !== 'opgaver';
-  viewRefs.tabSprint.hidden = activeTab !== 'sprint';
+  viewRefs.tabSprint.hidden = activeTab !== 'sprint' || !isParent;
   viewRefs.tabHistorik.hidden = activeTab !== 'historik' || !isParent;
 }
 

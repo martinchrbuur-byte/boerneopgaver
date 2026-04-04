@@ -22,7 +22,7 @@ export function createMainView(rootElement) {
         </div>
       </header>
 
-      <section class="card app-role-card" aria-label="Rolleskift">
+      <section class="card app-role-card app-top-card" aria-label="Rolleskift">
         <h2 class="section-title">Visningstilstand</h2>
         <div id="role-switch" class="role-switch" role="group" aria-label="Vælg brugerrolle">
           <button type="button" class="button button-secondary" data-role="parent" aria-pressed="true">
@@ -37,7 +37,7 @@ export function createMainView(rootElement) {
         </div>
       </section>
 
-      <section class="card app-status-card" aria-label="Status">
+      <section class="card app-status-card app-top-card" aria-label="Status">
         <div id="status-row" class="status-row">
           <div class="status-container">
             <p id="status-text" class="status-text">Forældretilstand</p>
@@ -58,7 +58,7 @@ export function createMainView(rootElement) {
 
       <nav class="tab-nav app-tab-nav" role="tablist" aria-label="Sektioner">
         <button class="tab-btn tab-active" role="tab" data-tab="opgaver" aria-selected="true">📋 Opgaver</button>
-        <button class="tab-btn" role="tab" data-tab="sprint" aria-selected="false">🏃 Sprint</button>
+        <button class="tab-btn tab-parent-only" role="tab" data-tab="sprint" aria-selected="false">🏃 Sprint</button>
         <button class="tab-btn tab-parent-only" role="tab" data-tab="historik" aria-selected="false">📜 Historik</button>
       </nav>
 
@@ -130,21 +130,17 @@ export function createMainView(rootElement) {
         </section>
 
         <div class="chore-content-grid">
-          <div class="chore-primary-column">
-            <div id="collab-inbox" class="collab-inbox" hidden></div>
+          <div id="collab-inbox" class="collab-inbox" hidden></div>
 
-            <section class="card chore-list-card" aria-label="Opgaveliste">
-              <h2 class="section-title">Opgaver</h2>
-              <ul id="chore-list" class="list"></ul>
-            </section>
-          </div>
+          <section class="card chore-list-card" aria-label="Opgaveliste">
+            <h2 class="section-title">Opgaver</h2>
+            <ul id="chore-list" class="list"></ul>
+          </section>
 
-          <div class="chore-secondary-column">
-            <section class="card recent-completions-card" aria-label="Seneste fuldføringer">
-              <h2 class="section-title">Seneste fuldføringer</h2>
-              <ul id="recent-completions" class="list"></ul>
-            </section>
-          </div>
+          <section class="card recent-completions-card" aria-label="Seneste fuldføringer">
+            <h2 class="section-title">Seneste fuldføringer</h2>
+            <ul id="recent-completions" class="list"></ul>
+          </section>
         </div>
       </div>
 

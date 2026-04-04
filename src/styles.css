@@ -102,10 +102,11 @@ body {
 .status-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
   flex-wrap: wrap;
   position: relative;
+  min-height: 100%;
 }
 
 .status-icons {
@@ -136,10 +137,13 @@ body {
 .status-container {
   flex: 1;
   min-width: 200px;
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
 }
 
 .status-text {
-  margin: 0 0 0.5rem;
+  margin: 0;
   font-weight: 600;
   color: #1d4ed8;
   font-size: 0.95rem;
@@ -156,6 +160,7 @@ body {
   display: grid;
   gap: 0.5rem;
   min-width: 0;
+  align-content: start;
 }
 
 .money-slider-item {
@@ -297,6 +302,7 @@ body {
 .feedback {
   min-height: 1.3rem;
   color: #92400e;
+  margin: 0.75rem 0 0;
 }
 
 .auth-form {
@@ -537,11 +543,23 @@ body {
   gap: 1rem;
 }
 
-.chore-content-grid,
-.chore-primary-column,
-.chore-secondary-column {
+.chore-content-grid {
   display: grid;
   gap: 1rem;
+}
+
+.app-top-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-role-card {
+  justify-content: flex-start;
+}
+
+.app-status-card {
+  justify-content: space-between;
 }
 
 .form-row-3 {
@@ -769,7 +787,7 @@ body {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 0.9rem;
     padding: 1rem 1.5rem 1.25rem;
-    align-items: start;
+    align-items: stretch;
   }
 
   .app-header-card {
@@ -780,11 +798,13 @@ body {
   .app-role-card {
     grid-column: 1 / span 5;
     padding: 0.9rem 1rem;
+    align-self: stretch;
   }
 
   .app-status-card {
     grid-column: 6 / -1;
     padding: 0.9rem 1rem;
+    align-self: stretch;
   }
 
   .app-tab-nav,
@@ -818,11 +838,6 @@ body {
     margin-bottom: 0.5rem;
   }
 
-  .status-row {
-    align-items: flex-start;
-    gap: 1.25rem;
-  }
-
   .status-container {
     min-width: 0;
   }
@@ -849,11 +864,6 @@ body {
 
   .chore-composer-card {
     padding: 1rem 1.1rem;
-  }
-
-  .chore-content-grid {
-    grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.95fr);
-    align-items: start;
   }
 
   .form-row-3 {

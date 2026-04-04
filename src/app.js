@@ -678,7 +678,7 @@ async function init() {
 
     activeRole = nextRole;
     persistActiveRole();
-    if (activeRole !== 'parent' && activeTab === 'historik') {
+    if (activeRole !== 'parent' && (activeTab === 'historik' || activeTab === 'sprint')) {
       activeTab = 'opgaver';
     }
     if (activeRole !== 'parent') {
@@ -696,7 +696,7 @@ async function init() {
     }
 
     const nextTab = button.getAttribute('data-tab');
-    if (nextTab === 'historik' && activeRole !== 'parent') {
+    if ((nextTab === 'historik' || nextTab === 'sprint') && activeRole !== 'parent') {
       return;
     }
 
