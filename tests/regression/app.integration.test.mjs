@@ -52,6 +52,10 @@ async function withBootstrappedApp(run) {
     const feedback = document.querySelector('#feedback');
     const moneySliderCount = document.querySelector('.money-slider-count');
     const mascotOverlay = document.querySelector('#mascot-overlay');
+    const feedbackForm = document.querySelector('#feedback-form');
+    const feedbackTitleInput = document.querySelector('#feedback-title-input');
+    const feedbackMessageInput = document.querySelector('#feedback-message-input');
+    const feedbackHistory = document.querySelector('#feedback-history');
 
     assert.ok(roleSwitch);
     assert.ok(addChoreForm);
@@ -62,6 +66,10 @@ async function withBootstrappedApp(run) {
     assert.ok(choreValueInput);
     assert.ok(moneySliderCount);
     assert.ok(mascotOverlay);
+    assert.ok(feedbackForm);
+    assert.ok(feedbackTitleInput);
+    assert.ok(feedbackMessageInput);
+    assert.ok(feedbackHistory);
 
     await run({
       window,
@@ -73,7 +81,11 @@ async function withBootstrappedApp(run) {
       tabNav,
       feedback,
       moneySliderCount,
-      mascotOverlay
+      mascotOverlay,
+      feedbackForm,
+      feedbackTitleInput,
+      feedbackMessageInput,
+      feedbackHistory
     });
   } finally {
     dom.window.close();
@@ -159,6 +171,52 @@ test('kid cannot add chores from UI submit', async () => {
     assert.match(feedback.textContent, /Kun forældrevisning kan tilføje opgaver/i);
     const afterCount = choreList.querySelectorAll('.chore-item').length;
     assert.equal(afterCount, beforeCount);
+  });
+});
+
+test('parent can save feedback and see read-only history', async () => {
+  await withBootstrappedApp(async ({
+    window,
+    tabNav,
+    feedback,
+    feedbackForm,
+    feedbackTitleInput,
+    feedbackMessageInput,
+    feedbackHistory
+  }) => {
+    const feedbackTab = tabNav.querySelector('button[data-tab="feedback"]');
+    assert.ok(feedbackTab);
+
+    click(window, feedbackTab);
+
+    feedbackTitleInput.value = 'Mere fleksibel feedback';
+    feedbackMessageInput.value = 'Det ville hjælpe, hvis jeg kan skrive ønsker direkte i appen.';
+    submit(window, feedbackForm);
+
+    assert.match(feedback.textContent, /Feedback gemt/i);
+    assert.match(feedbackHistory.textContent, /Mere fleksibel feedback/i);
+    assert.match(feedbackHistory.textContent, /skrive ønsker direkte/i);
+  });
+});
+
+test('kid cannot submit parent feedback from UI submit', async () => {
+  await withBootstrappedApp(async ({
+    window,
+    roleSwitch,
+    feedbackForm,
+    feedbackMessageInput,
+    feedback,
+    feedbackHistory
+  }) => {
+    const andreaButton = roleSwitch.querySelector('button[data-role="Andrea"]');
+    assert.ok(andreaButton);
+    click(window, andreaButton);
+
+    feedbackMessageInput.value = 'Jeg prøver at sende feedback som barn';
+    submit(window, feedbackForm);
+
+    assert.match(feedback.textContent, /Kun forældrevisning kan sende feedback/i);
+    assert.doesNotMatch(feedbackHistory.textContent, /Jeg prøver at sende feedback som barn/i);
   });
 });
 

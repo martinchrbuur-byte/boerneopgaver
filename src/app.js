@@ -3,6 +3,7 @@ import { resolveAppConfig } from './config/appConfig.js';
 import { isSupabaseConfigured } from './config/supabaseConfig.js';
 import { createChoreService } from './services/choreService.js';
 import { createSprintService } from './services/sprintService.js';
+import { createFeedbackService } from './services/feedbackService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
 import {
   getCurrentSession,
@@ -76,6 +77,7 @@ function resolveRemoteSectionTimestamps(supabaseData) {
     choresUpdatedAt,
     recordsUpdatedAt,
     uiUpdatedAt: supabaseData.ui?.updatedAt || null,
+    feedbackUpdatedAt: maxIsoTimestamp((supabaseData.feedback || []).map(item => item.createdAt)),
     sprintsUpdatedAt,
     settingsUpdatedAt: supabaseData.settings?.updatedAt || null
   };
@@ -105,6 +107,7 @@ function toRemoteStorageShape(supabaseData) {
     chores: supabaseData.chores,
     records: supabaseData.records,
     ui: { activeRole: supabaseData.ui.activeRole },
+    feedback: supabaseData.feedback,
     sprints: supabaseData.sprints,
     settings: { sprintLengthDays: supabaseData.settings.sprintLengthDays }
   };
@@ -255,6 +258,7 @@ function hasMeaningfulLocalData(data) {
   return (
     (data.chores || []).length > 0 ||
     (data.records || []).length > 0 ||
+    (data.feedback || []).length > 0 ||
     (data.sprints || []).length > 0 ||
     (data.settings?.sprintLengthDays || 7) !== 7
   );
@@ -306,6 +310,7 @@ async function init() {
 
   const storageService = createStorageService();
   const sprintService = createSprintService({ storageService });
+  const feedbackService = createFeedbackService({ storageService });
   let activeTab = 'opgaver';
   const orphanedRecordService = createOrphanedRecordService();
   let lastRemoteSnapshotKey = null;
@@ -340,6 +345,7 @@ async function init() {
     const hasRemoteData =
       supabaseData.chores.length > 0 ||
       supabaseData.records.length > 0 ||
+      supabaseData.feedback.length > 0 ||
       supabaseData.sprints.length > 0 ||
       supabaseData.settings.sprintLengthDays !== 7;
 
@@ -385,6 +391,12 @@ async function init() {
         remoteShape.ui,
         localSyncMeta.uiUpdatedAt,
         remoteSectionTimestamps.uiUpdatedAt
+      ),
+      feedback: pickNewerSection(
+        localData.feedback,
+        remoteShape.feedback,
+        localSyncMeta.feedbackUpdatedAt,
+        remoteSectionTimestamps.feedbackUpdatedAt
       ),
       sprints: pickNewerSection(
         localData.sprints,
@@ -499,7 +511,11 @@ async function init() {
         : null
     };
 
-  renderState(viewRefs, choreState, { activeRole, activeTab, sprintUi, editState: sprintUi.editState });
+    const feedbackUi = {
+      entries: feedbackService.listEntries()
+    };
+
+  renderState(viewRefs, choreState, { activeRole, activeTab, sprintUi, feedbackUi, editState: sprintUi.editState });
     renderFeedback(viewRefs, message);
 
     const feedbackEl = viewRefs.feedback;
@@ -678,7 +694,7 @@ async function init() {
 
     activeRole = nextRole;
     persistActiveRole();
-    if (activeRole !== 'parent' && (activeTab === 'historik' || activeTab === 'sprint')) {
+    if (activeRole !== 'parent' && (activeTab === 'historik' || activeTab === 'sprint' || activeTab === 'feedback')) {
       activeTab = 'opgaver';
     }
     if (activeRole !== 'parent') {
@@ -696,7 +712,7 @@ async function init() {
     }
 
     const nextTab = button.getAttribute('data-tab');
-    if ((nextTab === 'historik' || nextTab === 'sprint') && activeRole !== 'parent') {
+    if ((nextTab === 'historik' || nextTab === 'sprint' || nextTab === 'feedback') && activeRole !== 'parent') {
       return;
     }
 
@@ -730,6 +746,30 @@ async function init() {
 
     refresh(result.message);
   });
+
+  if (viewRefs.feedbackForm) {
+    viewRefs.feedbackForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      const formData = new FormData(viewRefs.feedbackForm);
+      const result = feedbackService.createFeedbackEntry({
+        actorRole: activeRole,
+        title: formData.get('feedbackTitle'),
+        category: formData.get('feedbackCategory'),
+        message: formData.get('feedbackMessage')
+      });
+
+      if (result.ok) {
+        viewRefs.feedbackForm.reset();
+        if (viewRefs.feedbackCategoryInput) {
+          viewRefs.feedbackCategoryInput.value = 'general';
+        }
+        viewRefs.feedbackMessageInput?.focus();
+      }
+
+      refresh(result.message);
+    });
+  }
 
   viewRefs.choreList.addEventListener('click', (event) => {
     const actionButton = event.target.closest('button[data-action][data-chore-id], button[data-action][data-collab-id]');

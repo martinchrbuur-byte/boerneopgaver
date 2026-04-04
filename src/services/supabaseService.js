@@ -8,6 +8,7 @@ const schemaCapabilities = {
   choresMaxPerSprint: true,
   choresUnlimitedDailyCap: true,
   recordsSprintFields: true,
+  feedbackTable: true,
   appSettingsTable: true,
   sprintsTable: true
 };
@@ -128,6 +129,19 @@ function toAppSprint(sprint) {
     createdAt: sprint.created_at
   };
 }
+
+function toAppFeedback(entry) {
+  return {
+    id: entry.id,
+    title: entry.title || '',
+    message: entry.message,
+    category: entry.category || 'general',
+    createdAt: entry.created_at,
+    createdBy: entry.created_by || 'parent',
+    status: entry.status || 'open'
+  };
+}
+
 export function getSupabaseClient() {
   if (!isSupabaseConfigured()) {
     throw new Error('Supabase is not configured. Please set a publishable key.');
@@ -173,6 +187,25 @@ export async function initializeSupabaseData() {
     .single();
   if (uiError && !shouldIgnoreNotFound(uiError)) throw uiError;
 
+  let feedback = [];
+  if (schemaCapabilities.feedbackTable) {
+    const { data: feedbackData, error: feedbackError } = await client
+      .from('feedback')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (feedbackError) {
+      if (isMissingTableError(feedbackError, 'feedback')) {
+        schemaCapabilities.feedbackTable = false;
+      } else {
+        throw feedbackError;
+      }
+    } else {
+      feedback = feedbackData || [];
+    }
+  }
+
   let sprints = [];
   if (schemaCapabilities.sprintsTable) {
     const { data: sprintsData, error: sprintsError } = await client
@@ -217,6 +250,7 @@ export async function initializeSupabaseData() {
     ui: uiStateData
       ? { activeRole: uiStateData.active_role, updatedAt: uiStateData.updated_at || null }
       : { activeRole: 'parent', updatedAt: null },
+    feedback: (feedback || []).map(toAppFeedback),
     sprints: (sprints || []).map(toAppSprint),
     settings: settingsData
       ? {
@@ -316,6 +350,36 @@ export async function saveUiState(activeRole, userId) {
       { onConflict: 'id' }
     );
   throwIfError(error);
+}
+
+export async function saveFeedback(entries, userId) {
+  if (!schemaCapabilities.feedbackTable) {
+    return;
+  }
+
+  const client = getSupabaseClient();
+
+  const { error } = await client.from('feedback').upsert(
+    entries.map((entry) => ({
+      id: entry.id,
+      user_id: userId,
+      title: entry.title || '',
+      message: entry.message,
+      category: entry.category || 'general',
+      created_at: entry.createdAt,
+      created_by: entry.createdBy || 'parent',
+      status: entry.status || 'open'
+    })),
+    { onConflict: 'id' }
+  );
+
+  if (error) {
+    if (isMissingTableError(error, 'feedback')) {
+      schemaCapabilities.feedbackTable = false;
+      return;
+    }
+    throw error;
+  }
 }
 
 export async function saveSprints(sprints, userId) {

@@ -669,6 +669,53 @@ body {
   margin: 0 0 0.3rem;
 }
 
+.feedback-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.feedback-intro {
+  margin-top: 0;
+}
+
+.feedback-message-row {
+  grid-template-columns: 1fr;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 132px;
+  resize: vertical;
+  font: inherit;
+}
+
+.feedback-entry {
+  gap: 0.45rem;
+}
+
+.feedback-entry-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.feedback-category-badge {
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.feedback-entry-message {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
 .history-earnings {
   display: grid;
   grid-template-columns: repeat(2, minmax(140px, 1fr));

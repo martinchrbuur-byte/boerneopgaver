@@ -106,3 +106,22 @@ test('main view stacks recent completions below chores and marks sprint tab as p
     env.restore();
   }
 });
+
+test('main view renders parent feedback tab, form, and history area', () => {
+  const env = setupDom();
+
+  try {
+    const refs = createMainView(env.root);
+
+    const feedbackTab = env.root.querySelector('button[data-tab="feedback"]');
+    assert.ok(feedbackTab);
+    assert.ok(feedbackTab.classList.contains('tab-parent-only'));
+    assert.ok(refs.feedbackForm);
+    assert.ok(refs.feedbackTitleInput);
+    assert.ok(refs.feedbackCategoryInput);
+    assert.ok(refs.feedbackMessageInput);
+    assert.ok(refs.feedbackHistory);
+  } finally {
+    env.restore();
+  }
+});

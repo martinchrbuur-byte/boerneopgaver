@@ -59,6 +59,7 @@ export function createMainView(rootElement) {
       <nav class="tab-nav app-tab-nav" role="tablist" aria-label="Sektioner">
         <button class="tab-btn tab-active" role="tab" data-tab="opgaver" aria-selected="true">📋 Opgaver</button>
         <button class="tab-btn tab-parent-only" role="tab" data-tab="sprint" aria-selected="false">🏃 Sprint</button>
+        <button class="tab-btn tab-parent-only" role="tab" data-tab="feedback" aria-selected="false">💬 Feedback</button>
         <button class="tab-btn tab-parent-only" role="tab" data-tab="historik" aria-selected="false">📜 Historik</button>
       </nav>
 
@@ -166,6 +167,50 @@ export function createMainView(rootElement) {
         </section>
       </div>
 
+      <div id="tab-feedback" class="tab-panel" role="tabpanel" hidden>
+        <section class="card" aria-label="Send feedback">
+          <h2 class="section-title">💬 Forældre-feedback</h2>
+          <p class="chore-meta feedback-intro">Skriv ønsker, fejl eller idéer, så de kan bruges til senere implementering.</p>
+          <form id="feedback-form" class="feedback-form">
+            <div class="form-row">
+              <input
+                id="feedback-title-input"
+                class="input"
+                name="feedbackTitle"
+                type="text"
+                maxlength="120"
+                placeholder="Kort overskrift (valgfri)"
+              />
+              <select id="feedback-category-input" class="input" name="feedbackCategory">
+                <option value="general">Generelt</option>
+                <option value="bug">Fejl</option>
+                <option value="idea">Idé</option>
+                <option value="quality">Forbedring</option>
+                <option value="question">Spørgsmål</option>
+              </select>
+            </div>
+            <div class="form-row feedback-message-row">
+              <label class="assign-label" for="feedback-message-input">Hvad vil du gerne have ændret eller bygget?</label>
+              <textarea
+                id="feedback-message-input"
+                class="input textarea"
+                name="feedbackMessage"
+                rows="5"
+                maxlength="4000"
+                placeholder="Beskriv behov, problem eller idé"
+                required
+              ></textarea>
+            </div>
+            <button type="submit" class="button button-primary">Gem feedback</button>
+          </form>
+        </section>
+
+        <section class="card" aria-label="Tidligere feedback">
+          <h2 class="section-title">🗂️ Feedback-historik</h2>
+          <div id="feedback-history"></div>
+        </section>
+      </div>
+
       <div id="tab-historik" class="tab-panel" role="tabpanel" hidden>
         <section class="card" aria-label="Sprint-historik">
           <h2 class="section-title">📜 Sprint-historik</h2>
@@ -193,7 +238,13 @@ export function createMainView(rootElement) {
     tabNav: rootElement.querySelector('.tab-nav'),
     tabOpgaver: rootElement.querySelector('#tab-opgaver'),
     tabSprint: rootElement.querySelector('#tab-sprint'),
+    tabFeedback: rootElement.querySelector('#tab-feedback'),
     tabHistorik: rootElement.querySelector('#tab-historik'),
+    feedbackForm: rootElement.querySelector('#feedback-form'),
+    feedbackTitleInput: rootElement.querySelector('#feedback-title-input'),
+    feedbackCategoryInput: rootElement.querySelector('#feedback-category-input'),
+    feedbackMessageInput: rootElement.querySelector('#feedback-message-input'),
+    feedbackHistory: rootElement.querySelector('#feedback-history'),
     sprintTitle: rootElement.querySelector('#sprint-title'),
     sprintDates: rootElement.querySelector('#sprint-dates'),
     sprintDaysLeft: rootElement.querySelector('#sprint-days-left'),

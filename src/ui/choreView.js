@@ -40,6 +40,21 @@ function formatMoney(value) {
   return `${value.toFixed(2)} kr`;
 }
 
+function formatFeedbackCategory(category) {
+  switch (category) {
+    case 'bug':
+      return 'Fejl';
+    case 'idea':
+      return 'Idé';
+    case 'quality':
+      return 'Forbedring';
+    case 'question':
+      return 'Spørgsmål';
+    default:
+      return 'Generelt';
+  }
+}
+
 function asMoneyValue(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
@@ -48,6 +63,13 @@ function escapeAttribute(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
@@ -509,6 +531,7 @@ function renderTabs(viewRefs, activeTab, activeRole) {
 
   viewRefs.tabOpgaver.hidden = activeTab !== 'opgaver';
   viewRefs.tabSprint.hidden = activeTab !== 'sprint' || !isParent;
+  viewRefs.tabFeedback.hidden = activeTab !== 'feedback' || !isParent;
   viewRefs.tabHistorik.hidden = activeTab !== 'historik' || !isParent;
 }
 
@@ -567,7 +590,29 @@ function renderHistory(viewRefs, history) {
   `).join('');
 }
 
-export function renderState(viewRefs, state, { activeRole, activeTab, sprintUi, editState = null }) {
+function renderFeedbackHistory(viewRefs, entries) {
+  if (!viewRefs.feedbackHistory) {
+    return;
+  }
+
+  if (!entries || entries.length === 0) {
+    viewRefs.feedbackHistory.innerHTML = '<p class="chore-meta">Ingen feedback endnu.</p>';
+    return;
+  }
+
+  viewRefs.feedbackHistory.innerHTML = entries.map((entry) => `
+    <article class="history-item feedback-entry">
+      <div class="feedback-entry-header">
+        <h3>${escapeHtml(entry.title || 'Uden overskrift')}</h3>
+        <span class="feedback-category-badge">${formatFeedbackCategory(entry.category)}</span>
+      </div>
+      <p class="chore-meta">Sendt ${toDateTimeLabel(entry.createdAt)}</p>
+      <p class="feedback-entry-message">${escapeHtml(entry.message)}</p>
+    </article>
+  `).join('');
+}
+
+export function renderState(viewRefs, state, { activeRole, activeTab, sprintUi, feedbackUi, editState = null }) {
   renderMoneySliders(viewRefs, activeRole, sprintUi);
 
   viewRefs.addChoreSection.hidden = activeRole !== 'parent';
@@ -576,6 +621,7 @@ export function renderState(viewRefs, state, { activeRole, activeTab, sprintUi, 
   renderRoleSwitch(viewRefs, activeRole);
   renderTabs(viewRefs, activeTab, activeRole);
   renderSprint(viewRefs, sprintUi, activeRole);
+  renderFeedbackHistory(viewRefs, feedbackUi?.entries || []);
   renderHistory(viewRefs, sprintUi?.history || []);
   renderCollabInbox(viewRefs, state.pendingCollaborations ?? [], activeRole, state.chores);
 }

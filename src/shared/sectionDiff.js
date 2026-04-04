@@ -2,6 +2,7 @@ export const STORAGE_SECTION_KEYS = Object.freeze([
   'chores',
   'records',
   'ui',
+  'feedback',
   'sprints',
   'settings'
 ]);

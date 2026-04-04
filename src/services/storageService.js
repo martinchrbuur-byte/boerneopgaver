@@ -1,7 +1,7 @@
 import { isOnOrAfter, isValidIsoTimestamp, nowIsoTimestamp } from '../shared/dateTime.js';
 import { applySectionSyncTimestamps } from '../shared/sectionDiff.js';
 import { isSupabaseConfigured } from '../config/supabaseConfig.js';
-import { saveChores, saveRecords, saveUiState, saveSprints, saveSettings } from './supabaseService.js';
+import { saveChores, saveFeedback, saveRecords, saveUiState, saveSprints, saveSettings } from './supabaseService.js';
 import { createSyncQueue } from './syncQueueService.js';
 
 export const STORAGE_KEY = 'kids_chore_tracker_v1';
@@ -92,6 +92,20 @@ function isUiState(value) {
   );
 }
 
+function isFeedbackItem(value) {
+  return (
+    value &&
+    typeof value === 'object' &&
+    isNonEmptyString(value.id) &&
+    isNonEmptyString(value.message) &&
+    isValidIsoTimestamp(value.createdAt) &&
+    value.createdBy === 'parent' &&
+    (value.title === undefined || typeof value.title === 'string') &&
+    (value.category === undefined || isNonEmptyString(value.category)) &&
+    (value.status === undefined || value.status === 'open')
+  );
+}
+
 function createDefaultUiState() {
   return {
     activeRole: 'parent'
@@ -108,6 +122,7 @@ function createDefaultSyncMeta() {
     choresUpdatedAt: now,
     recordsUpdatedAt: now,
     uiUpdatedAt: now,
+    feedbackUpdatedAt: now,
     sprintsUpdatedAt: now,
     settingsUpdatedAt: now,
     lastLocalWriteAt: now,
@@ -120,6 +135,7 @@ function createEmptyPayload() {
     chores: [],
     records: [],
     ui: createDefaultUiState(),
+    feedback: [],
     sprints: [],
     settings: createDefaultSettings(),
     pendingCollaborations: [],
@@ -147,6 +163,7 @@ function isPayload(value) {
       (value.syncMeta.choresUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.choresUpdatedAt)) &&
       (value.syncMeta.recordsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.recordsUpdatedAt)) &&
       (value.syncMeta.uiUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.uiUpdatedAt)) &&
+      (value.syncMeta.feedbackUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.feedbackUpdatedAt)) &&
       (value.syncMeta.sprintsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.sprintsUpdatedAt)) &&
       (value.syncMeta.settingsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.settingsUpdatedAt)) &&
       (value.syncMeta.lastLocalWriteAt === undefined || isValidIsoTimestamp(value.syncMeta.lastLocalWriteAt)) &&
@@ -159,6 +176,7 @@ function isPayload(value) {
     Array.isArray(value.chores) &&
     Array.isArray(value.records) &&
     isUiState(value.ui) &&
+    Array.isArray(value.feedback) &&
     Array.isArray(value.sprints) &&
     value.sprints.every(isSprintItem) &&
     value.settings &&
@@ -168,6 +186,7 @@ function isPayload(value) {
     value.pendingCollaborations.every(isCollabItem) &&
     value.chores.every(isChoreItem) &&
     value.records.every(isChoreRecord) &&
+    value.feedback.every(isFeedbackItem) &&
     hasValidSyncMeta
   );
 }
@@ -200,6 +219,9 @@ function normalizePayload(value) {
       uiUpdatedAt: isValidIsoTimestamp(syncMeta.uiUpdatedAt)
         ? syncMeta.uiUpdatedAt
         : defaultSyncMeta.uiUpdatedAt,
+      feedbackUpdatedAt: isValidIsoTimestamp(syncMeta.feedbackUpdatedAt)
+        ? syncMeta.feedbackUpdatedAt
+        : defaultSyncMeta.feedbackUpdatedAt,
       sprintsUpdatedAt: isValidIsoTimestamp(syncMeta.sprintsUpdatedAt)
         ? syncMeta.sprintsUpdatedAt
         : defaultSyncMeta.sprintsUpdatedAt,
@@ -219,6 +241,7 @@ function normalizePayload(value) {
   if (isPayload(value)) {
     return {
       ...value,
+      feedback: Array.isArray(value.feedback) ? value.feedback.filter(isFeedbackItem) : [],
       syncMeta: normalizeSyncMeta(value.syncMeta)
     };
   }
@@ -244,6 +267,7 @@ function normalizePayload(value) {
       chores: migratedChores,
       records: migratedRecords,
       ui: isUiState(value.ui) ? value.ui : createDefaultUiState(),
+      feedback: Array.isArray(value.feedback) ? value.feedback.filter(isFeedbackItem) : [],
       sprints: Array.isArray(value.sprints) ? value.sprints.filter(isSprintItem) : [],
       settings: value.settings && Number.isInteger(value.settings.sprintLengthDays)
         ? value.settings
@@ -265,6 +289,7 @@ export function createStorageService({ storage = globalThis.localStorage, storag
   syncQueue.registerHandler('chores', data => saveChores(data, userId));
   syncQueue.registerHandler('records', data => saveRecords(data, userId));
   syncQueue.registerHandler('ui', data => saveUiState(data, userId));
+  syncQueue.registerHandler('feedback', data => saveFeedback(data, userId));
   syncQueue.registerHandler('sprints', data => saveSprints(data, userId));
   syncQueue.registerHandler('settings', data => saveSettings(data, userId));
 
@@ -338,6 +363,7 @@ export function createStorageService({ storage = globalThis.localStorage, storag
       syncQueue.enqueue('chores', normalizedNextData.chores);
       syncQueue.enqueue('records', normalizedNextData.records);
       syncQueue.enqueue('ui', normalizedNextData.ui.activeRole);
+      syncQueue.enqueue('feedback', normalizedNextData.feedback);
       syncQueue.enqueue('sprints', normalizedNextData.sprints);
       syncQueue.enqueue('settings', normalizedNextData.settings);
     }
