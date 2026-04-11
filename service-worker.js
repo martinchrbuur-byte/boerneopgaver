@@ -1,4 +1,4 @@
-const CACHE_NAME = 'opgavehelte-app-shell-v1';
+const CACHE_NAME = 'opgavehelte-app-shell-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -22,6 +22,7 @@ const APP_SHELL = [
   './src/shared/choreMarker.js',
   './src/shared/dateTime.js',
   './src/shared/id.js',
+  './src/shared/iconRegistry.js',
   './src/shared/sectionDiff.js',
   './src/ui/choreView.js',
   './src/ui/mainView.js',

@@ -5,6 +5,8 @@
  * Warns user about data inconsistencies
  */
 
+import { renderIcon, renderIconText } from '../shared/iconRegistry.js';
+
 export function createOrphanedRecordService() {
   /**
    * Find records that reference non-existent chores
@@ -87,7 +89,7 @@ export function createOrphanedRecordService() {
         margin: 12px 0;
         color: #856404;
       ">
-        <strong>⚠️ Data Issue Detected</strong>
+        <strong>${renderIcon('warning')} Data Issue Detected</strong>
         <p style="margin: 8px 0 0 0; font-size: 13px;">
           Found ${orphanSummary.count} records for deleted chores (${orphanSummary.orphanedValue.toFixed(2)} kr):
           ${byKidList}
@@ -102,7 +104,7 @@ export function createOrphanedRecordService() {
           font-size: 12px;
           font-weight: bold;
           margin-top: 8px;
-        ">🧹 Clean Up Now</button>
+        ">${renderIconText('cleanup', 'Clean Up Now')}</button>
       </div>
     `;
   }

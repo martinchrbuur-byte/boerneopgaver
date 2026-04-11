@@ -1,3 +1,5 @@
+import { renderIcon, renderIconText } from '../shared/iconRegistry.js';
+
 export function createMainView(rootElement) {
   if (!rootElement) {
     throw new Error('Root element is required.');
@@ -36,10 +38,10 @@ export function createMainView(rootElement) {
             Forældrevisning
           </button>
           <button type="button" class="button button-secondary" data-role="Hans Jørgen" aria-pressed="false">
-            👦 Hans Jørgen
+            ${renderIconText('kidHans', 'Hans Jørgen')}
           </button>
           <button type="button" class="button button-secondary" data-role="Andrea" aria-pressed="false">
-            👧 Andrea
+            ${renderIconText('kidAndrea', 'Andrea')}
           </button>
         </div>
       </section>
@@ -56,18 +58,18 @@ export function createMainView(rootElement) {
             </div>
           </div>
           <div class="status-icons" aria-hidden="true">
-            <span id="wallet-icon" class="wallet-icon" title="Lommepung">👛</span>
-            <span id="coin-icon" class="coin-icon" title="Optjente lommepenge" hidden>💰</span>
+            <span id="wallet-icon" class="wallet-icon" title="Lommepung">${renderIcon('wallet')}</span>
+            <span id="coin-icon" class="coin-icon" title="Optjente lommepenge" hidden>${renderIcon('coin')}</span>
           </div>
         </div>
         <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
       </section>
 
       <nav class="tab-nav app-tab-nav" role="tablist" aria-label="Sektioner">
-        <button class="tab-btn tab-active" role="tab" data-tab="opgaver" aria-selected="true">📋 Opgaver</button>
-        <button class="tab-btn tab-parent-only" role="tab" data-tab="periode" aria-selected="false">🗓️ Periode</button>
-        <button class="tab-btn tab-parent-only" role="tab" data-tab="feedback" aria-selected="false">💬 Feedback</button>
-        <button class="tab-btn tab-parent-only" role="tab" data-tab="historik" aria-selected="false">📜 Historik</button>
+        <button class="tab-btn tab-active" role="tab" data-tab="opgaver" aria-selected="true">${renderIconText('tabChores', 'Opgaver')}</button>
+        <button class="tab-btn tab-parent-only" role="tab" data-tab="periode" aria-selected="false">${renderIconText('tabPeriod', 'Periode')}</button>
+        <button class="tab-btn tab-parent-only" role="tab" data-tab="feedback" aria-selected="false">${renderIconText('tabFeedback', 'Feedback')}</button>
+        <button class="tab-btn tab-parent-only" role="tab" data-tab="historik" aria-selected="false">${renderIconText('tabHistory', 'Historik')}</button>
       </nav>
 
       <div id="tab-opgaver" class="tab-panel tab-panel-chores" role="tabpanel">
@@ -169,14 +171,14 @@ export function createMainView(rootElement) {
               <input id="period-length-input" class="input input-narrow" type="number" min="1" max="365" value="7" />
               <button id="period-length-save" class="button button-secondary" type="button">Gem</button>
             </div>
-            <button id="close-period-btn" class="button button-danger" type="button">✅ Luk periode og marker som betalt</button>
+            <button id="close-period-btn" class="button button-danger" type="button">${renderIconText('check', 'Luk periode og marker som betalt')}</button>
           </div>
         </section>
       </div>
 
       <div id="tab-feedback" class="tab-panel" role="tabpanel" hidden>
         <section class="card" aria-label="Send feedback">
-          <h2 class="section-title">💬 Forældre-feedback</h2>
+          <h2 class="section-title">${renderIconText('tabFeedback', 'Forældre-feedback')}</h2>
           <p class="chore-meta feedback-intro">Skriv ønsker, fejl eller idéer, så de kan bruges til senere implementering.</p>
           <form id="feedback-form" class="feedback-form">
             <div class="form-row">
@@ -213,14 +215,14 @@ export function createMainView(rootElement) {
         </section>
 
         <section class="card" aria-label="Tidligere feedback">
-          <h2 class="section-title">🗂️ Feedback-historik</h2>
+          <h2 class="section-title">${renderIconText('feedbackArchive', 'Feedback-historik')}</h2>
           <div id="feedback-history"></div>
         </section>
       </div>
 
       <div id="tab-historik" class="tab-panel" role="tabpanel" hidden>
         <section class="card" aria-label="Periode-historik">
-          <h2 class="section-title">📜 Periode-historik</h2>
+          <h2 class="section-title">${renderIconText('tabHistory', 'Periode-historik')}</h2>
           <div id="period-history"></div>
         </section>
       </div>

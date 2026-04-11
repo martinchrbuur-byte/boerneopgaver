@@ -4,6 +4,8 @@
  * Detects and recovers from corrupted localStorage data
  */
 
+import { renderIconText } from '../shared/iconRegistry.js';
+
 export function createCorruptionRecoveryService() {
   /**
    * Validate if stored data is recoverable or corrupted
@@ -56,7 +58,7 @@ export function createCorruptionRecoveryService() {
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       ">
         <div style="max-width: 600px; margin: 0 auto;">
-          <h2 style="margin: 0 0 10px 0; font-size: 18px;">⚠️ Data Recovery</h2>
+          <h2 style="margin: 0 0 10px 0; font-size: 18px;">${renderIconText('warning', 'Data Recovery')}</h2>
           <p style="margin: 0 0 15px 0; font-size: 14px;">Your app data appears to be corrupted. You can:</p>
           <div style="display: flex; gap: 10px;">
             <button onclick="recoverData('${storageKey}')" style="
@@ -67,7 +69,7 @@ export function createCorruptionRecoveryService() {
               border-radius: 4px;
               cursor: pointer;
               font-weight: bold;
-            ">🔄 Try to Recover</button>
+            ">${renderIconText('sync', 'Try to Recover')}</button>
             
             <button onclick="startFresh('${storageKey}')" style="
               padding: 10px 16px;
@@ -77,7 +79,7 @@ export function createCorruptionRecoveryService() {
               border-radius: 4px;
               cursor: pointer;
               font-weight: bold;
-            ">✨ Start Fresh</button>
+            ">${renderIconText('magic', 'Start Fresh')}</button>
             
             <button onclick="downloadBackup('${storageKey}')" style="
               padding: 10px 16px;
@@ -87,7 +89,7 @@ export function createCorruptionRecoveryService() {
               border-radius: 4px;
               cursor: pointer;
               font-weight: bold;
-            ">📥 Download Backup</button>
+            ">${renderIconText('feedbackArchive', 'Download Backup')}</button>
           </div>
           <p style="margin: 15px 0 0 0; font-size: 12px; opacity: 0.9;">
             Your recent changes are saved locally. If you just started the app, try recovering. Otherwise, starting fresh is recommended.

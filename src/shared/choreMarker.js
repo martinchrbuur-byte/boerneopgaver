@@ -1,62 +1,60 @@
 const CATEGORY_RULES = Object.freeze([
   {
     label: 'Søvn',
-    visuals: ['🛏️', '🛌', '🌙', '🧸'],
+    visuals: ['sleep', 'star'],
     keywords: ['make the bed', 'bed', 'seng', 'red seng', 'rede seng']
   },
   {
     label: 'Tandpleje',
-    visuals: ['😁', '🦷', '✨', '💧'],
+    visuals: ['dental', 'magic'],
     keywords: ['brush teeth', 'teeth', 'tooth', 'taender', 'tand', 'borst taender', 'børst tænder']
   },
   {
     label: 'Kæledyr',
-    visuals: ['🐶', '🐱', '🐾', '🦴'],
+    visuals: ['pet', 'star'],
     keywords: ['feed dog', 'feed the dog', 'dog', 'hund', 'fodr hund', 'fodre hund', 'pet', 'cat', 'kat', 'fish', 'fisk']
   },
   {
     label: 'Rengøring',
-    visuals: ['🧹', '🧽', '🪣', '✨'],
+    visuals: ['clean', 'magic'],
     keywords: ['clean', 'tidy', 'opryd', 'ryd op', 'stovsug', 'støvsug', 'sweep', 'vacuum', 'wash dishes', 'opvask']
   },
   {
     label: 'Tøj',
-    visuals: ['🧺', '👕', '🧦', '✨'],
+    visuals: ['clothes', 'star'],
     keywords: ['laundry', 'vasketoj', 'vasketøj', 'toj', 'tøj', 'clothes']
   },
   {
     label: 'Skole',
-    visuals: ['📚', '✏️', '📖', '🧠'],
+    visuals: ['school', 'idea'],
     keywords: ['homework', 'lektier', 'read', 'laes', 'læs', 'book']
   },
   {
     label: 'Bad',
-    visuals: ['🛁', '🚿', '🧼', '💧'],
+    visuals: ['bath', 'magic'],
     keywords: ['bath', 'shower', 'bad', 'vaske sig', 'wash up']
   },
   {
     label: 'Mad',
-    visuals: ['🍽️', '🥗', '🍳', '🥣'],
+    visuals: ['food', 'star'],
     keywords: ['table', 'dinner', 'meal', 'mad', 'bord', 'kokken', 'køkken']
   }
 ]);
 
 const FALLBACK_VISUALS = Object.freeze([
-  { emoji: '⭐', label: 'Stjerne' },
-  { emoji: '🎯', label: 'Mål' },
-  { emoji: '🚀', label: 'Mission' },
-  { emoji: '🧩', label: 'Puslespil' },
-  { emoji: '🎈', label: 'Sjov' },
-  { emoji: '🌈', label: 'Regnbue' },
-  { emoji: '🏆', label: 'Sejr' },
-  { emoji: '🎵', label: 'Rytme' },
-  { emoji: '🎨', label: 'Kreativ' },
-  { emoji: '🛠️', label: 'Byg' },
-  { emoji: '🧭', label: 'Eventyr' },
-  { emoji: '🎲', label: 'Spil' },
-  { emoji: '💡', label: 'Idé' },
-  { emoji: '✨', label: 'Magi' },
-  { emoji: '🥇', label: 'Guld' }
+  { iconKey: 'star', label: 'Stjerne' },
+  { iconKey: 'target', label: 'Mål' },
+  { iconKey: 'rocket', label: 'Mission' },
+  { iconKey: 'puzzle', label: 'Puslespil' },
+  { iconKey: 'balloon', label: 'Sjov' },
+  { iconKey: 'rainbow', label: 'Regnbue' },
+  { iconKey: 'trophy', label: 'Sejr' },
+  { iconKey: 'music', label: 'Rytme' },
+  { iconKey: 'paint', label: 'Kreativ' },
+  { iconKey: 'build', label: 'Byg' },
+  { iconKey: 'idea', label: 'Idé' },
+  { iconKey: 'magic', label: 'Magi' },
+  { iconKey: 'medal', label: 'Guld' }
 ]);
 
 function normalizeText(value) {
@@ -95,11 +93,11 @@ export function getChoreVisual(choreName) {
   if (keywordRule) {
     const visuals = Array.isArray(keywordRule.visuals) && keywordRule.visuals.length > 0
       ? keywordRule.visuals
-      : ['⭐'];
-    const emoji = visuals[hash % visuals.length];
+      : ['star'];
+    const iconKey = visuals[hash % visuals.length];
 
     return {
-      emoji,
+      iconKey,
       label: keywordRule.label,
       source: 'keyword'
     };
@@ -110,7 +108,7 @@ export function getChoreVisual(choreName) {
     : 0;
   const fallback = FALLBACK_VISUALS[fallbackIndex];
   return {
-    emoji: fallback.emoji,
+    iconKey: fallback.iconKey,
     label: fallback.label,
     source: 'fallback'
   };

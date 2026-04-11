@@ -31,7 +31,7 @@ test('keyword visuals are deterministic for the same chore name', () => {
   const first = getChoreVisual('Ryd op på værelset');
   const second = getChoreVisual('Ryd op på værelset');
 
-  assert.equal(first.emoji, second.emoji);
+  assert.equal(first.iconKey, second.iconKey);
   assert.equal(first.label, second.label);
   assert.equal(first.source, 'keyword');
 });
@@ -40,7 +40,7 @@ test('falls back deterministically for unknown chores', () => {
   const first = getChoreVisual('Sort my stickers');
   const second = getChoreVisual('Sort my stickers');
 
-  assert.equal(first.emoji, second.emoji);
+  assert.equal(first.iconKey, second.iconKey);
   assert.equal(first.source, 'fallback');
   assert.equal(second.source, 'fallback');
 });

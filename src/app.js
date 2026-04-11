@@ -477,7 +477,7 @@ async function init() {
       const result = choreService.acceptCollaboration(collabId, { actorRole: activeRole, periodId: ensureActivePeriodId() });
       if (result.ok) {
         showCoinToWallet(viewRefs);
-        showMascot(viewRefs.mascotOverlay, activeRole, 'Godt samarbejde! 🤝', { type: 'collab', duration: 3000 });
+        showMascot(viewRefs.mascotOverlay, activeRole, 'Godt samarbejde!', { type: 'collab', duration: 3000 });
       }
       return result;
     }
@@ -710,7 +710,7 @@ async function init() {
         const kidChores = chores.filter(c => c.assignedTo?.includes(activeRole));
         const allDone = kidChores.length > 0 && kidChores.every(c => c.isFullyDone || c.isCompleted);
         if (allDone) {
-          showMascot(viewRefs.mascotOverlay, activeRole, 'Alle opgaver klaret! 🎉', { type: 'celebrate', duration: 4000 });
+          showMascot(viewRefs.mascotOverlay, activeRole, 'Alle opgaver klaret!', { type: 'celebrate', duration: 4000 });
         } else {
           showMascot(viewRefs.mascotOverlay, activeRole, 'Flot klaret!');
         }
@@ -786,7 +786,7 @@ async function init() {
   viewRefs.closePeriodBtn.addEventListener('click', () => {
     const result = periodService.closePeriod(activeRole);
     if (result.ok) {
-      showMascot(viewRefs.mascotOverlay, 'parent', 'Periode betalt! 🎉', { type: 'confetti', duration: 4000 });
+      showMascot(viewRefs.mascotOverlay, 'parent', 'Periode betalt!', { type: 'confetti', duration: 4000 });
     }
     refresh(result.message);
   });
@@ -813,7 +813,7 @@ async function init() {
         ...data,
         records: cleaned
       }));
-      refresh(`Cleaned up ${orphanedCount} orphaned records ✓`);
+      refresh(`Cleaned up ${orphanedCount} orphaned records.`);
     } else {
       refresh('No orphaned records found');
     }

@@ -1,39 +1,38 @@
 import { toDateTimeLabel } from '../shared/dateTime.js';
 import { getChoreVisual } from '../shared/choreMarker.js';
+import { getIconSvgMarkup, renderIcon, renderIconText, setElementIcon } from '../shared/iconRegistry.js';
 
 const MASCOT_MAP = Object.freeze({
-  'Hans Jørgen': '🦕',
-  'Andrea': '🦄',
-  'parent': '🎉'
+  'Hans Jørgen': 'trophy',
+  'Andrea': 'heart',
+  'parent': 'party'
 });
 
-const MASCOT_EMOJI_SETS = Object.freeze({
+const MASCOT_ICON_SETS = Object.freeze({
   'Andrea': [
-    '🦄', '💖', '👧', '🌸', '🎀', '🧚', '🌷',
-    '💐', '🦋', '⭐', '💎', '🌟', '🎊', '🎁'
+    'heart', 'flower', 'gift', 'diamond', 'rainbow', 'magic'
   ],
   'Hans Jørgen': [
-    '🦕', '⚽', '👦', '🚀', '🛹', '🤖', '🎮',
-    '🏀', '🔧', '🛸', '🚗', '💪', '🎯', '🔥', '⚡', '🏆'
+    'rocket', 'target', 'trophy', 'build', 'ball', 'idea'
   ]
 });
 
-const lastMascotEmojiByRole = {
+const lastMascotIconByRole = {
   'Andrea': null,
   'Hans Jørgen': null
 };
 
 const BOTH_KIDS = ['Hans Jørgen', 'Andrea'];
 
-function getNextMascotEmoji(role) {
-  const emojiSet = MASCOT_EMOJI_SETS[role] ?? [];
-  if (emojiSet.length === 0) return '⭐';
+function getNextMascotIcon(role) {
+  const iconSet = MASCOT_ICON_SETS[role] ?? [];
+  if (iconSet.length === 0) return 'star';
 
-  const available = emojiSet.filter(e => e !== lastMascotEmojiByRole[role]);
-  const nextEmoji = available[Math.floor(Math.random() * available.length)];
+  const available = iconSet.filter(iconKey => iconKey !== lastMascotIconByRole[role]);
+  const nextIcon = available[Math.floor(Math.random() * available.length)];
 
-  lastMascotEmojiByRole[role] = nextEmoji;
-  return nextEmoji;
+  lastMascotIconByRole[role] = nextIcon;
+  return nextIcon;
 }
 
 function formatMoney(value) {
@@ -78,10 +77,10 @@ function renderEmptyChoreItem(text) {
   return `<li class="chore-item"><p class="chore-meta">${text}</p></li>`;
 }
 
-function renderCollabDecisionButtons(collabId, acceptText = '✅ Acceptér samarbejde', declineText = '❌ Afvis') {
+function renderCollabDecisionButtons(collabId, acceptText = 'Acceptér samarbejde', declineText = 'Afvis') {
   return `
-    <button class="button button-success" data-action="accept-collab" data-collab-id="${collabId}">${acceptText}</button>
-    <button class="button button-secondary" data-action="decline-collab" data-collab-id="${collabId}">${declineText}</button>
+    <button class="button button-success" data-action="accept-collab" data-collab-id="${collabId}">${renderIconText('check', acceptText)}</button>
+    <button class="button button-secondary" data-action="decline-collab" data-collab-id="${collabId}">${renderIconText('cancel', declineText)}</button>
   `;
 }
 
@@ -141,8 +140,8 @@ function renderParentEditFields(chore, draft) {
         </div>
       </div>
       <div class="actions">
-        <button class="button button-success" data-action="save-edit" data-chore-id="${chore.id}">💾 Gem</button>
-        <button class="button button-secondary" data-action="cancel-edit" data-chore-id="${chore.id}">✖️ Annuller</button>
+        <button class="button button-success" data-action="save-edit" data-chore-id="${chore.id}">${renderIconText('save', 'Gem')}</button>
+        <button class="button button-secondary" data-action="cancel-edit" data-chore-id="${chore.id}">${renderIconText('cancel', 'Annuller')}</button>
       </div>
     </div>
   `;
@@ -150,7 +149,7 @@ function renderParentEditFields(chore, draft) {
 
 function renderChoreMarker(choreName) {
   const visual = getChoreVisual(choreName);
-  return `<span class="chore-marker" role="img" aria-label="${visual.label} opgave">${visual.emoji}</span>`;
+  return `<span class="chore-marker" role="img" aria-label="${escapeAttribute(visual.label)} opgave" data-icon-key="${escapeAttribute(visual.iconKey)}">${getIconSvgMarkup(visual.iconKey)}</span>`;
 }
 
 function renderMoneySliders(viewRefs, activeRole, periodUi) {
@@ -257,30 +256,30 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
       let actionButtons = '';
       if (activeRole !== 'parent') {
         if (isFullyDone) {
-          actionButtons = `<button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">↩️ Fortryd</button>`;
+          actionButtons = `<button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">${renderIconText('undo', 'Fortryd')}</button>`;
         } else {
-          actionButtons = `<button class="button button-success" data-action="complete" data-chore-id="${chore.id}">✅ Fuldfør</button>`;
+          actionButtons = `<button class="button button-success" data-action="complete" data-chore-id="${chore.id}">${renderIconText('check', 'Fuldfør')}</button>`;
 
           if (isBothKidsChore && !pendingCollab) {
-            actionButtons += ` <button class="button button-collab" data-action="propose-collab" data-chore-id="${chore.id}">🤝 Gør det sammen</button>`;
+            actionButtons += ` <button class="button button-collab" data-action="propose-collab" data-chore-id="${chore.id}">${renderIconText('collab', 'Gør det sammen')}</button>`;
           }
 
           if (periodCount > 0) {
-            actionButtons += ` <button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">↩️ Fortryd</button>`;
+            actionButtons += ` <button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">${renderIconText('undo', 'Fortryd')}</button>`;
           }
         }
 
         if (pendingCollab) {
           if (isProposer) {
-            actionButtons += ` <span class="collab-pending-badge">⏳ Venter på den anden…</span>`;
+            actionButtons += ` <span class="collab-pending-badge">${renderIconText('pending', 'Venter på den anden…')}</span>`;
           } else {
             actionButtons = renderCollabDecisionButtons(pendingCollab.id);
           }
         }
       } else {
         actionButtons = `
-          <button class="button button-secondary" data-action="edit" data-chore-id="${chore.id}">✏️ Rediger</button>
-          <button class="button button-secondary" data-action="delete" data-chore-id="${chore.id}">🗑️ Slet</button>
+          <button class="button button-secondary" data-action="edit" data-chore-id="${chore.id}">${renderIconText('edit', 'Rediger')}</button>
+          <button class="button button-secondary" data-action="delete" data-chore-id="${chore.id}">${renderIconText('delete', 'Slet')}</button>
         `;
       }
 
@@ -361,17 +360,17 @@ export function renderCollabInbox(viewRefs, pendingCollaborations, activeRole, c
   viewRefs.collabInbox.hidden = false;
   viewRefs.collabInbox.innerHTML = `
     <div class="collab-inbox-card">
-      <h3 class="collab-inbox-title">🤝 Samarbejdsforslag</h3>
+      <h3 class="collab-inbox-title">${renderIconText('collab', 'Samarbejdsforslag')}</h3>
       ${incoming.map(collab => {
         const chore = choreMap.get(collab.choreId);
         const choreName = chore ? chore.name : 'Ukendt opgave';
         const choreMarker = renderChoreMarker(choreName);
-        const proposerEmoji = MASCOT_MAP[collab.proposedBy] ?? '👤';
+        const proposerIcon = MASCOT_MAP[collab.proposedBy] ?? 'user';
         return `
           <div class="collab-proposal">
-            <p>${proposerEmoji} <strong>${collab.proposedBy}</strong> vil gøre <strong>${choreMarker} ${choreName}</strong> sammen med dig!</p>
+            <p>${renderIcon(proposerIcon)} <strong>${collab.proposedBy}</strong> vil gøre <strong>${choreMarker} ${choreName}</strong> sammen med dig!</p>
             <div class="actions">
-              ${renderCollabDecisionButtons(collab.id, '✅ Gør det sammen!', '❌ Nej tak')}
+              ${renderCollabDecisionButtons(collab.id, 'Gør det sammen!', 'Nej tak')}
             </div>
           </div>
         `;
@@ -443,8 +442,7 @@ export function showCoinToWallet(viewRefs) {
 
   const coin = document.createElement('span');
   coin.className = 'coin-flight';
-  coin.textContent = '💰';
-  coin.setAttribute('aria-hidden', 'true');
+  setElementIcon(coin, 'coin', { decorative: true });
   coin.style.left = `${startX}px`;
   coin.style.top = `${startY}px`;
   statusRow.appendChild(coin);
@@ -478,7 +476,7 @@ export function showRoleSwitchWalk(mascotOverlay, role, { duration = 2000 } = {}
   const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
   const messageEl = mascotOverlay.querySelector('.mascot-message');
 
-  if (emojiEl) emojiEl.textContent = getNextMascotEmoji(role);
+  if (emojiEl) setElementIcon(emojiEl, getNextMascotIcon(role), { decorative: true });
   if (messageEl) messageEl.textContent = '';
 
   clearMascotTimers();
@@ -496,11 +494,11 @@ export function showRoleSwitchWalk(mascotOverlay, role, { duration = 2000 } = {}
 export function showMascot(mascotOverlay, activeRole, message, { type = 'pop', duration = 2500 } = {}) {
   if (!mascotOverlay) return;
 
-  const emoji = BOTH_KIDS.includes(activeRole) ? getNextMascotEmoji(activeRole) : MASCOT_MAP[activeRole] ?? '⭐';
+  const iconKey = BOTH_KIDS.includes(activeRole) ? getNextMascotIcon(activeRole) : MASCOT_MAP[activeRole] ?? 'star';
   const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
   const messageEl = mascotOverlay.querySelector('.mascot-message');
 
-  if (emojiEl) emojiEl.textContent = emoji;
+  if (emojiEl) setElementIcon(emojiEl, iconKey, { decorative: true });
   if (messageEl) messageEl.textContent = message;
 
   clearMascotTimers();
@@ -556,11 +554,11 @@ function renderPeriod(viewRefs, periodUi, activeRole) {
   viewRefs.periodEarnings.innerHTML = `
     <div class="earnings-grid">
       <div class="earning-card">
-        <h3>👦 Hans Jørgen</h3>
+        <h3>${renderIconText('kidHans', 'Hans Jørgen')}</h3>
         <p>${formatMoney(earnings['Hans Jørgen'] ?? 0)}</p>
       </div>
       <div class="earning-card">
-        <h3>👧 Andrea</h3>
+        <h3>${renderIconText('kidAndrea', 'Andrea')}</h3>
         <p>${formatMoney(earnings.Andrea ?? 0)}</p>
       </div>
     </div>
@@ -583,8 +581,8 @@ function renderHistory(viewRefs, history) {
       <h3>${period.startDate} → ${period.endDate}</h3>
       <p class="chore-meta">Betalt: ${period.paidAt ? toDateTimeLabel(period.paidAt) : 'Ukendt'}</p>
       <div class="history-earnings">
-        <p>👦 Hans Jørgen: <strong>${formatMoney(period.earnings['Hans Jørgen'] ?? 0)}</strong></p>
-        <p>👧 Andrea: <strong>${formatMoney(period.earnings.Andrea ?? 0)}</strong></p>
+        <p>${renderIconText('kidHans', 'Hans Jørgen:')} <strong>${formatMoney(period.earnings['Hans Jørgen'] ?? 0)}</strong></p>
+        <p>${renderIconText('kidAndrea', 'Andrea:')} <strong>${formatMoney(period.earnings.Andrea ?? 0)}</strong></p>
       </div>
     </article>
   `).join('');

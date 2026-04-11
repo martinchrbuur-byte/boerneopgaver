@@ -3,6 +3,8 @@
  * Displays sync state to user: syncing, failed, offline, etc.
  */
 
+import { renderIcon } from '../shared/iconRegistry.js';
+
 export function renderSyncStatusIndicator(syncState) {
   if (!syncState) {
     return ''; // No sync state available
@@ -26,24 +28,28 @@ export function renderSyncStatusIndicator(syncState) {
   // Determine status message and styling
   let html = '<div id="sync-status" class="sync-status-container';
   let statusText = '';
+  let leadingIcon = '';
 
   if (lastError) {
     const safeError = escapeHtml(lastError);
     const failedItemsLabel = failureCount > 0 ? `${failureCount} items failed` : 'sync issue detected';
-    statusText = isRetrying ? `⚠️ Sync Retry (${queueLength} pending)` : `⚠️ Sync Error (${failedItemsLabel})`;
+    statusText = isRetrying ? `Sync Retry (${queueLength} pending)` : `Sync Error (${failedItemsLabel})`;
+    leadingIcon = renderIcon('warning');
     html += ' sync-status-error">';
-    html += `<span class="sync-status-text">${statusText}</span><span class="sync-status-note">${safeError}</span>`;
+    html += `${leadingIcon}<span class="sync-status-text">${statusText}</span><span class="sync-status-note">${safeError}</span>`;
     if (failureCount > 0) {
       html += '<button type="button" onclick="retryFailedSync()" class="sync-status-button sync-status-button-error">Retry failed</button>';
     }
   } else if (isRetrying) {
-    statusText = `⏳ Syncing (Retry ${queueLength})`;
+    statusText = `Syncing (Retry ${queueLength})`;
+    leadingIcon = renderIcon('pending');
     html += ' sync-status-warning sync-status-pulse">';
-    html += `<span class="sync-status-text">${statusText}</span>`;
+    html += `${leadingIcon}<span class="sync-status-text">${statusText}</span>`;
   } else if (isPending) {
-    statusText = `🔄 Syncing (${queueLength} items)`;
+    statusText = `Syncing (${queueLength} items)`;
+    leadingIcon = renderIcon('sync');
     html += ' sync-status-info sync-status-pulse">';
-    html += `<span class="sync-status-text">${statusText}</span>`;
+    html += `${leadingIcon}<span class="sync-status-text">${statusText}</span>`;
   } else if (lastSuccessfulSync) {
     const syncTime = new Date(lastSuccessfulSync);
     const now = new Date();
@@ -53,9 +59,10 @@ export function renderSyncStatusIndicator(syncState) {
     if (diffMin > 0) {
       timeStr = diffMin === 1 ? '1 min ago' : `${diffMin} mins ago`;
     }
-    statusText = `✓ Synced ${timeStr}`;
+    statusText = `Synced ${timeStr}`;
+    leadingIcon = renderIcon('success');
     html += ' sync-status-success sync-status-muted">';
-    html += `<span class="sync-status-text">${statusText}</span>`;
+    html += `${leadingIcon}<span class="sync-status-text">${statusText}</span>`;
   } else {
     html += '" hidden>';
   }
@@ -86,7 +93,7 @@ export function renderLocalOnlyIndicator({ reason = 'missing-config' } = {}) {
   }
 
   return `<div id="local-only-status" class="sync-status-container sync-status-local-only">
-    ⚠️ ${message}
+    ${renderIcon('warning')} <span class="sync-status-text">${message}</span>
   </div>`;
 }
 
@@ -137,6 +144,6 @@ export function renderSyncControlPanel(syncState, onSyncClick) {
  */
 export function renderOfflineIndicator() {
   return `<div class="offline-indicator">
-    🔌 Offline Mode - Your changes are saved locally and will sync when online
+    ${renderIcon('offline')} Offline Mode - Your changes are saved locally and will sync when online
   </div>`;
 }
