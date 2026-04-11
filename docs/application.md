@@ -29,6 +29,7 @@ It allows:
 ## Tech Stack
 - Vanilla JavaScript (ES modules)
 - HTML + CSS
+- Progressive Web App shell (manifest + service worker)
 - Node built-in test runner (`node --test`)
 - No framework
 
@@ -42,6 +43,8 @@ It allows:
 - `src/shared/dateTime.js` — date parsing/validation/formatting helpers.
 - `src/shared/choreMarker.js` — deterministic chore-to-visual mapping helper.
 - `src/config/appConfig.js` — runtime config for provider selection.
+- `src/pwa/installPrompt.js` — standalone/install display mode and install prompt helpers.
+- `src/pwa/registerServiceWorker.js` — service worker registration helper.
 - `tests/regression/choreService.test.mjs` — service-level regression tests.
 
 ## Architectural Boundaries

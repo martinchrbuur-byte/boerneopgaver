@@ -46,36 +46,14 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Build static site
+        run: npm run build
+
       # - name: Enforce token gate
       #   run: npm run token:gate
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
-
-      - name: Prepare static files
-        env:
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-        run: |
-          mkdir -p dist/src
-          cp index.html dist/
-          if [ -f favicon.svg ]; then cp favicon.svg dist/; fi
-          cp -r src/* dist/src/
-          cp .nojekyll dist/
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          path = Path('dist/src/config/supabaseConfig.js')
-          content = path.read_text(encoding='utf-8')
-          publishable_key = os.environ.get('SUPABASE_PUBLISHABLE_KEY', '')
-
-          if publishable_key:
-              content = content.replace('__SUPABASE_PUBLISHABLE_KEY__', publishable_key)
-              path.write_text(content, encoding='utf-8')
-              print('Injected Supabase publishable key into deploy artifact.')
-          else:
-              print('No Supabase publishable key secret is set; leaving placeholder in config.')
-          PY
 
       - name: Auto-commit tracked changes
         run: |

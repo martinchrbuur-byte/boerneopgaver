@@ -26,7 +26,7 @@ Choose one option:
 
 ### Option C: Build-time injection (GitHub Pages)
 - [ ] Set `SUPABASE_PUBLISHABLE_KEY` in GitHub repository secrets
-- [ ] The deploy workflow replaces the placeholder automatically
+- [ ] Run `npm run build` locally or let CI build the deploy artifact automatically
 
 ## 3. Create Database Tables + Auth Policies
 - [ ] Open your Supabase dashboard
@@ -52,7 +52,7 @@ Choose one option:
 
 ## 6. Test the Integration
 - [ ] Install dependencies: `npm install`
-- [ ] Start your dev server or open index.html
+- [ ] Start a local static server over `http://localhost` or use the deployed site
 - [ ] Open browser DevTools (F12)
 - [ ] Check Console tab for "Connected to Supabase" message
 - [ ] Use app landing page to create account or log in
@@ -80,9 +80,10 @@ Choose one option:
 - [ ] Check Supabase project is correct (mfydufcizonxjmgyrwkj)
 - [ ] Try creating new chore to test sync
 
-### "Cannot GET /config" errors
-- [ ] If using Option B runtime config, make sure server is running
-- [ ] Check file paths are correct
+### App loads but install/PWA features do not appear
+- [ ] Make sure you are not using `file://`
+- [ ] Verify `manifest.webmanifest` and `service-worker.js` load successfully
+- [ ] Use HTTPS or `http://localhost`
 
 ### Row Level Security (RLS) Blocking Access
 - [ ] Go to Supabase Dashboard → Authentication → Policies
@@ -94,7 +95,7 @@ Choose one option:
 See [docs/deployment.md](deployment.md) for:
 - GitHub Pages deployment with Supabase
 - GitHub Secrets setup
-- Build scripts for injecting API keys safely
+- Static build and deploy artifact flow
 
 ## Architecture Overview
 
@@ -135,5 +136,6 @@ See [docs/deployment.md](deployment.md) for:
 
 - [ ] Test the integration with different browsers
 - [ ] Set up GitHub Actions for production deployment
+- [ ] Run `npm run build` before shipping changes
 - [ ] Configure authentication if multi-user support needed
 - [ ] Review [docs/supabase-setup.md](supabase-setup.md) for advanced options

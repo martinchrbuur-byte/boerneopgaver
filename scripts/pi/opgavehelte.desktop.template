@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Opgavehelte
+Comment=Start Opgavehelte automatically in Chromium app mode
+Exec=/usr/bin/chromium-browser --app=${APP_URL} --start-maximized --force-device-scale-factor=1 --disable-session-crashed-bubble --disable-infobars
+Icon=chromium-browser
+Terminal=false
+X-GNOME-Autostart-enabled=true
+StartupNotify=false
+Categories=Education;Utility;

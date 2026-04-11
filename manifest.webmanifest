@@ -1,0 +1,28 @@
+{
+  "id": "./?source=pwa",
+  "name": "Opgavehelte",
+  "short_name": "Opgavehelte",
+  "description": "Et børnevenligt opgave- og lommepengeoverblik med Supabase-sync.",
+  "lang": "da",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "categories": ["family", "productivity", "education"],
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

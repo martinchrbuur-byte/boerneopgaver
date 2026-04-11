@@ -78,6 +78,12 @@ test('main view renders hidden account controls for authenticated mode', () => {
     assert.match(refs.switchAccountButton.textContent, /Skift konto/i);
     assert.ok(refs.logoutButton);
     assert.match(refs.logoutButton.textContent, /Log ud/i);
+    assert.ok(refs.pwaInstallSection);
+    assert.equal(refs.pwaInstallSection.hidden, true);
+    assert.ok(refs.pwaInstallStatus);
+    assert.ok(refs.pwaInstallHint);
+    assert.ok(refs.pwaInstallButton);
+    assert.equal(refs.pwaInstallButton.hidden, true);
   } finally {
     env.restore();
   }

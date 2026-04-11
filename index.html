@@ -3,13 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="application-name" content="Opgavehelte" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>Opgavehelte</title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="stylesheet" href="./src/styles.css" />
     <script type="importmap">
       {
         "imports": {
-          "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.100.1"
+          "@supabase/supabase-js": "./src/vendor/supabase-js.js"
         }
       }
     </script>

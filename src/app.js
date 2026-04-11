@@ -1,6 +1,8 @@
 import { createOrphanedRecordService } from './services/orphanedRecordService.js';
 import { resolveAppConfig } from './config/appConfig.js';
 import { isSupabaseConfigured } from './config/supabaseConfig.js';
+import { applyDisplayMode, bindInstallPromptUi, createInstallPromptManager } from './pwa/installPrompt.js';
+import { registerServiceWorker } from './pwa/registerServiceWorker.js';
 import { createChoreService } from './services/choreService.js';
 import { createPeriodService } from './services/periodService.js';
 import { createFeedbackService } from './services/feedbackService.js';
@@ -24,6 +26,8 @@ const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
 let disposeActiveApp = null;
 let isAuthTransitioning = false;
+const installPromptManager = createInstallPromptManager();
+applyDisplayMode();
 
 function seedStarterChores(choreService) {
   const state = choreService.getState();
@@ -307,6 +311,14 @@ async function init() {
     viewRefs.accountSection.hidden = false;
     viewRefs.accountEmail.textContent = currentSession.user.email;
   }
+
+  cleanupTasks.push(bindInstallPromptUi({
+    manager: installPromptManager,
+    section: viewRefs.pwaInstallSection,
+    button: viewRefs.pwaInstallButton,
+    status: viewRefs.pwaInstallStatus,
+    hint: viewRefs.pwaInstallHint
+  }));
 
   const storageService = createStorageService();
   const periodService = createPeriodService({ storageService });
@@ -929,5 +941,7 @@ async function init() {
     }
   };
 }
+
+registerServiceWorker();
 
 document.addEventListener('DOMContentLoaded', init);

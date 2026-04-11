@@ -47,6 +47,16 @@ This app integrates with Supabase for cloud data persistence while maintaining o
 
 See [docs/supabase-setup.md](docs/supabase-setup.md) for complete setup instructions.
 
+## Build and Raspberry Pi app install
+
+- Build a deployable static site with local vendored browser dependencies:
+   - `npm run build`
+- The output is written to `dist/` and includes the PWA manifest and service worker.
+- For local browser testing, serve the app over `http://localhost` rather than opening `file://` directly.
+- Raspberry Pi install and boot guidance: [docs/raspberry-pi-pwa.md](docs/raspberry-pi-pwa.md)
+- Full Raspberry Pi installation walkthrough: [docs/raspberry-pi-install.md](docs/raspberry-pi-install.md)
+- Raspberry Pi rollout checklist: [docs/raspberry-pi-checklist.md](docs/raspberry-pi-checklist.md)
+
 ## Token Efficiency Gates
 
 - Generate a baseline snapshot:
@@ -65,5 +75,6 @@ See [docs/supabase-setup.md](docs/supabase-setup.md) for complete setup instruct
    - `npm run token:gate`
    - `npm run ci:secret-guard`
 - Deployment to GitHub Pages runs only after a PR is merged into `main`.
+- Validation now includes `npm run build` so the deployable static site stays healthy.
 - Deploy workflow auto-commits tracked file changes (if any) after all gates pass.
 - Secret safety is blocking: tracked `.env` files or obvious hardcoded secrets fail CI.

@@ -20,6 +20,13 @@ export function createMainView(rootElement) {
             <button id="logout-btn" type="button" class="button button-secondary">Log ud</button>
           </div>
         </div>
+        <div id="pwa-install-section" class="pwa-install-banner" hidden>
+          <div class="pwa-install-copy">
+            <p id="pwa-install-status" class="pwa-install-status"></p>
+            <p id="pwa-install-hint" class="pwa-install-hint"></p>
+          </div>
+          <button id="pwa-install-btn" type="button" class="button button-primary" hidden>Installer app</button>
+        </div>
       </header>
 
       <section class="card app-role-card app-top-card" aria-label="Rolleskift">
@@ -267,7 +274,11 @@ export function createMainView(rootElement) {
     accountSection: rootElement.querySelector('#account-section'),
     accountEmail: rootElement.querySelector('#account-email'),
     switchAccountButton: rootElement.querySelector('#switch-account-btn'),
-    logoutButton: rootElement.querySelector('#logout-btn')
+    logoutButton: rootElement.querySelector('#logout-btn'),
+    pwaInstallSection: rootElement.querySelector('#pwa-install-section'),
+    pwaInstallStatus: rootElement.querySelector('#pwa-install-status'),
+    pwaInstallHint: rootElement.querySelector('#pwa-install-hint'),
+    pwaInstallButton: rootElement.querySelector('#pwa-install-btn')
   };
 }
 

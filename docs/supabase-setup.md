@@ -164,7 +164,7 @@ Use one of these options:
 
 **Option 1: Build-time injection (GitHub Pages)**
 - Set `SUPABASE_PUBLISHABLE_KEY` in GitHub repository secrets
-- The deploy workflow injects it into the built artifact
+- Run `npm run build` locally or let CI build the deploy artifact; the key is injected into `dist/`
 
 **Option 2: Runtime key in browser**
 - Set `window.SUPABASE_PUBLISHABLE_KEY` in `index.html`
@@ -181,9 +181,11 @@ Use one of these options:
    - Add `window.SUPABASE_PUBLISHABLE_KEY` in `index.html`, or
    - Run `localStorage.setItem('SUPABASE_PUBLISHABLE_KEY', '...')` in DevTools
 
-3. Reload the app and sign in
+3. Serve the app over `http://localhost` or use the deployed site
 
-4. Data will now sync to both localStorage and Supabase automatically!
+4. Reload the app and sign in
+
+5. Data will now sync to both localStorage and Supabase automatically!
 
 ## Architecture:
 
@@ -198,6 +200,7 @@ Use one of these options:
 - Make sure your publishable key is valid
 - Verify the database tables exist in your Supabase project
 - Check Row Level Security (RLS) policies if data doesn't sync
+- Avoid validating auth or PWA behavior from `file://`; prefer HTTPS or `http://localhost`
 
 ## Key types
 

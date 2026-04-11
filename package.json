@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "npm run build:vendor && npm run build:static",
+    "build:static": "node scripts/build-static-site.mjs",
+    "build:vendor": "node scripts/build-supabase-vendor.mjs",
     "test": "node --test tests/regression/*.test.mjs",
     "test:regression": "node --test tests/regression/*.test.mjs",
     "test:supabase": "node scripts/test-supabase-connection.mjs",
@@ -15,6 +18,7 @@
     "token:gate": "node scripts/token-metrics.mjs gate --budget scripts/token-budgets.json"
   },
   "devDependencies": {
+    "esbuild": "^0.25.3",
     "jsdom": "^29.0.1"
   },
   "dependencies": {
