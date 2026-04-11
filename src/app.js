@@ -1,4 +1,5 @@
 import { createOrphanedRecordService } from './services/orphanedRecordService.js';
+import { createRemoteSnapshotKey, reconcileCloudSnapshot } from './services/remoteSyncService.js';
 import { resolveAppConfig } from './config/appConfig.js';
 import { isSupabaseConfigured } from './config/supabaseConfig.js';
 import { applyDisplayMode, bindInstallPromptUi, createInstallPromptManager } from './pwa/installPrompt.js';
@@ -20,7 +21,6 @@ import {
 import { createAuthView, createMainView } from './ui/mainView.js';
 import { renderFeedback, renderState, showCoinToWallet, showMascot, showRoleSwitchWalk } from './ui/choreView.js';
 import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
-import { hasSectionChanges } from './shared/sectionDiff.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
@@ -61,70 +61,6 @@ function calculateDaysLeft(endDate) {
   const end = new Date(endDate);
   const diffMs = end.setHours(23, 59, 59, 999) - now.getTime();
   return Math.max(0, Math.ceil(diffMs / (24 * 60 * 60 * 1000)));
-}
-
-function maxIsoTimestamp(values) {
-  const validValues = values.filter(value => typeof value === 'string' && value.length > 0);
-  if (validValues.length === 0) {
-    return null;
-  }
-
-  return validValues.reduce((latest, value) => (value > latest ? value : latest));
-}
-
-function resolveRemoteSectionTimestamps(supabaseData) {
-  const choresUpdatedAt = maxIsoTimestamp((supabaseData.chores || []).map(item => item.createdAt));
-  const recordsUpdatedAt = maxIsoTimestamp((supabaseData.records || []).flatMap(item => [item.completedAt, item.undoneAt]));
-  const periodsUpdatedAt = maxIsoTimestamp((supabaseData.periods || []).flatMap(item => [item.createdAt, item.paidAt]));
-
-  return {
-    choresUpdatedAt,
-    recordsUpdatedAt,
-    uiUpdatedAt: supabaseData.ui?.updatedAt || null,
-    feedbackUpdatedAt: maxIsoTimestamp((supabaseData.feedback || []).map(item => item.createdAt)),
-    periodsUpdatedAt,
-    settingsUpdatedAt: supabaseData.settings?.updatedAt || null
-  };
-}
-
-function pickNewerSection(localValue, remoteValue, localUpdatedAt, remoteUpdatedAt) {
-  if (!remoteUpdatedAt && localUpdatedAt) {
-    return localValue;
-  }
-
-  if (remoteUpdatedAt && !localUpdatedAt) {
-    return remoteValue;
-  }
-
-  if (!remoteUpdatedAt && !localUpdatedAt) {
-    const hasRemoteValues = Array.isArray(remoteValue)
-      ? remoteValue.length > 0
-      : Boolean(remoteValue && Object.keys(remoteValue).length > 0);
-    return hasRemoteValues ? remoteValue : localValue;
-  }
-
-  return remoteUpdatedAt >= localUpdatedAt ? remoteValue : localValue;
-}
-
-function toRemoteStorageShape(supabaseData) {
-  return {
-    chores: supabaseData.chores,
-    records: supabaseData.records,
-    ui: { activeRole: supabaseData.ui.activeRole },
-    feedback: supabaseData.feedback,
-    periods: supabaseData.periods,
-    settings: { periodLengthDays: supabaseData.settings.periodLengthDays }
-  };
-}
-
-function createRemoteSnapshotKey(supabaseData) {
-  const remoteShape = toRemoteStorageShape(supabaseData);
-  const remoteTimestamps = resolveRemoteSectionTimestamps(supabaseData);
-  return JSON.stringify({
-    remoteShape,
-    remoteTimestamps,
-    userId: supabaseData.userId
-  });
 }
 
 function authErrorMessage(error, fallback = 'Kunne ikke gennemføre login.') {
@@ -258,16 +194,6 @@ async function startAuthFlow(root, initialPage = resolveInitialAuthPage(), messa
   render(initialPage, message);
 }
 
-function hasMeaningfulLocalData(data) {
-  return (
-    (data.chores || []).length > 0 ||
-    (data.records || []).length > 0 ||
-    (data.feedback || []).length > 0 ||
-    (data.periods || []).length > 0 ||
-    (data.settings?.periodLengthDays || 7) !== 7
-  );
-}
-
 async function init() {
   const appConfig = resolveAppConfig();
 
@@ -349,86 +275,34 @@ async function init() {
 
     const localData = storageService.loadData();
     const syncState = storageService.getSyncState();
-    const hasUnsyncedLocalChanges =
-      (syncState?.queueLength || 0) > 0 ||
-      (syncState?.deadLetterCount || 0) > 0 ||
-      (syncState?.failureCount || 0) > 0;
+    const result = reconcileCloudSnapshot({
+      localData,
+      syncState,
+      supabaseData
+    });
 
-    const hasRemoteData =
-      supabaseData.chores.length > 0 ||
-      supabaseData.records.length > 0 ||
-      supabaseData.feedback.length > 0 ||
-      supabaseData.periods.length > 0 ||
-      supabaseData.settings.periodLengthDays !== 7;
-
-    if (!hasRemoteData) {
-      if (hasMeaningfulLocalData(localData)) {
+    if (result.action === 'claim-local') {
         storageService.updateData(data => ({ ...data }));
         await storageService.syncNow();
         return { applied: false, hasRemoteData: false, skippedReason: 'claimed-local' };
-      }
+    }
 
-      if (hasUnsyncedLocalChanges) {
+    if (result.action === 'sync-pending') {
         storageService.syncNow();
-      }
       return { applied: false, hasRemoteData: false, skippedReason: null };
     }
 
-    if (hasUnsyncedLocalChanges) {
+    if (result.action === 'skip-remote') {
       console.log('Skipping remote merge because unsynced local changes are pending.');
       storageService.syncNow();
       return { applied: false, hasRemoteData: true, skippedReason: 'unsynced-local' };
     }
 
-    const localSyncMeta = localData.syncMeta || {};
-    const remoteSectionTimestamps = resolveRemoteSectionTimestamps(supabaseData);
-    const remoteShape = toRemoteStorageShape(supabaseData);
-
-    const reconciledData = {
-      ...localData,
-      chores: pickNewerSection(
-        localData.chores,
-        remoteShape.chores,
-        localSyncMeta.choresUpdatedAt,
-        remoteSectionTimestamps.choresUpdatedAt
-      ),
-      records: pickNewerSection(
-        localData.records,
-        remoteShape.records,
-        localSyncMeta.recordsUpdatedAt,
-        remoteSectionTimestamps.recordsUpdatedAt
-      ),
-      ui: pickNewerSection(
-        localData.ui,
-        remoteShape.ui,
-        localSyncMeta.uiUpdatedAt,
-        remoteSectionTimestamps.uiUpdatedAt
-      ),
-      feedback: pickNewerSection(
-        localData.feedback,
-        remoteShape.feedback,
-        localSyncMeta.feedbackUpdatedAt,
-        remoteSectionTimestamps.feedbackUpdatedAt
-      ),
-      periods: pickNewerSection(
-        localData.periods,
-        remoteShape.periods,
-        localSyncMeta.periodsUpdatedAt,
-        remoteSectionTimestamps.periodsUpdatedAt
-      ),
-      settings: pickNewerSection(
-        localData.settings,
-        remoteShape.settings,
-        localSyncMeta.settingsUpdatedAt,
-        remoteSectionTimestamps.settingsUpdatedAt
-      )
-    };
-
-    if (!hasSectionChanges(localData, reconciledData)) {
+    if (result.action !== 'apply-remote' || !result.nextData) {
       return { applied: false, hasRemoteData: true, skippedReason: 'no-change' };
     }
 
-    storageService.saveDataWithOptions(reconciledData, {
+    storageService.saveDataWithOptions(result.nextData, {
       previousData: localData,
       source: 'remote',
       skipCloudSync: true

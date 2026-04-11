@@ -45,6 +45,38 @@ function throwIfError(error) {
   }
 }
 
+export function findMissingEntityIds(existingRows, nextRows) {
+  const nextIds = new Set(
+    (nextRows || [])
+      .map(row => row?.id)
+      .filter(id => typeof id === 'string' && id.length > 0)
+  );
+
+  return (existingRows || [])
+    .map(row => row?.id)
+    .filter(id => typeof id === 'string' && id.length > 0 && !nextIds.has(id));
+}
+
+async function pruneMissingRows(client, table, userId, nextRows) {
+  const { data: existingRows, error: loadError } = await client
+    .from(table)
+    .select('id')
+    .eq('user_id', userId);
+  throwIfError(loadError);
+
+  const missingIds = findMissingEntityIds(existingRows, nextRows);
+  if (missingIds.length === 0) {
+    return;
+  }
+
+  const { error: deleteError } = await client
+    .from(table)
+    .delete()
+    .eq('user_id', userId)
+    .in('id', missingIds);
+  throwIfError(deleteError);
+}
+
 function shouldIgnoreNotFound(error) {
   return error?.code === NOT_FOUND_CODE;
 }
@@ -313,7 +345,10 @@ export async function saveChores(chores, userId) {
 
   const runUpsert = async () => client.from('chores').upsert(buildPayload(), { onConflict: 'id' });
 
-  let { error } = await runUpsert();
+  let error = null;
+  if (chores.length > 0) {
+    ({ error } = await runUpsert());
+  }
 
   if (error && isMissingColumnError(error, 'chores', 'max_per_period')) {
     schemaCapabilities.choresMaxPerPeriod = false;
@@ -331,6 +366,7 @@ export async function saveChores(chores, userId) {
   }
 
   throwIfError(error);
+  await pruneMissingRows(client, 'chores', userId, chores);
 }
 
 export async function saveRecords(records, userId) {
@@ -360,7 +396,10 @@ export async function saveRecords(records, userId) {
 
   const runUpsert = async () => client.from('records').upsert(buildPayload(), { onConflict: 'id' });
 
-  let { error } = await runUpsert();
+  let error = null;
+  if (records.length > 0) {
+    ({ error } = await runUpsert());
+  }
 
   if (error && (
     isMissingColumnError(error, 'records', 'period_id') ||
@@ -381,6 +420,7 @@ export async function saveRecords(records, userId) {
   }
 
   throwIfError(error);
+  await pruneMissingRows(client, 'records', userId, records);
 }
 
 export async function saveUiState(activeRole, userId) {
@@ -402,19 +442,22 @@ export async function saveFeedback(entries, userId) {
 
   const client = getSupabaseClient();
 
-  const { error } = await client.from('feedback').upsert(
-    entries.map((entry) => ({
-      id: entry.id,
-      user_id: userId,
-      title: entry.title || '',
-      message: entry.message,
-      category: entry.category || 'general',
-      created_at: entry.createdAt,
-      created_by: entry.createdBy || 'parent',
-      status: entry.status || 'open'
-    })),
-    { onConflict: 'id' }
-  );
+  let error = null;
+  if (entries.length > 0) {
+    ({ error } = await client.from('feedback').upsert(
+      entries.map((entry) => ({
+        id: entry.id,
+        user_id: userId,
+        title: entry.title || '',
+        message: entry.message,
+        category: entry.category || 'general',
+        created_at: entry.createdAt,
+        created_by: entry.createdBy || 'parent',
+        status: entry.status || 'open'
+      })),
+      { onConflict: 'id' }
+    ));
+  }
 
   if (error) {
     if (isMissingTableError(error, 'feedback')) {
@@ -423,12 +466,12 @@ export async function saveFeedback(entries, userId) {
     }
     throw error;
   }
+
+  await pruneMissingRows(client, 'feedback', userId, entries);
 }
 
 export async function savePeriods(periods, userId) {
   const client = getSupabaseClient();
-
-  if (periods.length === 0) return;
 
   const payload = periods.map(period => ({
     id: period.id,
@@ -441,8 +484,12 @@ export async function savePeriods(periods, userId) {
   }));
 
   if (schemaCapabilities.periodsTable) {
-    const { error } = await client.from('periods').upsert(payload, { onConflict: 'id' });
+    let error = null;
+    if (payload.length > 0) {
+      ({ error } = await client.from('periods').upsert(payload, { onConflict: 'id' }));
+    }
     if (!error) {
+      await pruneMissingRows(client, 'periods', userId, periods);
       return;
     }
     if (!isMissingTableError(error, 'periods')) {
@@ -455,7 +502,10 @@ export async function savePeriods(periods, userId) {
     return;
   }
 
-  const { error } = await client.from('sprints').upsert(payload, { onConflict: 'id' });
+  let error = null;
+  if (payload.length > 0) {
+    ({ error } = await client.from('sprints').upsert(payload, { onConflict: 'id' }));
+  }
 
   if (error) {
     if (isMissingTableError(error, 'sprints')) {
@@ -464,6 +514,8 @@ export async function savePeriods(periods, userId) {
     }
     throw error;
   }
+
+  await pruneMissingRows(client, 'sprints', userId, periods);
 }
 
 export async function saveSprints(sprints, userId) {
