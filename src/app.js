@@ -293,13 +293,17 @@ async function init() {
     }
 
     if (result.action === 'skip-remote') {
-      console.log('Skipping remote merge because unsynced local changes are pending.');
+      console.log('Skipping remote merge because all changed sections are blocked by unsynced local changes.');
       storageService.syncNow();
       return { applied: false, hasRemoteData: true, skippedReason: 'unsynced-local' };
     }
 
     if (result.action !== 'apply-remote' || !result.nextData) {
       return { applied: false, hasRemoteData: true, skippedReason: 'no-change' };
+    }
+
+    if (Array.isArray(result.blockedSections) && result.blockedSections.length > 0) {
+      console.log('Applying remote changes for unblocked sections only:', result.blockedSections);
     }
 
     storageService.saveDataWithOptions(result.nextData, {

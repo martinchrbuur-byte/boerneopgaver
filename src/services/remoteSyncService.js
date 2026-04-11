@@ -1,5 +1,39 @@
 import { hasSectionChanges } from '../shared/sectionDiff.js';
 
+const REMOTE_SECTION_KEYS = Object.freeze([
+  'chores',
+  'records',
+  'ui',
+  'feedback',
+  'periods',
+  'settings'
+]);
+
+function normalizeSyncItemType(type) {
+  return REMOTE_SECTION_KEYS.includes(type) ? type : null;
+}
+
+function getBlockedSections(syncState) {
+  const blockedSections = new Set();
+  const pendingItems = Array.isArray(syncState?.pendingItems) ? syncState.pendingItems : [];
+  const failedItems = Array.isArray(syncState?.failedItems) ? syncState.failedItems : [];
+
+  for (const item of [...pendingItems, ...failedItems]) {
+    const sectionKey = normalizeSyncItemType(item?.type);
+    if (sectionKey) {
+      blockedSections.add(sectionKey);
+    }
+  }
+
+  if (blockedSections.size === 0 && ((syncState?.queueLength || 0) > 0 || (syncState?.failureCount || 0) > 0)) {
+    for (const sectionKey of REMOTE_SECTION_KEYS) {
+      blockedSections.add(sectionKey);
+    }
+  }
+
+  return blockedSections;
+}
+
 export function hasMeaningfulLocalData(data) {
   return (
     (data?.chores || []).length > 0 ||
@@ -33,10 +67,8 @@ export function reconcileCloudSnapshot({
   syncState,
   supabaseData
 }) {
-  const hasUnsyncedLocalChanges =
-    (syncState?.queueLength || 0) > 0 ||
-    (syncState?.deadLetterCount || 0) > 0 ||
-    (syncState?.failureCount || 0) > 0;
+  const blockedSections = getBlockedSections(syncState);
+  const hasUnsyncedLocalChanges = blockedSections.size > 0;
 
   const remoteShape = toRemoteStorageShape(supabaseData);
   const hasRemoteData = hasMeaningfulLocalData(remoteShape);
@@ -54,7 +86,21 @@ export function reconcileCloudSnapshot({
   }
 
   if (hasUnsyncedLocalChanges) {
-    return { action: 'skip-remote', hasRemoteData: true, nextData: null };
+    const nextData = {
+      ...localData
+    };
+
+    for (const sectionKey of REMOTE_SECTION_KEYS) {
+      nextData[sectionKey] = blockedSections.has(sectionKey)
+        ? localData[sectionKey]
+        : remoteShape[sectionKey];
+    }
+
+    if (!hasSectionChanges(localData, nextData)) {
+      return { action: 'skip-remote', hasRemoteData: true, nextData: null, blockedSections: [...blockedSections] };
+    }
+
+    return { action: 'apply-remote', hasRemoteData: true, nextData, blockedSections: [...blockedSections] };
   }
 
   const nextData = {

@@ -98,6 +98,40 @@ test('reconcileCloudSnapshot skips remote overwrite when local sync is pending',
   assert.equal(result.action, 'skip-remote');
 });
 
+test('reconcileCloudSnapshot still applies unblocked remote sections when another section has failed sync', () => {
+  const result = reconcileCloudSnapshot({
+    localData: {
+      chores: [{ id: 'local-1', name: 'Old' }],
+      records: [],
+      ui: { activeRole: 'parent' },
+      feedback: [],
+      periods: [],
+      settings: { periodLengthDays: 7 }
+    },
+    syncState: {
+      queueLength: 0,
+      deadLetterCount: 1,
+      failureCount: 1,
+      failedItems: [{ type: 'settings' }],
+      pendingItems: []
+    },
+    supabaseData: {
+      chores: [{ id: 'local-1', name: 'Updated from remote' }],
+      records: [],
+      ui: { activeRole: 'Andrea' },
+      feedback: [],
+      periods: [],
+      settings: { periodLengthDays: 14 },
+      userId: 'user-1'
+    }
+  });
+
+  assert.equal(result.action, 'apply-remote');
+  assert.equal(result.nextData.chores[0].name, 'Updated from remote');
+  assert.equal(result.nextData.ui.activeRole, 'Andrea');
+  assert.equal(result.nextData.settings.periodLengthDays, 7);
+});
+
 test('createRemoteSnapshotKey changes when remote shape changes', () => {
   const base = createRemoteSnapshotKey({
     chores: [{ id: 'chore-1', name: 'A' }],
