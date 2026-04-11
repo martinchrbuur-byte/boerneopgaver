@@ -146,6 +146,20 @@ Check that:
 - the deployed build has the correct Supabase publishable key
 - Supabase is reachable from Chromium on the Pi
 
+### Emoji are missing or show as boxes
+
+Check that:
+
+- Raspberry Pi OS has a color emoji font installed and available to Chromium
+- Chromium has been restarted after installing fonts
+- the system is reasonably up to date, because older Chromium and older font packages miss newer Unicode glyphs
+
+Recommended approach:
+
+- install a color emoji font package such as Noto Color Emoji on the Pi
+- restart Chromium after the font install
+- if some newer emoji still fail, redeploy the latest app build because the app now prefers safer fallback emoji on low-support devices
+
 ## Notes
 
 - The app shell is cached locally by the service worker.

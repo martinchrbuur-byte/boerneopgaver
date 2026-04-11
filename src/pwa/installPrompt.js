@@ -130,7 +130,7 @@ export function bindInstallPromptUi({ manager, section, button, status, hint }) 
 
   const render = (nextState) => {
     const { canInstall, isInstalled } = nextState;
-    const shouldShow = Boolean(canInstall || isInstalled || transientMessage);
+    const shouldShow = Boolean(canInstall || transientMessage);
     section.hidden = !shouldShow;
 
     if (!shouldShow) {
@@ -142,11 +142,12 @@ export function bindInstallPromptUi({ manager, section, button, status, hint }) 
     }
 
     if (isInstalled) {
-      status.textContent = 'Opgavehelte kører som installeret app på denne enhed.';
-      hint.textContent = 'Perfekt til Raspberry Pi-start og fuldskærmsbrug.';
-      button.hidden = true;
-      button.disabled = true;
       transientMessage = '';
+      section.hidden = true;
+      button.hidden = true;
+      button.disabled = false;
+      status.textContent = '';
+      hint.textContent = '';
       return;
     }
 

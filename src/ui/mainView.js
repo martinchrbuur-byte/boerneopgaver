@@ -39,7 +39,7 @@ export function createMainView(rootElement) {
             👦 Hans Jørgen
           </button>
           <button type="button" class="button button-secondary" data-role="Andrea" aria-pressed="false">
-            👱‍♀️ Andrea
+            👧 Andrea
           </button>
         </div>
       </section>
@@ -57,7 +57,7 @@ export function createMainView(rootElement) {
           </div>
           <div class="status-icons" aria-hidden="true">
             <span id="wallet-icon" class="wallet-icon" title="Lommepung">👛</span>
-            <span id="coin-icon" class="coin-icon" title="Optjente lommepenge" hidden>🪙</span>
+            <span id="coin-icon" class="coin-icon" title="Optjente lommepenge" hidden>💰</span>
           </div>
         </div>
         <p id="feedback" class="feedback" role="status" aria-live="polite"></p>

@@ -443,7 +443,7 @@ export function showCoinToWallet(viewRefs) {
 
   const coin = document.createElement('span');
   coin.className = 'coin-flight';
-  coin.textContent = '🪙';
+  coin.textContent = '💰';
   coin.setAttribute('aria-hidden', 'true');
   coin.style.left = `${startX}px`;
   coin.style.top = `${startY}px`;
@@ -560,7 +560,7 @@ function renderPeriod(viewRefs, periodUi, activeRole) {
         <p>${formatMoney(earnings['Hans Jørgen'] ?? 0)}</p>
       </div>
       <div class="earning-card">
-        <h3>👱‍♀️ Andrea</h3>
+        <h3>👧 Andrea</h3>
         <p>${formatMoney(earnings.Andrea ?? 0)}</p>
       </div>
     </div>
@@ -584,7 +584,7 @@ function renderHistory(viewRefs, history) {
       <p class="chore-meta">Betalt: ${period.paidAt ? toDateTimeLabel(period.paidAt) : 'Ukendt'}</p>
       <div class="history-earnings">
         <p>👦 Hans Jørgen: <strong>${formatMoney(period.earnings['Hans Jørgen'] ?? 0)}</strong></p>
-        <p>👱‍♀️ Andrea: <strong>${formatMoney(period.earnings.Andrea ?? 0)}</strong></p>
+        <p>👧 Andrea: <strong>${formatMoney(period.earnings.Andrea ?? 0)}</strong></p>
       </div>
     </article>
   `).join('');

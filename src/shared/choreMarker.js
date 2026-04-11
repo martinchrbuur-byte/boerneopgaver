@@ -6,7 +6,7 @@ const CATEGORY_RULES = Object.freeze([
   },
   {
     label: 'Tandpleje',
-    visuals: ['🪥', '🦷', '✨', '🫧'],
+    visuals: ['😁', '🦷', '✨', '💧'],
     keywords: ['brush teeth', 'teeth', 'tooth', 'taender', 'tand', 'borst taender', 'børst tænder']
   },
   {
@@ -21,7 +21,7 @@ const CATEGORY_RULES = Object.freeze([
   },
   {
     label: 'Tøj',
-    visuals: ['🧺', '👕', '🧦', '🫧'],
+    visuals: ['🧺', '👕', '🧦', '✨'],
     keywords: ['laundry', 'vasketoj', 'vasketøj', 'toj', 'tøj', 'clothes']
   },
   {
@@ -31,7 +31,7 @@ const CATEGORY_RULES = Object.freeze([
   },
   {
     label: 'Bad',
-    visuals: ['🛁', '🚿', '🧼', '🫧'],
+    visuals: ['🛁', '🚿', '🧼', '💧'],
     keywords: ['bath', 'shower', 'bad', 'vaske sig', 'wash up']
   },
   {
@@ -55,7 +55,7 @@ const FALLBACK_VISUALS = Object.freeze([
   { emoji: '🧭', label: 'Eventyr' },
   { emoji: '🎲', label: 'Spil' },
   { emoji: '💡', label: 'Idé' },
-  { emoji: '🪄', label: 'Magi' },
+  { emoji: '✨', label: 'Magi' },
   { emoji: '🥇', label: 'Guld' }
 ]);
 

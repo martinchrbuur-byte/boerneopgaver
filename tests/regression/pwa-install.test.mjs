@@ -123,7 +123,8 @@ test('bindInstallPromptUi toggles install and installed states', async () => {
   assert.equal(button.hidden, true);
 
   windowRef.dispatch('appinstalled');
-  assert.match(status.textContent, /installeret app/i);
+  assert.equal(section.hidden, true);
+  assert.equal(status.textContent, '');
   assert.equal(button.hidden, true);
 
   cleanup();
