@@ -4,8 +4,8 @@ const DEFAULT_CONFIG = Object.freeze({
   persistRoleSelection: true,
   spotify: Object.freeze({
     enabled: true,
-    connectUrl: '__SPOTIFY_CONNECT_URL__',
-    recommendationsEndpoint: '__SPOTIFY_RECOMMENDATIONS_ENDPOINT__'
+    connectUrl: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-connect',
+    recommendationsEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-recommendations'
   })
 });
 
