@@ -81,7 +81,7 @@ export function createMainView(rootElement) {
           ${renderIconText('offline', 'Offline – Spotify er midlertidigt utilgængelig.')}
         </div>
         <div id="spotify-actions" class="actions spotify-actions">
-          <a id="spotify-connect-link" class="button button-primary" href="#" target="_blank" rel="noopener noreferrer" hidden>Forbind Spotify</a>
+          <button id="spotify-connect-link" type="button" class="button button-primary" hidden>Forbind Spotify</button>
           <button id="spotify-refresh-btn" type="button" class="button button-secondary" hidden>Opdater anbefalinger</button>
         </div>
         <ul id="spotify-list" class="list spotify-list"></ul>

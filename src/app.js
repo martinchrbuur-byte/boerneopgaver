@@ -607,6 +607,25 @@ async function init() {
     });
   }
 
+  if (viewRefs.spotifyConnectLink) {
+    viewRefs.spotifyConnectLink.addEventListener('click', async () => {
+      const pending = spotifyService.beginAuthorization();
+      refresh();
+      const result = await pending;
+
+      if (result?.ok && typeof result.authorizationUrl === 'string' && result.authorizationUrl.length > 0) {
+        window.location.assign(result.authorizationUrl);
+        return;
+      }
+
+      if (isAppDisposed || !root?.isConnected || typeof document === 'undefined') {
+        return;
+      }
+
+      refresh(result?.message || 'Kunne ikke starte Spotify-login.');
+    });
+  }
+
   root.addEventListener('click', async (event) => {
     const actionElement = event.target.closest('[data-app-action]');
     if (!actionElement) {

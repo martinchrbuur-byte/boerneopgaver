@@ -664,9 +664,7 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
 
   if (viewRefs.spotifyConnectLink) {
     viewRefs.spotifyConnectLink.hidden = !canConnect;
-    if (canConnect) {
-      viewRefs.spotifyConnectLink.href = spotifyUi.connectUrl;
-    }
+    viewRefs.spotifyConnectLink.disabled = status === 'loading';
   }
 
   if (viewRefs.spotifyRefreshButton) {

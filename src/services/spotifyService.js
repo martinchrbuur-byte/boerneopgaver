@@ -59,6 +59,94 @@ export function createSpotifyService({
     return { ...tileState };
   }
 
+  async function beginAuthorization() {
+    if (!enabled) {
+      tileState = {
+        status: 'unavailable',
+        message: 'Spotify er slået fra.',
+        connectUrl,
+        items: []
+      };
+      return { ok: false, message: tileState.message, authorizationUrl: '' };
+    }
+
+    if (!isOnline()) {
+      return { ok: false, message: 'Du er offline. Prøv igen når forbindelsen er tilbage.', authorizationUrl: '' };
+    }
+
+    if (!connectUrl) {
+      tileState = {
+        status: 'unavailable',
+        message: 'Spotify connect-endpoint mangler i app-konfigurationen.',
+        connectUrl,
+        items: []
+      };
+      return { ok: false, message: tileState.message, authorizationUrl: '' };
+    }
+
+    tileState = {
+      ...tileState,
+      status: 'loading',
+      message: 'Forbereder Spotify-login...'
+    };
+
+    try {
+      const accessToken = typeof getAccessToken === 'function'
+        ? String(getAccessToken() || '')
+        : '';
+      const headers = {
+        Accept: 'application/json'
+      };
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+      }
+
+      const response = await fetchImpl(connectUrl, {
+        method: 'GET',
+        headers,
+        credentials: 'omit'
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      const authorizationUrl = sanitizeUrl(payload?.connectUrl);
+
+      if (!response.ok || !authorizationUrl) {
+        tileState = {
+          status: 'needs-auth',
+          message: typeof payload?.message === 'string' && payload.message.trim().length > 0
+            ? payload.message
+            : 'Forbind Spotify for at hente anbefalinger.',
+          connectUrl,
+          items: []
+        };
+
+        return { ok: false, message: tileState.message, authorizationUrl: '' };
+      }
+
+      tileState = {
+        status: 'needs-auth',
+        message: 'Åbner Spotify-login...',
+        connectUrl,
+        items: []
+      };
+
+      return {
+        ok: true,
+        message: tileState.message,
+        authorizationUrl
+      };
+    } catch (error) {
+      tileState = {
+        status: 'unavailable',
+        message: 'Kunne ikke starte Spotify-login lige nu.',
+        connectUrl,
+        items: []
+      };
+
+      return { ok: false, message: tileState.message, authorizationUrl: '' };
+    }
+  }
+
   async function refreshRecommendations() {
     if (!enabled) {
       tileState = {
@@ -152,6 +240,7 @@ export function createSpotifyService({
 
   return {
     getTileState,
-    refreshRecommendations
+    refreshRecommendations,
+    beginAuthorization
   };
 }
