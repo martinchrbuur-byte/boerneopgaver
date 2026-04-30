@@ -1,3 +1,5 @@
+import { getPublishableKey } from '../config/supabaseConfig.js';
+
 function sanitizeUrl(value) {
   if (typeof value !== 'string') {
     return '';
@@ -59,6 +61,26 @@ export function createSpotifyService({
     return { ...tileState };
   }
 
+  function buildSupabaseHeaders() {
+    const headers = {
+      Accept: 'application/json'
+    };
+
+    const accessToken = typeof getAccessToken === 'function'
+      ? String(getAccessToken() || '')
+      : '';
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    const publishableKey = String(getPublishableKey() || '').trim();
+    if (publishableKey) {
+      headers.apikey = publishableKey;
+    }
+
+    return headers;
+  }
+
   async function beginAuthorization() {
     if (!enabled) {
       tileState = {
@@ -91,15 +113,7 @@ export function createSpotifyService({
     };
 
     try {
-      const accessToken = typeof getAccessToken === 'function'
-        ? String(getAccessToken() || '')
-        : '';
-      const headers = {
-        Accept: 'application/json'
-      };
-      if (accessToken) {
-        headers.Authorization = `Bearer ${accessToken}`;
-      }
+      const headers = buildSupabaseHeaders();
 
       const response = await fetchImpl(connectUrl, {
         method: 'GET',
@@ -181,15 +195,7 @@ export function createSpotifyService({
     };
 
     try {
-      const accessToken = typeof getAccessToken === 'function'
-        ? String(getAccessToken() || '')
-        : '';
-      const headers = {
-        Accept: 'application/json'
-      };
-      if (accessToken) {
-        headers.Authorization = `Bearer ${accessToken}`;
-      }
+      const headers = buildSupabaseHeaders();
 
       const response = await fetchImpl(recommendationsEndpoint, {
         method: 'GET',
