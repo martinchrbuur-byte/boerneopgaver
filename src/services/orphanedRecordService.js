@@ -94,7 +94,7 @@ export function createOrphanedRecordService() {
           Found ${orphanSummary.count} records for deleted chores (${orphanSummary.orphanedValue.toFixed(2)} kr):
           ${byKidList}
         </p>
-        <button onclick="cleanupOrphanedRecords()" style="
+        <button type="button" data-app-action="cleanup-orphaned-records" style="
           padding: 6px 12px;
           background: #ffc107;
           color: #333;

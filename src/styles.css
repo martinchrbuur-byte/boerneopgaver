@@ -644,6 +644,28 @@ body {
   justify-content: space-between;
 }
 
+.app-spotify-card {
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.spotify-offline {
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.spotify-actions {
+  margin-top: 0.15rem;
+}
+
+.spotify-list {
+  margin-top: 0.2rem;
+}
+
+.spotify-list .chore-item {
+  margin-bottom: 0.45rem;
+}
+
 .form-row-3 {
   grid-template-columns: 1fr 120px auto;
 }
@@ -932,6 +954,12 @@ body {
 
   .app-status-card {
     grid-column: 6 / -1;
+    padding: 0.9rem 1rem;
+    align-self: stretch;
+  }
+
+  .app-spotify-card {
+    grid-column: 1 / -1;
     padding: 0.9rem 1rem;
     align-self: stretch;
   }

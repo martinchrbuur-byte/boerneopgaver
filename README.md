@@ -44,6 +44,19 @@ This app integrates with Supabase for cloud data persistence while maintaining o
 ### Environment Variables
 
 - `SUPABASE_PUBLISHABLE_KEY` - Your Supabase publishable key for the client app
+- `SPOTIFY_CONNECT_URL` - Public URL to your Spotify OAuth connect endpoint (Edge Function/web handler)
+- `SPOTIFY_RECOMMENDATIONS_ENDPOINT` - Public API endpoint returning Spotify recommendation tiles
+
+Spotify Edge Functions additionally require Supabase secrets:
+
+- `SPOTIFY_CLIENT_ID`
+- `SPOTIFY_CLIENT_SECRET`
+- `SPOTIFY_REDIRECT_URI`
+- `SPOTIFY_STATE_SECRET`
+- `SPOTIFY_SCOPES`
+- `SPOTIFY_POST_AUTH_REDIRECT_URL`
+
+Run `scripts/supabase-spotify-migration.sql` in Supabase SQL Editor before deploying Spotify functions.
 
 See [docs/supabase-setup.md](docs/supabase-setup.md) for complete setup instructions.
 

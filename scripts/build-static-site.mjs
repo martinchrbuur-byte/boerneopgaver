@@ -39,4 +39,19 @@ if (publishableKey) {
   console.log('No publishable key in env; dist build keeps placeholder config.');
 }
 
+const spotifyConnectUrl = process.env.SPOTIFY_CONNECT_URL || '';
+const spotifyRecommendationsEndpoint = process.env.SPOTIFY_RECOMMENDATIONS_ENDPOINT || '';
+
+if (spotifyConnectUrl || spotifyRecommendationsEndpoint) {
+  const appConfigPath = path.join(distSrcDir, 'config', 'appConfig.js');
+  const appConfigContent = await readFile(appConfigPath, 'utf8');
+  const nextContent = appConfigContent
+    .replace('__SPOTIFY_CONNECT_URL__', spotifyConnectUrl)
+    .replace('__SPOTIFY_RECOMMENDATIONS_ENDPOINT__', spotifyRecommendationsEndpoint);
+  await writeFile(appConfigPath, nextContent, 'utf8');
+  console.log('Injected Spotify public endpoints into dist build.');
+} else {
+  console.log('No Spotify endpoint env vars found; dist build keeps Spotify placeholders.');
+}
+
 console.log(`Static site prepared in ${path.relative(rootDir, distDir)}`);

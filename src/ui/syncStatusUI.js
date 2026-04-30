@@ -38,7 +38,7 @@ export function renderSyncStatusIndicator(syncState) {
     html += ' sync-status-error">';
     html += `${leadingIcon}<span class="sync-status-text">${statusText}</span><span class="sync-status-note">${safeError}</span>`;
     if (failureCount > 0) {
-      html += '<button type="button" onclick="retryFailedSync()" class="sync-status-button sync-status-button-error">Retry failed</button>';
+      html += '<button type="button" data-app-action="retry-failed-sync" class="sync-status-button sync-status-button-error">Retry failed</button>';
     }
   } else if (isRetrying) {
     statusText = `Syncing (Retry ${queueLength})`;
@@ -123,7 +123,7 @@ export function renderSyncControlPanel(syncState, onSyncClick) {
 
   // Sync button
   if (failureCount > 0 || queueLength > 0) {
-    html += `<button onclick="syncNow()" style="
+    html += `<button type="button" data-app-action="sync-now" style="
       padding: 8px 16px;
       background-color: ${failureCount > 0 ? '#f44' : '#4af'};
       color: white;

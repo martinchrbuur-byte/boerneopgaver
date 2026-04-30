@@ -7,6 +7,7 @@ import { registerServiceWorker } from './pwa/registerServiceWorker.js';
 import { createChoreService } from './services/choreService.js';
 import { createPeriodService } from './services/periodService.js';
 import { createFeedbackService } from './services/feedbackService.js';
+import { createSpotifyService } from './services/spotifyService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
 import {
   getCurrentSession,
@@ -249,6 +250,10 @@ async function init() {
   const storageService = createStorageService();
   const periodService = createPeriodService({ storageService });
   const feedbackService = createFeedbackService({ storageService });
+  const spotifyService = createSpotifyService({
+    spotifyConfig: appConfig.spotify,
+    getAccessToken: () => currentSession?.access_token || ''
+  });
   let activeTab = 'opgaver';
   const orphanedRecordService = createOrphanedRecordService();
   let lastRemoteSnapshotKey = null;
@@ -405,7 +410,9 @@ async function init() {
       entries: feedbackService.listEntries()
     };
 
-  renderState(viewRefs, choreState, { activeRole, activeTab, periodUi, feedbackUi, editState: periodUi.editState });
+    const spotifyUi = spotifyService.getTileState();
+
+  renderState(viewRefs, choreState, { activeRole, activeTab, periodUi, feedbackUi, spotifyUi, editState: periodUi.editState });
     renderFeedback(viewRefs, message);
 
     const feedbackEl = viewRefs.feedback;
@@ -452,9 +459,17 @@ async function init() {
     }
   }
 
+  async function refreshSpotifyRecommendations({ completionMessage = '' } = {}) {
+    const pending = spotifyService.refreshRecommendations();
+    refresh();
+    await pending;
+    refresh(completionMessage);
+  }
+
   seedStarterChores(choreService);
   persistActiveRole();
   refresh();
+  void refreshSpotifyRecommendations();
 
   if (isSupabaseConfigured()) {
     lastSyncStateSnapshot = createSyncStateSnapshot(storageService.getSyncState());
@@ -502,6 +517,7 @@ async function init() {
 
   if (isSupabaseConfigured()) {
     const authListener = onAuthStateChange(async (event, session) => {
+      currentSession = session ?? null;
       if ((event === 'SIGNED_OUT' || !session?.user?.id) && !isAuthTransitioning) {
         await moveToAuthScreen(root, 'Session udløbet. Log ind igen.');
       }
@@ -538,6 +554,7 @@ async function init() {
 
     const onOnline = async () => {
       try {
+        await spotifyService.refreshRecommendations();
         await storageService.syncNow();
         const supabaseData = await initializeSupabaseData();
         if (!supabaseData) {
@@ -570,6 +587,50 @@ async function init() {
       await signOutAndReturnToAuth('Log ind med en anden konto.');
     });
   }
+
+  if (viewRefs.spotifyRefreshButton) {
+    viewRefs.spotifyRefreshButton.addEventListener('click', async () => {
+      await refreshSpotifyRecommendations({ completionMessage: 'Spotify-anbefalinger opdateret.' });
+    });
+  }
+
+  root.addEventListener('click', async (event) => {
+    const actionElement = event.target.closest('[data-app-action]');
+    if (!actionElement) {
+      return;
+    }
+
+    const appAction = actionElement.getAttribute('data-app-action');
+    if (appAction === 'sync-now') {
+      console.log('Manual sync triggered by user');
+      await storageService.syncNow();
+      refresh('Syncing...');
+      return;
+    }
+
+    if (appAction === 'retry-failed-sync') {
+      console.log('Retry failed sync triggered by user');
+      await storageService.retryFailedSync();
+      refresh('Retrying failed sync items...');
+      return;
+    }
+
+    if (appAction === 'cleanup-orphaned-records') {
+      console.log('Cleanup orphaned records triggered');
+      const choreState = choreService.getState();
+      const { cleaned, orphanedCount } = orphanedRecordService.cleanOrphanedRecords(choreState.chores, choreState.records);
+
+      if (orphanedCount > 0) {
+        storageService.updateData((data) => ({
+          ...data,
+          records: cleaned
+        }));
+        refresh(`Cleaned up ${orphanedCount} orphaned records.`);
+      } else {
+        refresh('No orphaned records found');
+      }
+    }
+  });
 
   viewRefs.roleSwitch.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-role]');
@@ -790,34 +851,6 @@ async function init() {
     }
     refresh(result.message);
   });
-
-  window.syncNow = async () => {
-    console.log('Manual sync triggered by user');
-    await storageService.syncNow();
-    refresh('Syncing...');
-  };
-
-  window.retryFailedSync = async () => {
-    console.log('Retry failed sync triggered by user');
-    await storageService.retryFailedSync();
-    refresh('Retrying failed sync items...');
-  };
-
-  window.cleanupOrphanedRecords = () => {
-    console.log('Cleanup orphaned records triggered');
-    const choreState = choreService.getState();
-    const { cleaned, orphanedCount } = orphanedRecordService.cleanOrphanedRecords(choreState.chores, choreState.records);
-
-    if (orphanedCount > 0) {
-      storageService.updateData((data) => ({
-        ...data,
-        records: cleaned
-      }));
-      refresh(`Cleaned up ${orphanedCount} orphaned records.`);
-    } else {
-      refresh('No orphaned records found');
-    }
-  };
 }
 
 registerServiceWorker();

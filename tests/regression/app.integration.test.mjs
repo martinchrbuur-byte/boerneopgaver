@@ -46,6 +46,10 @@ async function withBootstrappedApp(run) {
     const feedbackTitleInput = document.querySelector('#feedback-title-input');
     const feedbackMessageInput = document.querySelector('#feedback-message-input');
     const feedbackHistory = document.querySelector('#feedback-history');
+    const spotifyStatus = document.querySelector('#spotify-status');
+    const spotifyConnectLink = document.querySelector('#spotify-connect-link');
+    const spotifyRefreshButton = document.querySelector('#spotify-refresh-btn');
+    const spotifyList = document.querySelector('#spotify-list');
 
     assert.ok(roleSwitch);
     assert.ok(addChoreForm);
@@ -60,6 +64,10 @@ async function withBootstrappedApp(run) {
     assert.ok(feedbackTitleInput);
     assert.ok(feedbackMessageInput);
     assert.ok(feedbackHistory);
+    assert.ok(spotifyStatus);
+    assert.ok(spotifyConnectLink);
+    assert.ok(spotifyRefreshButton);
+    assert.ok(spotifyList);
 
     await run({
       window,
@@ -75,7 +83,11 @@ async function withBootstrappedApp(run) {
       feedbackForm,
       feedbackTitleInput,
       feedbackMessageInput,
-      feedbackHistory
+      feedbackHistory,
+      spotifyStatus,
+      spotifyConnectLink,
+      spotifyRefreshButton,
+      spotifyList
     });
   } finally {
     dom.window.close();
@@ -274,5 +286,19 @@ test('kid cannot delete chores even if invalid action is triggered', async () =>
 
     click(window, spoofedDeleteButton);
     assert.match(feedback.textContent, /Kun forældrevisning kan tilføje opgaver/i);
+  });
+});
+
+test('spotify tile shows unavailable fallback when endpoint config is missing', async () => {
+  await withBootstrappedApp(async ({
+    spotifyStatus,
+    spotifyConnectLink,
+    spotifyRefreshButton,
+    spotifyList
+  }) => {
+    assert.match(spotifyStatus.textContent, /spotify/i);
+    assert.equal(spotifyConnectLink.hidden, true);
+    assert.equal(spotifyRefreshButton.hidden, true);
+    assert.match(spotifyList.textContent, /forbundet/i);
   });
 });

@@ -62,6 +62,28 @@ Set one of these in the browser context:
 
 This is useful for local testing without changing committed source files.
 
+## Spotify tile deployment (Edge Functions)
+
+Deploy the Spotify functions once per Supabase project:
+
+- `supabase functions deploy spotify-connect`
+- `supabase functions deploy spotify-callback`
+- `supabase functions deploy spotify-recommendations`
+
+Set these function secrets in Supabase before using the tile:
+
+- `SPOTIFY_CLIENT_ID`
+- `SPOTIFY_CLIENT_SECRET`
+- `SPOTIFY_REDIRECT_URI`
+- `SPOTIFY_STATE_SECRET`
+- `SPOTIFY_SCOPES`
+- `SPOTIFY_POST_AUTH_REDIRECT_URL`
+
+Set these public env vars for build-time injection into `dist/`:
+
+- `SPOTIFY_CONNECT_URL`
+- `SPOTIFY_RECOMMENDATIONS_ENDPOINT`
+
 ## Recommended deployment setup
 
 For GitHub Pages:

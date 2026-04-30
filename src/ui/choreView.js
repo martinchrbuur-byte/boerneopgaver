@@ -78,13 +78,16 @@ function renderEmptyChoreItem(text) {
 }
 
 function renderCollabDecisionButtons(collabId, acceptText = 'Acceptér samarbejde', declineText = 'Afvis') {
+  const safeCollabId = escapeAttribute(collabId);
+
   return `
-    <button class="button button-success" data-action="accept-collab" data-collab-id="${collabId}">${renderIconText('check', acceptText)}</button>
-    <button class="button button-secondary" data-action="decline-collab" data-collab-id="${collabId}">${renderIconText('cancel', declineText)}</button>
+    <button class="button button-success" data-action="accept-collab" data-collab-id="${safeCollabId}">${renderIconText('check', acceptText)}</button>
+    <button class="button button-secondary" data-action="decline-collab" data-collab-id="${safeCollabId}">${renderIconText('cancel', declineText)}</button>
   `;
 }
 
 function renderEditAssigneeCheckboxes(choreId, selectedKids = []) {
+  const safeChoreId = escapeAttribute(choreId);
   const selected = new Set(Array.isArray(selectedKids) ? selectedKids : []);
 
   return BOTH_KIDS.map((kid) => `
@@ -92,15 +95,17 @@ function renderEditAssigneeCheckboxes(choreId, selectedKids = []) {
       <input
         type="checkbox"
         data-edit-field="assignedTo"
-        data-chore-id="${choreId}"
-        data-kid="${kid}"
+        data-chore-id="${safeChoreId}"
+        data-kid="${escapeAttribute(kid)}"
         ${selected.has(kid) ? 'checked' : ''}
-      /> ${kid}
+      /> ${escapeHtml(kid)}
     </label>
   `).join('');
 }
 
 function renderParentEditFields(chore, draft) {
+  const safeChoreId = escapeAttribute(chore.id);
+
   return `
     <div class="chore-edit-fields">
       <div class="form-row form-row-3">
@@ -109,7 +114,7 @@ function renderParentEditFields(chore, draft) {
           type="text"
           maxlength="80"
           data-edit-field="name"
-          data-chore-id="${chore.id}"
+          data-chore-id="${safeChoreId}"
           value="${escapeAttribute(draft.name)}"
         />
         <div class="value-input-wrapper">
@@ -119,7 +124,7 @@ function renderParentEditFields(chore, draft) {
             min="0"
             step="0.5"
             data-edit-field="value"
-            data-chore-id="${chore.id}"
+            data-chore-id="${safeChoreId}"
             value="${escapeAttribute(draft.value)}"
           />
           <span class="value-unit">kr</span>
@@ -129,7 +134,7 @@ function renderParentEditFields(chore, draft) {
           type="number"
           min="0"
           data-edit-field="maxPerPeriod"
-          data-chore-id="${chore.id}"
+          data-chore-id="${safeChoreId}"
           value="${escapeAttribute(draft.maxPerPeriod)}"
         />
       </div>
@@ -140,8 +145,8 @@ function renderParentEditFields(chore, draft) {
         </div>
       </div>
       <div class="actions">
-        <button class="button button-success" data-action="save-edit" data-chore-id="${chore.id}">${renderIconText('save', 'Gem')}</button>
-        <button class="button button-secondary" data-action="cancel-edit" data-chore-id="${chore.id}">${renderIconText('cancel', 'Annuller')}</button>
+        <button class="button button-success" data-action="save-edit" data-chore-id="${safeChoreId}">${renderIconText('save', 'Gem')}</button>
+        <button class="button button-secondary" data-action="cancel-edit" data-chore-id="${safeChoreId}">${renderIconText('cancel', 'Annuller')}</button>
       </div>
     </div>
   `;
@@ -240,6 +245,8 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
 
   return filteredChores
     .map((chore) => {
+      const safeChoreId = escapeAttribute(chore.id);
+      const safeChoreName = escapeHtml(chore.name);
       const maxPerPeriod = chore.maxPerPeriod ?? 1;
       const periodCount = chore.periodCompletionCount ?? 0;
       const isFullyDone = chore.isFullyDone ?? false;
@@ -256,16 +263,16 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
       let actionButtons = '';
       if (activeRole !== 'parent') {
         if (isFullyDone) {
-          actionButtons = `<button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">${renderIconText('undo', 'Fortryd')}</button>`;
+          actionButtons = `<button class="button button-secondary" data-action="undo" data-chore-id="${safeChoreId}">${renderIconText('undo', 'Fortryd')}</button>`;
         } else {
-          actionButtons = `<button class="button button-success" data-action="complete" data-chore-id="${chore.id}">${renderIconText('check', 'Fuldfør')}</button>`;
+          actionButtons = `<button class="button button-success" data-action="complete" data-chore-id="${safeChoreId}">${renderIconText('check', 'Fuldfør')}</button>`;
 
           if (isBothKidsChore && !pendingCollab) {
-            actionButtons += ` <button class="button button-collab" data-action="propose-collab" data-chore-id="${chore.id}">${renderIconText('collab', 'Gør det sammen')}</button>`;
+            actionButtons += ` <button class="button button-collab" data-action="propose-collab" data-chore-id="${safeChoreId}">${renderIconText('collab', 'Gør det sammen')}</button>`;
           }
 
           if (periodCount > 0) {
-            actionButtons += ` <button class="button button-secondary" data-action="undo" data-chore-id="${chore.id}">${renderIconText('undo', 'Fortryd')}</button>`;
+            actionButtons += ` <button class="button button-secondary" data-action="undo" data-chore-id="${safeChoreId}">${renderIconText('undo', 'Fortryd')}</button>`;
           }
         }
 
@@ -278,8 +285,8 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
         }
       } else {
         actionButtons = `
-          <button class="button button-secondary" data-action="edit" data-chore-id="${chore.id}">${renderIconText('edit', 'Rediger')}</button>
-          <button class="button button-secondary" data-action="delete" data-chore-id="${chore.id}">${renderIconText('delete', 'Slet')}</button>
+          <button class="button button-secondary" data-action="edit" data-chore-id="${safeChoreId}">${renderIconText('edit', 'Rediger')}</button>
+          <button class="button button-secondary" data-action="delete" data-chore-id="${safeChoreId}">${renderIconText('delete', 'Slet')}</button>
         `;
       }
 
@@ -302,7 +309,7 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
         <li class="chore-item${isFullyDone ? ' chore-fully-done' : ''}">
           <div class="chore-main">
             <div class="chore-title-row">
-              <h3 class="chore-title">${choreMarker}<span>${chore.name}</span></h3>
+              <h3 class="chore-title">${choreMarker}<span>${safeChoreName}</span></h3>
               ${repeatBadge}
             </div>
             <div class="actions">${actionButtons}</div>
@@ -322,11 +329,12 @@ function renderRecentCompletions(items) {
   return items
     .map((item) => {
       const choreMarker = renderChoreMarker(item.choreName);
+      const safeChoreName = escapeHtml(item.choreName);
       const resetText = item.undoneAt ? ` (fortrudt ${toDateTimeLabel(item.undoneAt)})` : ' (aktiv)';
       return `
         <li class="chore-item">
           <p class="chore-meta">
-            ${choreMarker} ${item.choreName} fuldført ${toDateTimeLabel(item.completedAt)}${resetText}
+            ${choreMarker} ${safeChoreName} fuldført ${toDateTimeLabel(item.completedAt)}${resetText}
           </p>
         </li>
       `;
@@ -366,9 +374,11 @@ export function renderCollabInbox(viewRefs, pendingCollaborations, activeRole, c
         const choreName = chore ? chore.name : 'Ukendt opgave';
         const choreMarker = renderChoreMarker(choreName);
         const proposerIcon = MASCOT_MAP[collab.proposedBy] ?? 'user';
+        const safeProposedBy = escapeHtml(collab.proposedBy);
+        const safeChoreName = escapeHtml(choreName);
         return `
           <div class="collab-proposal">
-            <p>${renderIcon(proposerIcon)} <strong>${collab.proposedBy}</strong> vil gøre <strong>${choreMarker} ${choreName}</strong> sammen med dig!</p>
+            <p>${renderIcon(proposerIcon)} <strong>${safeProposedBy}</strong> vil gøre <strong>${choreMarker} ${safeChoreName}</strong> sammen med dig!</p>
             <div class="actions">
               ${renderCollabDecisionButtons(collab.id, 'Gør det sammen!', 'Nej tak')}
             </div>
@@ -578,7 +588,7 @@ function renderHistory(viewRefs, history) {
 
   viewRefs.periodHistory.innerHTML = history.map(period => `
     <article class="history-item">
-      <h3>${period.startDate} → ${period.endDate}</h3>
+      <h3>${escapeHtml(period.startDate)} → ${escapeHtml(period.endDate)}</h3>
       <p class="chore-meta">Betalt: ${period.paidAt ? toDateTimeLabel(period.paidAt) : 'Ukendt'}</p>
       <div class="history-earnings">
         <p>${renderIconText('kidHans', 'Hans Jørgen:')} <strong>${formatMoney(period.earnings['Hans Jørgen'] ?? 0)}</strong></p>
@@ -610,7 +620,74 @@ function renderFeedbackHistory(viewRefs, entries) {
   `).join('');
 }
 
-export function renderState(viewRefs, state, { activeRole, activeTab, periodUi, feedbackUi, editState = null }) {
+function renderSpotifyItems(items = []) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return renderEmptyChoreItem('Ingen anbefalinger endnu.');
+  }
+
+  return items.map((item) => {
+    const title = escapeHtml(item?.title || 'Ukendt titel');
+    const subtitle = escapeHtml(item?.subtitle || 'Spotify');
+    const href = escapeAttribute(item?.href || '');
+    const linkMarkup = href
+      ? `<a class="button button-secondary" href="${href}" target="_blank" rel="noopener noreferrer">Åbn i Spotify</a>`
+      : '';
+
+    return `
+      <li class="chore-item">
+        <div class="chore-main">
+          <h3 class="chore-title">${renderIcon('music')}<span>${title}</span></h3>
+          <div class="actions">${linkMarkup}</div>
+        </div>
+        <p class="chore-meta">${subtitle}</p>
+      </li>
+    `;
+  }).join('');
+}
+
+function renderSpotifyTile(viewRefs, spotifyUi = null) {
+  if (!viewRefs.spotifyStatus || !viewRefs.spotifyList) {
+    return;
+  }
+
+  const status = spotifyUi?.status ?? 'unavailable';
+  const message = spotifyUi?.message ?? 'Spotify er ikke sat op endnu.';
+  const isOffline = status === 'offline';
+  const isConnected = status === 'ready';
+  const canConnect = status === 'needs-auth' && typeof spotifyUi?.connectUrl === 'string' && spotifyUi.connectUrl.length > 0;
+  const canRefresh = isConnected;
+
+  viewRefs.spotifyStatus.textContent = message;
+  if (viewRefs.spotifyOffline) {
+    viewRefs.spotifyOffline.hidden = !isOffline;
+  }
+
+  if (viewRefs.spotifyConnectLink) {
+    viewRefs.spotifyConnectLink.hidden = !canConnect;
+    if (canConnect) {
+      viewRefs.spotifyConnectLink.href = spotifyUi.connectUrl;
+    }
+  }
+
+  if (viewRefs.spotifyRefreshButton) {
+    viewRefs.spotifyRefreshButton.hidden = !canRefresh;
+    viewRefs.spotifyRefreshButton.disabled = status === 'loading';
+  }
+
+  if (status === 'loading') {
+    viewRefs.spotifyList.innerHTML = renderEmptyChoreItem('Henter anbefalinger...');
+    return;
+  }
+
+  if (!isConnected) {
+    viewRefs.spotifyList.innerHTML = renderEmptyChoreItem('Spotify-data vises her, når kontoen er forbundet.');
+    return;
+  }
+
+  viewRefs.spotifyList.innerHTML = renderSpotifyItems(spotifyUi.items || []);
+}
+
+export function renderState(viewRefs, state, { activeRole, activeTab, periodUi, feedbackUi, spotifyUi = null, editState = null }) {
   renderMoneySliders(viewRefs, activeRole, periodUi);
 
   viewRefs.addChoreSection.hidden = activeRole !== 'parent';
@@ -622,6 +699,7 @@ export function renderState(viewRefs, state, { activeRole, activeTab, periodUi, 
   renderFeedbackHistory(viewRefs, feedbackUi?.entries || []);
   renderHistory(viewRefs, periodUi?.history || []);
   renderCollabInbox(viewRefs, state.pendingCollaborations ?? [], activeRole, state.chores);
+  renderSpotifyTile(viewRefs, spotifyUi);
 }
 
 export function renderFeedback(viewRefs, message) {

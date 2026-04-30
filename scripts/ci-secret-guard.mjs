@@ -71,8 +71,7 @@ function getSecretMatches(filePath, content) {
       if (
         line.includes('__SUPABASE_PUBLISHABLE_KEY__') ||
         line.includes('${{') ||
-        /your_(copied|actual|publishable)_key_here/i.test(line) ||
-        /sb_publishable_[A-Za-z0-9_\-]+/i.test(line)
+        /your_(copied|actual|publishable)_key_here/i.test(line)
       ) {
         continue;
       }

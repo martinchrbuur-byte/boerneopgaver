@@ -1,5 +1,14 @@
 import { renderIcon, renderIconText } from '../shared/iconRegistry.js';
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function createMainView(rootElement) {
   if (!rootElement) {
     throw new Error('Root element is required.');
@@ -63,6 +72,19 @@ export function createMainView(rootElement) {
           </div>
         </div>
         <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="card app-spotify-card app-top-card" aria-label="Spotify">
+        <h2 class="section-title">${renderIconText('music', 'Spotify')}</h2>
+        <p id="spotify-status" class="chore-meta">Forbinder ikke endnu.</p>
+        <div id="spotify-offline" class="spotify-offline" hidden>
+          ${renderIconText('offline', 'Offline – Spotify er midlertidigt utilgængelig.')}
+        </div>
+        <div id="spotify-actions" class="actions spotify-actions">
+          <a id="spotify-connect-link" class="button button-primary" href="#" target="_blank" rel="noopener noreferrer" hidden>Forbind Spotify</a>
+          <button id="spotify-refresh-btn" type="button" class="button button-secondary" hidden>Opdater anbefalinger</button>
+        </div>
+        <ul id="spotify-list" class="list spotify-list"></ul>
       </section>
 
       <nav class="tab-nav app-tab-nav" role="tablist" aria-label="Sektioner">
@@ -273,6 +295,12 @@ export function createMainView(rootElement) {
     statusRow: rootElement.querySelector('#status-row'),
     walletIcon: rootElement.querySelector('#wallet-icon'),
     coinIcon: rootElement.querySelector('#coin-icon'),
+    spotifyStatus: rootElement.querySelector('#spotify-status'),
+    spotifyOffline: rootElement.querySelector('#spotify-offline'),
+    spotifyActions: rootElement.querySelector('#spotify-actions'),
+    spotifyConnectLink: rootElement.querySelector('#spotify-connect-link'),
+    spotifyRefreshButton: rootElement.querySelector('#spotify-refresh-btn'),
+    spotifyList: rootElement.querySelector('#spotify-list'),
     accountSection: rootElement.querySelector('#account-section'),
     accountEmail: rootElement.querySelector('#account-email'),
     switchAccountButton: rootElement.querySelector('#switch-account-btn'),
@@ -364,6 +392,11 @@ export function createAuthView(rootElement, { page = 'welcome', message = '' } =
     throw new Error('Root element is required.');
   }
 
+  const safePage = escapeHtml(page);
+  const safeHeading = escapeHtml(authPageHeading(page));
+  const safeSubheading = escapeHtml(authPageSubheading(page));
+  const safeMessage = escapeHtml(message);
+
   rootElement.innerHTML = `
     <section class="auth-shell" aria-label="Konto og login">
       <header class="card">
@@ -375,10 +408,10 @@ export function createAuthView(rootElement, { page = 'welcome', message = '' } =
           </div>
         </div>
       </header>
-      <section class="card" data-auth-page="${page}">
-        <h2 class="section-title">${authPageHeading(page)}</h2>
-        <p class="app-subtitle auth-subtitle">${authPageSubheading(page)}</p>
-        <p id="auth-feedback" class="feedback" role="status" aria-live="polite">${message}</p>
+      <section class="card" data-auth-page="${safePage}">
+        <h2 class="section-title">${safeHeading}</h2>
+        <p class="app-subtitle auth-subtitle">${safeSubheading}</p>
+        <p id="auth-feedback" class="feedback" role="status" aria-live="polite">${safeMessage}</p>
         ${authPageBody(page)}
       </section>
     </section>

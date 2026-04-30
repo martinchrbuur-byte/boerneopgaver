@@ -84,6 +84,36 @@ CREATE POLICY "Users can delete own ui_state" ON ui_state
   FOR DELETE USING (auth.uid()::text = user_id);
 ```
 
+## Spotify tile backend (Edge Functions)
+
+For Spotify OAuth + recommendations, run this additional SQL migration in Supabase SQL Editor:
+
+- `scripts/supabase-spotify-migration.sql`
+
+Then deploy these Edge Functions from the repository root:
+
+```bash
+supabase functions deploy spotify-connect
+supabase functions deploy spotify-callback
+supabase functions deploy spotify-recommendations
+```
+
+Required function secrets:
+
+```bash
+supabase secrets set SPOTIFY_CLIENT_ID=your_spotify_client_id
+supabase secrets set SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+supabase secrets set SPOTIFY_REDIRECT_URI=https://<project-ref>.supabase.co/functions/v1/spotify-callback
+supabase secrets set SPOTIFY_STATE_SECRET=<long-random-value>
+supabase secrets set SPOTIFY_SCOPES="user-read-email user-read-private"
+supabase secrets set SPOTIFY_POST_AUTH_REDIRECT_URL=https://<your-app-origin>/
+```
+
+For local `npm run build` / CI artifact injection, also set public client env vars:
+
+- `SPOTIFY_CONNECT_URL=https://<project-ref>.supabase.co/functions/v1/spotify-connect`
+- `SPOTIFY_RECOMMENDATIONS_ENDPOINT=https://<project-ref>.supabase.co/functions/v1/spotify-recommendations`
+
 ## Important if you already ran the old public policy setup:
 
 If you already enabled RLS with public policies, replace them with auth-based policies once:
