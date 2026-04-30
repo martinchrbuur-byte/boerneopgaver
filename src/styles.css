@@ -783,6 +783,16 @@ body {
   background: #b91c1c;
 }
 
+.button-danger-outline {
+  background: transparent;
+  color: #dc2626;
+  border: 1.5px solid #dc2626;
+}
+
+.button-danger-outline:hover {
+  background: #fef2f2;
+}
+
 .period-header {
   display: flex;
   justify-content: space-between;

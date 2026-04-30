@@ -7,7 +7,8 @@ const DEFAULT_CONFIG = Object.freeze({
     connectUrl: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-connect',
     recommendationsEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-recommendations',
     tokenEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-token',
-    playbackEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-playback'
+    playbackEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-playback',
+    disconnectEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-disconnect'
   })
 });
 
@@ -30,13 +31,17 @@ function normalizeSpotifyConfig(spotifyConfig) {
   const playbackEndpoint = typeof spotifyConfig.playbackEndpoint === 'string'
     ? spotifyConfig.playbackEndpoint.trim()
     : fallback.playbackEndpoint;
+  const disconnectEndpoint = typeof spotifyConfig.disconnectEndpoint === 'string'
+    ? spotifyConfig.disconnectEndpoint.trim()
+    : fallback.disconnectEndpoint;
 
   return {
     enabled,
     connectUrl,
     recommendationsEndpoint,
     tokenEndpoint,
-    playbackEndpoint
+    playbackEndpoint,
+    disconnectEndpoint
   };
 }
 

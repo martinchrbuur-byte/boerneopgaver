@@ -72,6 +72,7 @@ export function createSpotifyService({
   const recommendationsEndpoint = sanitizeUrl(spotifyConfig?.recommendationsEndpoint);
   const tokenEndpoint = sanitizeUrl(spotifyConfig?.tokenEndpoint);
   const playbackEndpoint = sanitizeUrl(spotifyConfig?.playbackEndpoint);
+  const disconnectEndpoint = sanitizeUrl(spotifyConfig?.disconnectEndpoint);
 
   let tileState = {
     status: enabled ? (connectUrl ? 'needs-auth' : 'unavailable') : 'unavailable',
@@ -352,6 +353,36 @@ export function createSpotifyService({
     onStateChange = null;
   }
 
+  async function disconnect() {
+    // Stop and clean up SDK player
+    dispose();
+    cachedToken = null;
+    deviceId = '';
+
+    if (disconnectEndpoint) {
+      try {
+        await fetchImpl(disconnectEndpoint, {
+          method: 'POST',
+          headers: buildSupabaseHeaders(),
+          credentials: 'omit'
+        });
+      } catch {
+        // best-effort
+      }
+    }
+
+    tileState = {
+      status: connectUrl ? 'needs-auth' : 'unavailable',
+      message: 'Forbind Spotify for at hente anbefalinger.',
+      connectUrl,
+      items: [],
+      playerReady: false,
+      isPlaying: false,
+      currentTrack: null,
+      deviceId: ''
+    };
+  }
+
   async function beginAuthorization() {
     if (!enabled) {
       tileState = { ...tileState, status: 'unavailable', message: 'Spotify er slået fra.' };
@@ -490,6 +521,7 @@ export function createSpotifyService({
     getTileState,
     refreshRecommendations,
     beginAuthorization,
+    disconnect,
     initPlayer,
     play,
     togglePlay,

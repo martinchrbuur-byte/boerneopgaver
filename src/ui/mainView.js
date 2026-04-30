@@ -83,6 +83,7 @@ export function createMainView(rootElement) {
         <div id="spotify-actions" class="actions spotify-actions">
           <button id="spotify-connect-link" type="button" class="button button-primary" hidden>Forbind Spotify</button>
           <button id="spotify-refresh-btn" type="button" class="button button-secondary" hidden>Opdater anbefalinger</button>
+          <button id="spotify-disconnect-btn" type="button" class="button button-danger-outline" hidden>Afbryd Spotify</button>
         </div>
         <ul id="spotify-list" class="list spotify-list"></ul>
         <div id="spotify-player" class="spotify-player" hidden>
@@ -314,6 +315,7 @@ export function createMainView(rootElement) {
     spotifyActions: rootElement.querySelector('#spotify-actions'),
     spotifyConnectLink: rootElement.querySelector('#spotify-connect-link'),
     spotifyRefreshButton: rootElement.querySelector('#spotify-refresh-btn'),
+    spotifyDisconnectButton: rootElement.querySelector('#spotify-disconnect-btn'),
     spotifyList: rootElement.querySelector('#spotify-list'),
     spotifyPlayer: rootElement.querySelector('#spotify-player'),
     spotifyTrackImage: rootElement.querySelector('#spotify-track-image'),

@@ -679,6 +679,11 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
     viewRefs.spotifyRefreshButton.disabled = status === 'loading';
   }
 
+  if (viewRefs.spotifyDisconnectButton) {
+    viewRefs.spotifyDisconnectButton.hidden = !isConnected;
+    viewRefs.spotifyDisconnectButton.disabled = status === 'loading';
+  }
+
   // Player panel
   if (viewRefs.spotifyPlayer) {
     viewRefs.spotifyPlayer.hidden = !playerReady;

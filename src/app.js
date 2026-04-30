@@ -608,6 +608,13 @@ async function init() {
     });
   }
 
+  if (viewRefs.spotifyDisconnectButton) {
+    viewRefs.spotifyDisconnectButton.addEventListener('click', async () => {
+      await spotifyService.disconnect();
+      refresh('Spotify-forbindelsen er afbrudt.');
+    });
+  }
+
   if (viewRefs.spotifyRefreshButton) {
     viewRefs.spotifyRefreshButton.addEventListener('click', async () => {
       await refreshSpotifyRecommendations({ completionMessage: 'Spotify-anbefalinger opdateret.' });
