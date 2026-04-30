@@ -35,8 +35,8 @@ jobs:
       - name: Build static site
         env:
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          SPOTIFY_CONNECT_URL: ${{ vars.SPOTIFY_CONNECT_URL }}
-          SPOTIFY_RECOMMENDATIONS_ENDPOINT: ${{ vars.SPOTIFY_RECOMMENDATIONS_ENDPOINT }}
+          SPOTIFY_CONNECT_URL: ${{ vars.SPOTIFY_CONNECT_URL || secrets.SPOTIFY_CONNECT_URL }}
+          SPOTIFY_RECOMMENDATIONS_ENDPOINT: ${{ vars.SPOTIFY_RECOMMENDATIONS_ENDPOINT || secrets.SPOTIFY_RECOMMENDATIONS_ENDPOINT }}
         run: npm run build
 
       # - name: Enforce token gate
