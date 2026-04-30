@@ -539,14 +539,35 @@ export async function saveSettings(settings, userId) {
     period_length_days: settings.periodLengthDays
   };
 
-  let { error } = await client.from('app_settings').upsert(payload, { onConflict: 'user_id' });
+  async function saveByUpdateThenInsert(nextPayload) {
+    let { data: updatedRows, error: updateError } = await client
+      .from('app_settings')
+      .update(nextPayload)
+      .eq('user_id', userId)
+      .select('user_id');
+
+    if (updateError) {
+      return { error: updateError };
+    }
+
+    if (!Array.isArray(updatedRows) || updatedRows.length === 0) {
+      const { error: insertError } = await client
+        .from('app_settings')
+        .insert(nextPayload);
+      return { error: insertError || null };
+    }
+
+    return { error: null };
+  }
+
+  let { error } = await saveByUpdateThenInsert(payload);
 
   if (error && isMissingColumnError(error, 'app_settings', 'period_length_days')) {
     payload = {
       ...basePayload,
       sprint_length_days: settings.periodLengthDays
     };
-    ({ error } = await client.from('app_settings').upsert(payload, { onConflict: 'user_id' }));
+    ({ error } = await saveByUpdateThenInsert(payload));
   }
 
   if (error) {
