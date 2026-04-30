@@ -71,6 +71,7 @@ export function createSpotifyService({
   const connectUrl = sanitizeUrl(spotifyConfig?.connectUrl);
   const recommendationsEndpoint = sanitizeUrl(spotifyConfig?.recommendationsEndpoint);
   const tokenEndpoint = sanitizeUrl(spotifyConfig?.tokenEndpoint);
+  const playbackEndpoint = sanitizeUrl(spotifyConfig?.playbackEndpoint);
 
   let tileState = {
     status: enabled ? (connectUrl ? 'needs-auth' : 'unavailable') : 'unavailable',
@@ -276,24 +277,41 @@ export function createSpotifyService({
     onStateChange = callback;
   }
 
-  async function play(contextUri) {
-    if (!deviceId || !contextUri) {
+  async function sendPlaybackCommand(action, extra = {}) {
+    if (!playbackEndpoint) {
+      console.warn('Playback endpoint not configured.');
       return;
     }
 
     try {
-      const token = await getSpotifyToken();
-      await fetchImpl(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(deviceId)}`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ context_uri: contextUri })
+      const response = await fetchImpl(playbackEndpoint, {
+        method: 'POST',
+        headers: { ...buildSupabaseHeaders(), 'Content-Type': 'application/json' },
+        credentials: 'omit',
+        body: JSON.stringify({ action, deviceId, ...extra })
       });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (payload?.needsReconnect) {
+        // stored token lacks playback scopes – prompt reconnect
+        tileState = {
+          ...tileState,
+          status: 'needs-auth',
+          message: payload.message || 'Forbind Spotify igen for at aktivere afspilning.',
+          connectUrl: sanitizeUrl(payload.reconnectUrl) || connectUrl
+        };
+        if (typeof onStateChange === 'function') {
+          onStateChange();
+        }
+      }
     } catch (error) {
-      console.warn('Spotify play failed:', error);
+      console.warn(`Spotify ${action} failed:`, error);
     }
+  }
+
+  async function play(contextUri) {
+    await sendPlaybackCommand('play', contextUri ? { contextUri } : {});
   }
 
   async function togglePlay() {
@@ -302,34 +320,27 @@ export function createSpotifyService({
     }
 
     try {
-      await player.togglePlay();
+      // Get current state from SDK to know if playing or paused
+      const state = await player.getCurrentState();
+      if (!state) {
+        return;
+      }
+      if (state.paused) {
+        await sendPlaybackCommand('play');
+      } else {
+        await sendPlaybackCommand('pause');
+      }
     } catch (error) {
       console.warn('Spotify togglePlay failed:', error);
     }
   }
 
   async function next() {
-    if (!player) {
-      return;
-    }
-
-    try {
-      await player.nextTrack();
-    } catch (error) {
-      console.warn('Spotify nextTrack failed:', error);
-    }
+    await sendPlaybackCommand('next');
   }
 
   async function previous() {
-    if (!player) {
-      return;
-    }
-
-    try {
-      await player.previousTrack();
-    } catch (error) {
-      console.warn('Spotify previousTrack failed:', error);
-    }
+    await sendPlaybackCommand('previous');
   }
 
   function dispose() {
