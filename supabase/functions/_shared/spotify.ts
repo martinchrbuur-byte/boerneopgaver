@@ -93,7 +93,10 @@ export function buildSpotifyAuthorizeUrl(userId: string): Promise<string> {
   return createSpotifyState(userId).then((state) => {
     const clientId = requireEnv('SPOTIFY_CLIENT_ID');
     const redirectUri = requireEnv('SPOTIFY_REDIRECT_URI');
-    const scope = Deno.env.get('SPOTIFY_SCOPES')?.trim() || 'user-read-email user-read-private';
+    const configuredScopes = Deno.env.get('SPOTIFY_SCOPES')?.trim() || '';
+    const requiredScopes = ['user-read-email', 'user-read-private', 'streaming', 'user-modify-playback-state', 'user-read-playback-state', 'user-read-currently-playing'];
+    const scopeSet = new Set([...requiredScopes, ...(configuredScopes ? configuredScopes.split(/\s+/) : [])]);
+    const scope = [...scopeSet].join(' ');
 
     const url = new URL(`${SPOTIFY_ACCOUNTS_BASE}${SPOTIFY_AUTHORIZE_PATH}`);
     url.searchParams.set('response_type', 'code');
@@ -176,16 +179,20 @@ export async function fetchSpotifyUser(accessToken: string): Promise<{ id: strin
 
 export async function fetchFeaturedPlaylists(accessToken: string, { limit = 6, country = 'DK' } = {}) {
   function normalizeItems(items: unknown[]) {
-    return items.slice(0, limit).map((item: Record<string, unknown>) => ({
-      id: typeof item?.id === 'string' ? item.id : crypto.randomUUID(),
-      title: typeof item?.name === 'string' ? item.name : 'Ukendt playliste',
-      subtitle: typeof item?.description === 'string' && item.description.trim().length > 0
-        ? item.description
-        : 'Spotify-anbefaling',
-      href: typeof item?.external_urls === 'object' && item.external_urls && typeof (item.external_urls as Record<string, unknown>).spotify === 'string'
-        ? (item.external_urls as Record<string, string>).spotify
-        : ''
-    }));
+    return items.slice(0, limit).map((item: Record<string, unknown>) => {
+      const id = typeof item?.id === 'string' ? item.id : crypto.randomUUID();
+      return {
+        id,
+        title: typeof item?.name === 'string' ? item.name : 'Ukendt playliste',
+        subtitle: typeof item?.description === 'string' && item.description.trim().length > 0
+          ? item.description
+          : 'Spotify-anbefaling',
+        href: typeof item?.external_urls === 'object' && item.external_urls && typeof (item.external_urls as Record<string, unknown>).spotify === 'string'
+          ? (item.external_urls as Record<string, string>).spotify
+          : '',
+        uri: typeof item?.uri === 'string' ? item.uri : `spotify:playlist:${id}`
+      };
+    });
   }
 
   async function requestPlaylists(endpointUrl: URL): Promise<unknown[]> {

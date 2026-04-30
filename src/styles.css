@@ -666,6 +666,94 @@ body {
   margin-bottom: 0.45rem;
 }
 
+.spotify-player {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #f1f5f9;
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.spotify-now-playing {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.5rem;
+}
+
+.spotify-track-image {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.35rem;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.spotify-track-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.spotify-track-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #1e293b;
+}
+
+.spotify-track-artist {
+  font-size: 0.8rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotify-controls {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.spotify-ctrl-btn {
+  background: #1db954;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+  padding: 0;
+}
+
+.spotify-ctrl-btn:hover {
+  background: #17a34a;
+  transform: scale(1.08);
+}
+
+.spotify-ctrl-btn:active {
+  transform: scale(0.95);
+}
+
+.spotify-play-item-btn {
+  background: #1db954;
+  color: #fff;
+}
+
+.spotify-play-item-btn:hover {
+  background: #17a34a;
+}
+
 .form-row-3 {
   grid-template-columns: 1fr 120px auto;
 }

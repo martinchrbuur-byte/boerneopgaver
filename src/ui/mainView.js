@@ -85,6 +85,20 @@ export function createMainView(rootElement) {
           <button id="spotify-refresh-btn" type="button" class="button button-secondary" hidden>Opdater anbefalinger</button>
         </div>
         <ul id="spotify-list" class="list spotify-list"></ul>
+        <div id="spotify-player" class="spotify-player" hidden>
+          <div class="spotify-now-playing">
+            <img id="spotify-track-image" class="spotify-track-image" src="" alt="" hidden>
+            <div class="spotify-track-info">
+              <strong id="spotify-track-name" class="spotify-track-name"></strong>
+              <span id="spotify-track-artist" class="spotify-track-artist"></span>
+            </div>
+          </div>
+          <div class="spotify-controls">
+            <button id="spotify-prev-btn" type="button" class="spotify-ctrl-btn" title="Forrige">⏮</button>
+            <button id="spotify-play-pause-btn" type="button" class="spotify-ctrl-btn" title="Afspil/Pause">▶</button>
+            <button id="spotify-next-btn" type="button" class="spotify-ctrl-btn" title="Næste">⏭</button>
+          </div>
+        </div>
       </section>
 
       <nav class="tab-nav app-tab-nav" role="tablist" aria-label="Sektioner">
@@ -301,6 +315,13 @@ export function createMainView(rootElement) {
     spotifyConnectLink: rootElement.querySelector('#spotify-connect-link'),
     spotifyRefreshButton: rootElement.querySelector('#spotify-refresh-btn'),
     spotifyList: rootElement.querySelector('#spotify-list'),
+    spotifyPlayer: rootElement.querySelector('#spotify-player'),
+    spotifyTrackImage: rootElement.querySelector('#spotify-track-image'),
+    spotifyTrackName: rootElement.querySelector('#spotify-track-name'),
+    spotifyTrackArtist: rootElement.querySelector('#spotify-track-artist'),
+    spotifyPlayPauseBtn: rootElement.querySelector('#spotify-play-pause-btn'),
+    spotifyPrevBtn: rootElement.querySelector('#spotify-prev-btn'),
+    spotifyNextBtn: rootElement.querySelector('#spotify-next-btn'),
     accountSection: rootElement.querySelector('#account-section'),
     accountEmail: rootElement.querySelector('#account-email'),
     switchAccountButton: rootElement.querySelector('#switch-account-btn'),

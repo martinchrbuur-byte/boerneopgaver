@@ -18,8 +18,47 @@ function normalizeItem(item) {
     id: typeof item?.id === 'string' ? item.id : '',
     title: typeof item?.title === 'string' ? item.title : 'Ukendt titel',
     subtitle: typeof item?.subtitle === 'string' ? item.subtitle : 'Spotify',
-    href: sanitizeUrl(item?.href)
+    href: sanitizeUrl(item?.href),
+    uri: typeof item?.uri === 'string' ? item.uri : ''
   };
+}
+
+let sdkLoadPromise = null;
+
+function loadSpotifySdk() {
+  if (sdkLoadPromise) {
+    return sdkLoadPromise;
+  }
+
+  sdkLoadPromise = new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') {
+      reject(new Error('No window context.'));
+      return;
+    }
+
+    if (window.Spotify) {
+      resolve();
+      return;
+    }
+
+    const existingCallback = window.onSpotifyWebPlaybackSDKReady;
+    window.onSpotifyWebPlaybackSDKReady = () => {
+      if (typeof existingCallback === 'function') {
+        existingCallback();
+      }
+      resolve();
+    };
+
+    const script = document.createElement('script');
+    script.src = 'https://sdk.scdn.co/spotify-player.js';
+    script.onerror = () => {
+      sdkLoadPromise = null;
+      reject(new Error('Failed to load Spotify Web Playback SDK.'));
+    };
+    document.head.appendChild(script);
+  });
+
+  return sdkLoadPromise;
 }
 
 export function createSpotifyService({
@@ -31,6 +70,7 @@ export function createSpotifyService({
   const enabled = spotifyConfig?.enabled !== false;
   const connectUrl = sanitizeUrl(spotifyConfig?.connectUrl);
   const recommendationsEndpoint = sanitizeUrl(spotifyConfig?.recommendationsEndpoint);
+  const tokenEndpoint = sanitizeUrl(spotifyConfig?.tokenEndpoint);
 
   let tileState = {
     status: enabled ? (connectUrl ? 'needs-auth' : 'unavailable') : 'unavailable',
@@ -38,14 +78,24 @@ export function createSpotifyService({
       ? (connectUrl ? 'Forbind Spotify for at hente anbefalinger.' : 'Spotify er ikke sat op endnu.')
       : 'Spotify er slået fra.',
     connectUrl,
-    items: []
+    items: [],
+    playerReady: false,
+    isPlaying: false,
+    currentTrack: null,
+    deviceId: ''
   };
+
+  // SDK player state
+  let player = null;
+  let deviceId = '';
+  let cachedToken = null; // { token, expiresAt (ms) }
+  let playerInitPromise = null;
+  let onStateChange = null;
 
   function isOnline() {
     if (!navigatorRef || typeof navigatorRef.onLine !== 'boolean') {
       return true;
     }
-
     return navigatorRef.onLine;
   }
 
@@ -57,7 +107,6 @@ export function createSpotifyService({
         message: 'Du er offline. Spotify-anbefalinger kan ikke opdateres lige nu.'
       };
     }
-
     return { ...tileState };
   }
 
@@ -81,14 +130,220 @@ export function createSpotifyService({
     return headers;
   }
 
+  async function fetchSpotifyToken() {
+    if (!tokenEndpoint) {
+      throw new Error('Token endpoint ikke konfigureret.');
+    }
+
+    const response = await fetchImpl(tokenEndpoint, {
+      method: 'GET',
+      headers: buildSupabaseHeaders(),
+      credentials: 'omit'
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok || !payload?.access_token) {
+      const message = typeof payload?.message === 'string' ? payload.message : 'Kunne ikke hente Spotify-token.';
+      throw new Error(message);
+    }
+
+    const expiresIn = typeof payload.expires_in === 'number' ? payload.expires_in : 3600;
+    cachedToken = {
+      token: payload.access_token,
+      expiresAt: Date.now() + (expiresIn - 60) * 1000
+    };
+
+    return cachedToken.token;
+  }
+
+  async function getSpotifyToken() {
+    if (cachedToken && cachedToken.expiresAt > Date.now()) {
+      return cachedToken.token;
+    }
+    return fetchSpotifyToken();
+  }
+
+  function updatePlayerState(sdkState) {
+    if (!sdkState) {
+      tileState = { ...tileState, isPlaying: false, currentTrack: null };
+      return;
+    }
+
+    const track = sdkState.track_window?.current_track || null;
+    const currentTrack = track
+      ? {
+          name: track.name || '',
+          artist: Array.isArray(track.artists) ? track.artists.map(a => a.name).join(', ') : '',
+          imageUrl: Array.isArray(track.album?.images) && track.album.images.length > 0
+            ? track.album.images[0].url
+            : ''
+        }
+      : null;
+
+    tileState = { ...tileState, isPlaying: !sdkState.paused, currentTrack };
+
+    if (typeof onStateChange === 'function') {
+      onStateChange();
+    }
+  }
+
+  async function initPlayer() {
+    if (!enabled || !tokenEndpoint) {
+      return;
+    }
+
+    if (playerInitPromise) {
+      return playerInitPromise;
+    }
+
+    playerInitPromise = (async () => {
+      try {
+        await loadSpotifySdk();
+
+        if (!window.Spotify) {
+          throw new Error('Spotify SDK ikke tilgængeligt.');
+        }
+
+        player = new window.Spotify.Player({
+          name: 'Opgavehelte',
+          getOAuthToken: async (cb) => {
+            try {
+              const token = await getSpotifyToken();
+              cb(token);
+            } catch {
+              cb('');
+            }
+          },
+          volume: 0.7
+        });
+
+        player.addListener('ready', ({ device_id }) => {
+          deviceId = device_id;
+          tileState = { ...tileState, playerReady: true, deviceId };
+          if (typeof onStateChange === 'function') {
+            onStateChange();
+          }
+        });
+
+        player.addListener('not_ready', () => {
+          deviceId = '';
+          tileState = { ...tileState, playerReady: false, deviceId: '', isPlaying: false };
+          if (typeof onStateChange === 'function') {
+            onStateChange();
+          }
+        });
+
+        player.addListener('player_state_changed', (state) => {
+          updatePlayerState(state);
+        });
+
+        player.addListener('initialization_error', ({ message }) => {
+          console.warn('Spotify init error:', message);
+          playerInitPromise = null;
+          tileState = { ...tileState, playerReady: false };
+        });
+
+        player.addListener('authentication_error', ({ message }) => {
+          console.warn('Spotify auth error:', message);
+          cachedToken = null;
+          tileState = { ...tileState, playerReady: false };
+        });
+
+        player.addListener('account_error', ({ message }) => {
+          console.warn('Spotify account error (Premium required):', message);
+          tileState = {
+            ...tileState,
+            playerReady: false,
+            message: 'Spotify Premium kræves for afspilning i browseren.'
+          };
+          if (typeof onStateChange === 'function') {
+            onStateChange();
+          }
+        });
+
+        await player.connect();
+      } catch (error) {
+        console.warn('Spotify player init failed:', error);
+        playerInitPromise = null;
+      }
+    })();
+
+    return playerInitPromise;
+  }
+
+  function setOnStateChange(callback) {
+    onStateChange = callback;
+  }
+
+  async function play(contextUri) {
+    if (!deviceId || !contextUri) {
+      return;
+    }
+
+    try {
+      const token = await getSpotifyToken();
+      await fetchImpl(`https://api.spotify.com/v1/me/player/play?device_id=${encodeURIComponent(deviceId)}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ context_uri: contextUri })
+      });
+    } catch (error) {
+      console.warn('Spotify play failed:', error);
+    }
+  }
+
+  async function togglePlay() {
+    if (!player) {
+      return;
+    }
+
+    try {
+      await player.togglePlay();
+    } catch (error) {
+      console.warn('Spotify togglePlay failed:', error);
+    }
+  }
+
+  async function next() {
+    if (!player) {
+      return;
+    }
+
+    try {
+      await player.nextTrack();
+    } catch (error) {
+      console.warn('Spotify nextTrack failed:', error);
+    }
+  }
+
+  async function previous() {
+    if (!player) {
+      return;
+    }
+
+    try {
+      await player.previousTrack();
+    } catch (error) {
+      console.warn('Spotify previousTrack failed:', error);
+    }
+  }
+
+  function dispose() {
+    if (player) {
+      player.disconnect();
+      player = null;
+    }
+    playerInitPromise = null;
+    onStateChange = null;
+  }
+
   async function beginAuthorization() {
     if (!enabled) {
-      tileState = {
-        status: 'unavailable',
-        message: 'Spotify er slået fra.',
-        connectUrl,
-        items: []
-      };
+      tileState = { ...tileState, status: 'unavailable', message: 'Spotify er slået fra.' };
       return { ok: false, message: tileState.message, authorizationUrl: '' };
     }
 
@@ -98,26 +353,19 @@ export function createSpotifyService({
 
     if (!connectUrl) {
       tileState = {
+        ...tileState,
         status: 'unavailable',
-        message: 'Spotify connect-endpoint mangler i app-konfigurationen.',
-        connectUrl,
-        items: []
+        message: 'Spotify connect-endpoint mangler i app-konfigurationen.'
       };
       return { ok: false, message: tileState.message, authorizationUrl: '' };
     }
 
-    tileState = {
-      ...tileState,
-      status: 'loading',
-      message: 'Forbereder Spotify-login...'
-    };
+    tileState = { ...tileState, status: 'loading', message: 'Forbereder Spotify-login...' };
 
     try {
-      const headers = buildSupabaseHeaders();
-
       const response = await fetchImpl(connectUrl, {
         method: 'GET',
-        headers,
+        headers: buildSupabaseHeaders(),
         credentials: 'omit'
       });
 
@@ -131,44 +379,26 @@ export function createSpotifyService({
             ? payload.message
             : 'Forbind Spotify for at hente anbefalinger.',
           connectUrl,
-          items: []
+          items: [],
+          playerReady: false,
+          isPlaying: false,
+          currentTrack: null,
+          deviceId: ''
         };
-
         return { ok: false, message: tileState.message, authorizationUrl: '' };
       }
 
-      tileState = {
-        status: 'needs-auth',
-        message: 'Åbner Spotify-login...',
-        connectUrl,
-        items: []
-      };
-
-      return {
-        ok: true,
-        message: tileState.message,
-        authorizationUrl
-      };
-    } catch (error) {
-      tileState = {
-        status: 'unavailable',
-        message: 'Kunne ikke starte Spotify-login lige nu.',
-        connectUrl,
-        items: []
-      };
-
+      tileState = { ...tileState, status: 'needs-auth', message: 'Åbner Spotify-login...' };
+      return { ok: true, message: tileState.message, authorizationUrl };
+    } catch {
+      tileState = { ...tileState, status: 'unavailable', message: 'Kunne ikke starte Spotify-login lige nu.' };
       return { ok: false, message: tileState.message, authorizationUrl: '' };
     }
   }
 
   async function refreshRecommendations() {
     if (!enabled) {
-      tileState = {
-        status: 'unavailable',
-        message: 'Spotify er slået fra.',
-        connectUrl,
-        items: []
-      };
+      tileState = { ...tileState, status: 'unavailable', message: 'Spotify er slået fra.', items: [] };
       return getTileState();
     }
 
@@ -178,28 +408,22 @@ export function createSpotifyService({
 
     if (!recommendationsEndpoint) {
       tileState = {
+        ...tileState,
         status: connectUrl ? 'needs-auth' : 'unavailable',
         message: connectUrl
           ? 'Forbind Spotify for at hente anbefalinger.'
           : 'Spotify endpoint mangler i app-konfigurationen.',
-        connectUrl,
         items: []
       };
       return getTileState();
     }
 
-    tileState = {
-      ...tileState,
-      status: 'loading',
-      message: 'Henter Spotify-anbefalinger...'
-    };
+    tileState = { ...tileState, status: 'loading', message: 'Henter Spotify-anbefalinger...' };
 
     try {
-      const headers = buildSupabaseHeaders();
-
       const response = await fetchImpl(recommendationsEndpoint, {
         method: 'GET',
-        headers,
+        headers: buildSupabaseHeaders(),
         credentials: 'omit'
       });
 
@@ -209,6 +433,7 @@ export function createSpotifyService({
 
       if (response.status === 401 || !connected) {
         tileState = {
+          ...tileState,
           status: 'needs-auth',
           message: typeof payload?.message === 'string' && payload.message.trim().length > 0
             ? payload.message
@@ -224,6 +449,7 @@ export function createSpotifyService({
         : [];
 
       tileState = {
+        ...tileState,
         status: 'ready',
         message: typeof payload?.message === 'string' && payload.message.trim().length > 0
           ? payload.message
@@ -232,8 +458,13 @@ export function createSpotifyService({
         items
       };
 
+      // Auto-initialize the player when connected
+      if (tokenEndpoint && !player) {
+        void initPlayer();
+      }
+
       return getTileState();
-    } catch (error) {
+    } catch {
       tileState = {
         ...tileState,
         status: 'unavailable',
@@ -247,6 +478,13 @@ export function createSpotifyService({
   return {
     getTileState,
     refreshRecommendations,
-    beginAuthorization
+    beginAuthorization,
+    initPlayer,
+    play,
+    togglePlay,
+    next,
+    previous,
+    setOnStateChange,
+    dispose
   };
 }

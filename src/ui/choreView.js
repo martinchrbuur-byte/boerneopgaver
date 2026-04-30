@@ -620,7 +620,7 @@ function renderFeedbackHistory(viewRefs, entries) {
   `).join('');
 }
 
-function renderSpotifyItems(items = []) {
+function renderSpotifyItems(items = [], playerReady = false) {
   if (!Array.isArray(items) || items.length === 0) {
     return renderEmptyChoreItem('Ingen anbefalinger endnu.');
   }
@@ -629,15 +629,19 @@ function renderSpotifyItems(items = []) {
     const title = escapeHtml(item?.title || 'Ukendt titel');
     const subtitle = escapeHtml(item?.subtitle || 'Spotify');
     const href = escapeAttribute(item?.href || '');
+    const uri = escapeAttribute(item?.uri || '');
     const linkMarkup = href
       ? `<a class="button button-secondary" href="${href}" target="_blank" rel="noopener noreferrer">Åbn i Spotify</a>`
+      : '';
+    const playMarkup = playerReady && uri
+      ? `<button class="button button-primary spotify-play-item-btn" type="button" data-spotify-uri="${uri}" title="Afspil playlist">▶ Afspil</button>`
       : '';
 
     return `
       <li class="chore-item">
         <div class="chore-main">
           <h3 class="chore-title">${renderIcon('music')}<span>${title}</span></h3>
-          <div class="actions">${linkMarkup}</div>
+          <div class="actions">${playMarkup}${linkMarkup}</div>
         </div>
         <p class="chore-meta">${subtitle}</p>
       </li>
@@ -656,6 +660,9 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
   const isConnected = status === 'ready';
   const canConnect = status === 'needs-auth' && typeof spotifyUi?.connectUrl === 'string' && spotifyUi.connectUrl.length > 0;
   const canRefresh = isConnected;
+  const playerReady = spotifyUi?.playerReady === true;
+  const isPlaying = spotifyUi?.isPlaying === true;
+  const currentTrack = spotifyUi?.currentTrack || null;
 
   viewRefs.spotifyStatus.textContent = message;
   if (viewRefs.spotifyOffline) {
@@ -672,6 +679,40 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
     viewRefs.spotifyRefreshButton.disabled = status === 'loading';
   }
 
+  // Player panel
+  if (viewRefs.spotifyPlayer) {
+    viewRefs.spotifyPlayer.hidden = !playerReady;
+  }
+
+  if (playerReady) {
+    if (viewRefs.spotifyPlayPauseBtn) {
+      viewRefs.spotifyPlayPauseBtn.textContent = isPlaying ? '⏸' : '▶';
+      viewRefs.spotifyPlayPauseBtn.title = isPlaying ? 'Pause' : 'Afspil';
+    }
+
+    if (currentTrack) {
+      if (viewRefs.spotifyTrackName) {
+        viewRefs.spotifyTrackName.textContent = currentTrack.name || '';
+      }
+      if (viewRefs.spotifyTrackArtist) {
+        viewRefs.spotifyTrackArtist.textContent = currentTrack.artist || '';
+      }
+      if (viewRefs.spotifyTrackImage) {
+        if (currentTrack.imageUrl) {
+          viewRefs.spotifyTrackImage.src = currentTrack.imageUrl;
+          viewRefs.spotifyTrackImage.alt = currentTrack.name || '';
+          viewRefs.spotifyTrackImage.hidden = false;
+        } else {
+          viewRefs.spotifyTrackImage.hidden = true;
+        }
+      }
+    } else {
+      if (viewRefs.spotifyTrackName) viewRefs.spotifyTrackName.textContent = 'Intet spiller nu';
+      if (viewRefs.spotifyTrackArtist) viewRefs.spotifyTrackArtist.textContent = '';
+      if (viewRefs.spotifyTrackImage) viewRefs.spotifyTrackImage.hidden = true;
+    }
+  }
+
   if (status === 'loading') {
     viewRefs.spotifyList.innerHTML = renderEmptyChoreItem('Henter anbefalinger...');
     return;
@@ -682,7 +723,7 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
     return;
   }
 
-  viewRefs.spotifyList.innerHTML = renderSpotifyItems(spotifyUi.items || []);
+  viewRefs.spotifyList.innerHTML = renderSpotifyItems(spotifyUi.items || [], playerReady);
 }
 
 export function renderState(viewRefs, state, { activeRole, activeTab, periodUi, feedbackUi, spotifyUi = null, editState = null }) {

@@ -256,6 +256,13 @@ async function init() {
     spotifyConfig: appConfig.spotify,
     getAccessToken: () => currentSession?.access_token || ''
   });
+
+  spotifyService.setOnStateChange(() => {
+    if (!isAppDisposed && root?.isConnected) {
+      refresh();
+    }
+  });
+  cleanupTasks.push(() => spotifyService.dispose());
   let activeTab = 'opgaver';
   const orphanedRecordService = createOrphanedRecordService();
   let lastRemoteSnapshotKey = null;
@@ -607,6 +614,24 @@ async function init() {
     });
   }
 
+  if (viewRefs.spotifyPlayPauseBtn) {
+    viewRefs.spotifyPlayPauseBtn.addEventListener('click', () => {
+      void spotifyService.togglePlay();
+    });
+  }
+
+  if (viewRefs.spotifyPrevBtn) {
+    viewRefs.spotifyPrevBtn.addEventListener('click', () => {
+      void spotifyService.previous();
+    });
+  }
+
+  if (viewRefs.spotifyNextBtn) {
+    viewRefs.spotifyNextBtn.addEventListener('click', () => {
+      void spotifyService.next();
+    });
+  }
+
   if (viewRefs.spotifyConnectLink) {
     viewRefs.spotifyConnectLink.addEventListener('click', async () => {
       const pending = spotifyService.beginAuthorization();
@@ -625,6 +650,16 @@ async function init() {
       refresh(result?.message || 'Kunne ikke starte Spotify-login.');
     });
   }
+
+  root.addEventListener('click', (event) => {
+    const playBtn = event.target.closest('[data-spotify-uri]');
+    if (playBtn) {
+      const uri = playBtn.getAttribute('data-spotify-uri');
+      if (uri) {
+        void spotifyService.play(uri);
+      }
+    }
+  });
 
   root.addEventListener('click', async (event) => {
     const actionElement = event.target.closest('[data-app-action]');
