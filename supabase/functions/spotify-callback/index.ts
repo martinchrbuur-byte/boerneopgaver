@@ -50,12 +50,24 @@ Deno.serve(async (request) => {
       updated_at: new Date().toISOString()
     };
 
-    const { error: upsertError } = await supabase
+    const { data: updatedRows, error: updateError } = await supabase
       .from('spotify_connections')
-      .upsert(nextConnection, { onConflict: 'user_id' });
+      .update(nextConnection)
+      .eq('user_id', statePayload.u)
+      .select('user_id');
 
-    if (upsertError) {
-      throw upsertError;
+    if (updateError) {
+      throw updateError;
+    }
+
+    if (!Array.isArray(updatedRows) || updatedRows.length === 0) {
+      const { error: insertError } = await supabase
+        .from('spotify_connections')
+        .insert(nextConnection);
+
+      if (insertError) {
+        throw insertError;
+      }
     }
 
     return redirectToApp({ spotify: 'connected' });
