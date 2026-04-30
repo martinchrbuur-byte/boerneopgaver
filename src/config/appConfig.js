@@ -6,6 +6,7 @@ const DEFAULT_CONFIG = Object.freeze({
     enabled: true,
     connectUrl: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-connect',
     recommendationsEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-recommendations',
+    searchEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-search',
     tokenEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-token',
     playbackEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-playback',
     disconnectEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-disconnect'
@@ -25,6 +26,9 @@ function normalizeSpotifyConfig(spotifyConfig) {
   const recommendationsEndpoint = typeof spotifyConfig.recommendationsEndpoint === 'string'
     ? spotifyConfig.recommendationsEndpoint.trim()
     : fallback.recommendationsEndpoint;
+  const searchEndpoint = typeof spotifyConfig.searchEndpoint === 'string'
+    ? spotifyConfig.searchEndpoint.trim()
+    : fallback.searchEndpoint;
   const tokenEndpoint = typeof spotifyConfig.tokenEndpoint === 'string'
     ? spotifyConfig.tokenEndpoint.trim()
     : fallback.tokenEndpoint;
@@ -39,6 +43,7 @@ function normalizeSpotifyConfig(spotifyConfig) {
     enabled,
     connectUrl,
     recommendationsEndpoint,
+    searchEndpoint,
     tokenEndpoint,
     playbackEndpoint,
     disconnectEndpoint

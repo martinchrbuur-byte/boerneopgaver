@@ -86,6 +86,7 @@ Deno.serve(async (request) => {
   const action = typeof body.action === 'string' ? body.action : '';
   const deviceId = typeof body.deviceId === 'string' ? body.deviceId : '';
   const contextUri = typeof body.contextUri === 'string' ? body.contextUri : '';
+  const trackUri = typeof body.trackUri === 'string' ? body.trackUri : '';
 
   const spotifyHeaders = {
     Authorization: `Bearer ${accessToken}`,
@@ -99,7 +100,11 @@ Deno.serve(async (request) => {
       const url = new URL(`${SPOTIFY_API_BASE}/me/player/play`);
       if (deviceId) url.searchParams.set('device_id', deviceId);
       const playBody: Record<string, unknown> = {};
-      if (contextUri) playBody.context_uri = contextUri;
+      if (trackUri) {
+        playBody.uris = [trackUri];
+      } else if (contextUri) {
+        playBody.context_uri = contextUri;
+      }
       spotifyResp = await fetch(url.toString(), {
         method: 'PUT',
         headers: spotifyHeaders,

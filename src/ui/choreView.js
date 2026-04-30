@@ -543,6 +543,26 @@ function renderTabs(viewRefs, activeTab, activeRole) {
   viewRefs.tabHistorik.hidden = activeTab !== 'historik' || !isParent;
 }
 
+function renderModeSwitch(viewRefs, activeMode) {
+  if (!viewRefs.modeSwitch) {
+    return;
+  }
+
+  for (const button of viewRefs.modeSwitch.querySelectorAll('button[data-mode]')) {
+    const modeName = button.getAttribute('data-mode');
+    const isActive = modeName === activeMode;
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  }
+
+  if (viewRefs.choresWorkspace) {
+    viewRefs.choresWorkspace.hidden = activeMode !== 'chores';
+  }
+
+  if (viewRefs.spotifyWorkspace) {
+    viewRefs.spotifyWorkspace.hidden = activeMode !== 'spotify';
+  }
+}
+
 function renderPeriod(viewRefs, periodUi, activeRole) {
   const isParent = activeRole === 'parent';
 
@@ -626,15 +646,24 @@ function renderSpotifyItems(items = [], playerReady = false) {
   }
 
   return items.map((item) => {
+    const kind = typeof item?.kind === 'string' ? item.kind : 'playlist';
+    const kindLabel = kind === 'track'
+      ? 'Track'
+      : kind === 'album'
+        ? 'Album'
+        : kind === 'artist'
+          ? 'Artist'
+          : 'Playliste';
     const title = escapeHtml(item?.title || 'Ukendt titel');
     const subtitle = escapeHtml(item?.subtitle || 'Spotify');
     const href = escapeAttribute(item?.href || '');
     const uri = escapeAttribute(item?.uri || '');
+    const canPlay = playerReady && uri && item?.canPlay !== false;
     const linkMarkup = href
       ? `<a class="button button-secondary" href="${href}" target="_blank" rel="noopener noreferrer">Åbn i Spotify</a>`
       : '';
-    const playMarkup = playerReady && uri
-      ? `<button class="button button-primary spotify-play-item-btn" type="button" data-spotify-uri="${uri}" title="Afspil playlist">▶ Afspil</button>`
+    const playMarkup = canPlay
+      ? `<button class="button button-primary spotify-play-item-btn" type="button" data-spotify-uri="${uri}" title="Afspil">▶ Afspil</button>`
       : '';
 
     return `
@@ -643,10 +672,32 @@ function renderSpotifyItems(items = [], playerReady = false) {
           <h3 class="chore-title">${renderIcon('music')}<span>${title}</span></h3>
           <div class="actions">${playMarkup}${linkMarkup}</div>
         </div>
-        <p class="chore-meta">${subtitle}</p>
+        <p class="chore-meta">${escapeHtml(kindLabel)} · ${subtitle}</p>
       </li>
     `;
   }).join('');
+}
+
+function renderSpotifySearchResults(viewRefs, spotifyUi, playerReady) {
+  if (!viewRefs.spotifySearchStatus || !viewRefs.spotifySearchResults) {
+    return;
+  }
+
+  const search = spotifyUi?.search || null;
+  if (!search || !search.query) {
+    viewRefs.spotifySearchStatus.textContent = 'Søg for at finde musik og playlister.';
+    viewRefs.spotifySearchResults.innerHTML = renderEmptyChoreItem('Ingen søgeresultater endnu.');
+    return;
+  }
+
+  if (search.status === 'loading') {
+    viewRefs.spotifySearchStatus.textContent = `Søger efter “${search.query}”...`;
+    viewRefs.spotifySearchResults.innerHTML = renderEmptyChoreItem('Henter søgeresultater...');
+    return;
+  }
+
+  viewRefs.spotifySearchStatus.textContent = search.message || 'Søgning færdig.';
+  viewRefs.spotifySearchResults.innerHTML = renderSpotifyItems(search.items || [], playerReady);
 }
 
 function renderSpotifyTile(viewRefs, spotifyUi = null) {
@@ -720,23 +771,32 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
 
   if (status === 'loading') {
     viewRefs.spotifyList.innerHTML = renderEmptyChoreItem('Henter anbefalinger...');
+    renderSpotifySearchResults(viewRefs, spotifyUi, playerReady);
     return;
   }
 
   if (!isConnected) {
     viewRefs.spotifyList.innerHTML = renderEmptyChoreItem('Spotify-data vises her, når kontoen er forbundet.');
+    if (viewRefs.spotifySearchStatus) {
+      viewRefs.spotifySearchStatus.textContent = 'Forbind Spotify for at søge i musik og playlister.';
+    }
+    if (viewRefs.spotifySearchResults) {
+      viewRefs.spotifySearchResults.innerHTML = renderEmptyChoreItem('Søgeresultater vises her, når Spotify er forbundet.');
+    }
     return;
   }
 
   viewRefs.spotifyList.innerHTML = renderSpotifyItems(spotifyUi.items || [], playerReady);
+  renderSpotifySearchResults(viewRefs, spotifyUi, playerReady);
 }
 
-export function renderState(viewRefs, state, { activeRole, activeTab, periodUi, feedbackUi, spotifyUi = null, editState = null }) {
+export function renderState(viewRefs, state, { activeRole, activeMode = 'chores', activeTab, periodUi, feedbackUi, spotifyUi = null, editState = null }) {
   renderMoneySliders(viewRefs, activeRole, periodUi);
 
   viewRefs.addChoreSection.hidden = activeRole !== 'parent';
   viewRefs.choreList.innerHTML = renderChoreList(state.chores, activeRole, state.pendingCollaborations ?? [], editState);
   viewRefs.recentCompletions.innerHTML = renderRecentCompletions(state.recentCompletions);
+  renderModeSwitch(viewRefs, activeMode);
   renderRoleSwitch(viewRefs, activeRole);
   renderTabs(viewRefs, activeTab, activeRole);
   renderPeriod(viewRefs, periodUi, activeRole);

@@ -40,6 +40,20 @@ export function createMainView(rootElement) {
         </div>
       </header>
 
+      <section class="card app-mode-card app-top-card" aria-label="Hovedvisning">
+        <h2 class="section-title">Hovedvisning</h2>
+        <div id="mode-switch" class="role-switch" role="group" aria-label="Vælg hovedvisning">
+          <button type="button" class="button button-secondary" data-mode="chores" aria-pressed="true">
+            Opgaver
+          </button>
+          <button type="button" class="button button-secondary" data-mode="spotify" aria-pressed="false">
+            ${renderIconText('music', 'Spotify')}
+          </button>
+        </div>
+      </section>
+
+      <div id="chores-workspace">
+
       <section class="card app-role-card app-top-card" aria-label="Rolleskift">
         <h2 class="section-title">Visningstilstand</h2>
         <div id="role-switch" class="role-switch" role="group" aria-label="Vælg brugerrolle">
@@ -72,34 +86,6 @@ export function createMainView(rootElement) {
           </div>
         </div>
         <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
-      </section>
-
-      <section class="card app-spotify-card app-top-card" aria-label="Spotify">
-        <h2 class="section-title">${renderIconText('music', 'Spotify')}</h2>
-        <p id="spotify-status" class="chore-meta">Forbinder ikke endnu.</p>
-        <div id="spotify-offline" class="spotify-offline" hidden>
-          ${renderIconText('offline', 'Offline – Spotify er midlertidigt utilgængelig.')}
-        </div>
-        <div id="spotify-actions" class="actions spotify-actions">
-          <button id="spotify-connect-link" type="button" class="button button-primary" hidden>Forbind Spotify</button>
-          <button id="spotify-refresh-btn" type="button" class="button button-secondary" hidden>Opdater anbefalinger</button>
-          <button id="spotify-disconnect-btn" type="button" class="button button-danger-outline" hidden>Afbryd Spotify</button>
-        </div>
-        <ul id="spotify-list" class="list spotify-list"></ul>
-        <div id="spotify-player" class="spotify-player" hidden>
-          <div class="spotify-now-playing">
-            <img id="spotify-track-image" class="spotify-track-image" src="" alt="" hidden>
-            <div class="spotify-track-info">
-              <strong id="spotify-track-name" class="spotify-track-name"></strong>
-              <span id="spotify-track-artist" class="spotify-track-artist"></span>
-            </div>
-          </div>
-          <div class="spotify-controls">
-            <button id="spotify-prev-btn" type="button" class="spotify-ctrl-btn" title="Forrige">⏮</button>
-            <button id="spotify-play-pause-btn" type="button" class="spotify-ctrl-btn" title="Afspil/Pause">▶</button>
-            <button id="spotify-next-btn" type="button" class="spotify-ctrl-btn" title="Næste">⏭</button>
-          </div>
-        </div>
       </section>
 
       <nav class="tab-nav app-tab-nav" role="tablist" aria-label="Sektioner">
@@ -269,10 +255,62 @@ export function createMainView(rootElement) {
         <span class="mascot-message"></span>
       </div>
 
+      </div>
+
+      <div id="spotify-workspace" hidden>
+        <section class="card app-spotify-card" aria-label="Spotify">
+          <h2 class="section-title">${renderIconText('music', 'Spotify')}</h2>
+          <p id="spotify-status" class="chore-meta">Forbinder ikke endnu.</p>
+          <div id="spotify-offline" class="spotify-offline" hidden>
+            ${renderIconText('offline', 'Offline – Spotify er midlertidigt utilgængelig.')}
+          </div>
+          <div id="spotify-actions" class="actions spotify-actions">
+            <button id="spotify-connect-link" type="button" class="button button-primary" hidden>Forbind Spotify</button>
+            <button id="spotify-refresh-btn" type="button" class="button button-secondary" hidden>Opdater anbefalinger</button>
+            <button id="spotify-disconnect-btn" type="button" class="button button-danger-outline" hidden>Afbryd Spotify</button>
+          </div>
+          <ul id="spotify-list" class="list spotify-list"></ul>
+          <div id="spotify-player" class="spotify-player" hidden>
+            <div class="spotify-now-playing">
+              <img id="spotify-track-image" class="spotify-track-image" src="" alt="" hidden>
+              <div class="spotify-track-info">
+                <strong id="spotify-track-name" class="spotify-track-name"></strong>
+                <span id="spotify-track-artist" class="spotify-track-artist"></span>
+              </div>
+            </div>
+            <div class="spotify-controls">
+              <button id="spotify-prev-btn" type="button" class="spotify-ctrl-btn" title="Forrige">⏮</button>
+              <button id="spotify-play-pause-btn" type="button" class="spotify-ctrl-btn" title="Afspil/Pause">▶</button>
+              <button id="spotify-next-btn" type="button" class="spotify-ctrl-btn" title="Næste">⏭</button>
+            </div>
+          </div>
+
+          <hr class="divider" />
+          <h3 class="section-title">Søg i Spotify</h3>
+          <form id="spotify-search-form" class="form-row" aria-label="Søg i Spotify">
+            <input
+              id="spotify-search-input"
+              class="input"
+              type="search"
+              name="spotifySearch"
+              maxlength="120"
+              placeholder="Søg efter tracks, playlister, albums og artister"
+              autocomplete="off"
+            />
+            <button type="submit" class="button button-primary">Søg</button>
+          </form>
+          <p id="spotify-search-status" class="chore-meta">Søg for at finde musik og playlister.</p>
+          <ul id="spotify-search-results" class="list spotify-list"></ul>
+        </section>
+      </div>
+
     </section>
   `;
 
   return {
+    modeSwitch: rootElement.querySelector('#mode-switch'),
+    choresWorkspace: rootElement.querySelector('#chores-workspace'),
+    spotifyWorkspace: rootElement.querySelector('#spotify-workspace'),
     roleSwitch: rootElement.querySelector('#role-switch'),
     addChoreForm: rootElement.querySelector('#add-chore-form'),
     addChoreSection: rootElement.querySelector('#add-chore-section'),
@@ -324,6 +362,10 @@ export function createMainView(rootElement) {
     spotifyPlayPauseBtn: rootElement.querySelector('#spotify-play-pause-btn'),
     spotifyPrevBtn: rootElement.querySelector('#spotify-prev-btn'),
     spotifyNextBtn: rootElement.querySelector('#spotify-next-btn'),
+    spotifySearchForm: rootElement.querySelector('#spotify-search-form'),
+    spotifySearchInput: rootElement.querySelector('#spotify-search-input'),
+    spotifySearchStatus: rootElement.querySelector('#spotify-search-status'),
+    spotifySearchResults: rootElement.querySelector('#spotify-search-results'),
     accountSection: rootElement.querySelector('#account-section'),
     accountEmail: rootElement.querySelector('#account-email'),
     switchAccountButton: rootElement.querySelector('#switch-account-btn'),

@@ -34,6 +34,9 @@ async function withBootstrappedApp(run) {
     document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
 
     const roleSwitch = document.querySelector('#role-switch');
+    const modeSwitch = document.querySelector('#mode-switch');
+    const choresWorkspace = document.querySelector('#chores-workspace');
+    const spotifyWorkspace = document.querySelector('#spotify-workspace');
     const addChoreForm = document.querySelector('#add-chore-form');
     const choreNameInput = document.querySelector('#chore-name-input');
     const choreValueInput = document.querySelector('#chore-value-input');
@@ -52,6 +55,9 @@ async function withBootstrappedApp(run) {
     const spotifyList = document.querySelector('#spotify-list');
 
     assert.ok(roleSwitch);
+    assert.ok(modeSwitch);
+    assert.ok(choresWorkspace);
+    assert.ok(spotifyWorkspace);
     assert.ok(addChoreForm);
     assert.ok(choreNameInput);
     assert.ok(choreList);
@@ -72,6 +78,9 @@ async function withBootstrappedApp(run) {
     await run({
       window,
       roleSwitch,
+      modeSwitch,
+      choresWorkspace,
+      spotifyWorkspace,
       addChoreForm,
       choreNameInput,
       choreValueInput,
@@ -291,11 +300,24 @@ test('kid cannot delete chores even if invalid action is triggered', async () =>
 
 test('spotify tile shows a valid startup state', async () => {
   await withBootstrappedApp(async ({
+    window,
+    modeSwitch,
+    choresWorkspace,
+    spotifyWorkspace,
     spotifyStatus,
     spotifyConnectLink,
     spotifyRefreshButton,
     spotifyList
   }) => {
+    const spotifyModeButton = modeSwitch.querySelector('button[data-mode="spotify"]');
+    assert.ok(spotifyModeButton);
+    assert.equal(choresWorkspace.hidden, false);
+    assert.equal(spotifyWorkspace.hidden, true);
+
+    click(window, spotifyModeButton);
+    assert.equal(choresWorkspace.hidden, true);
+    assert.equal(spotifyWorkspace.hidden, false);
+
     assert.match(spotifyStatus.textContent, /spotify|henter|forbind/i);
     assert.equal(spotifyRefreshButton.hidden, true);
     assert.match(spotifyList.textContent, /forbundet|henter|anbefalinger/i);

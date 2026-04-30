@@ -263,6 +263,7 @@ async function init() {
     }
   });
   cleanupTasks.push(() => spotifyService.dispose());
+  let activeMode = 'chores';
   let activeTab = 'opgaver';
   const orphanedRecordService = createOrphanedRecordService();
   let lastRemoteSnapshotKey = null;
@@ -425,7 +426,15 @@ async function init() {
 
     const spotifyUi = spotifyService.getTileState();
 
-  renderState(viewRefs, choreState, { activeRole, activeTab, periodUi, feedbackUi, spotifyUi, editState: periodUi.editState });
+    renderState(viewRefs, choreState, {
+      activeRole,
+      activeMode,
+      activeTab,
+      periodUi,
+      feedbackUi,
+      spotifyUi,
+      editState: periodUi.editState
+    });
     renderFeedback(viewRefs, message);
 
     const feedbackEl = viewRefs.feedback;
@@ -658,6 +667,23 @@ async function init() {
     });
   }
 
+  if (viewRefs.spotifySearchForm && viewRefs.spotifySearchInput) {
+    viewRefs.spotifySearchForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const query = String(viewRefs.spotifySearchInput.value || '').trim();
+      const pending = spotifyService.searchCatalog(query);
+      refresh();
+      const result = await pending;
+
+      if (isAppDisposed || !root?.isConnected || typeof document === 'undefined') {
+        return;
+      }
+
+      refresh(result?.search?.message || (query ? `Søgning færdig for “${query}”.` : 'Søgefelt ryddet.'));
+    });
+  }
+
   root.addEventListener('click', (event) => {
     const playBtn = event.target.closest('[data-spotify-uri]');
     if (playBtn) {
@@ -729,6 +755,28 @@ async function init() {
     const message = activeRole === 'parent' ? 'Skiftet til forældrevisning.' : `Skiftet til ${activeRole}s visning.`;
     refresh(message);
   });
+
+  if (viewRefs.modeSwitch) {
+    viewRefs.modeSwitch.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-mode]');
+      if (!button) {
+        return;
+      }
+
+      const nextMode = button.getAttribute('data-mode');
+      if ((nextMode !== 'chores' && nextMode !== 'spotify') || nextMode === activeMode) {
+        return;
+      }
+
+      activeMode = nextMode;
+      if (activeMode === 'spotify') {
+        refresh('Spotify-visning åbnet.');
+        return;
+      }
+
+      refresh('Opgavevisning åbnet.');
+    });
+  }
 
   viewRefs.tabNav.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-tab]');

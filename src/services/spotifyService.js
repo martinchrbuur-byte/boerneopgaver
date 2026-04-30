@@ -19,7 +19,9 @@ function normalizeItem(item) {
     title: typeof item?.title === 'string' ? item.title : 'Ukendt titel',
     subtitle: typeof item?.subtitle === 'string' ? item.subtitle : 'Spotify',
     href: sanitizeUrl(item?.href),
-    uri: typeof item?.uri === 'string' ? item.uri : ''
+    uri: typeof item?.uri === 'string' ? item.uri : '',
+    kind: typeof item?.kind === 'string' ? item.kind : 'playlist',
+    canPlay: item?.canPlay !== false
   };
 }
 
@@ -70,6 +72,7 @@ export function createSpotifyService({
   const enabled = spotifyConfig?.enabled !== false;
   const connectUrl = sanitizeUrl(spotifyConfig?.connectUrl);
   const recommendationsEndpoint = sanitizeUrl(spotifyConfig?.recommendationsEndpoint);
+  const searchEndpoint = sanitizeUrl(spotifyConfig?.searchEndpoint);
   const tokenEndpoint = sanitizeUrl(spotifyConfig?.tokenEndpoint);
   const playbackEndpoint = sanitizeUrl(spotifyConfig?.playbackEndpoint);
   const disconnectEndpoint = sanitizeUrl(spotifyConfig?.disconnectEndpoint);
@@ -81,6 +84,12 @@ export function createSpotifyService({
       : 'Spotify er slået fra.',
     connectUrl,
     items: [],
+    search: {
+      query: '',
+      status: 'idle',
+      message: 'Søg for at finde musik og playlister.',
+      items: []
+    },
     playerReady: false,
     isPlaying: false,
     currentTrack: null,
@@ -311,8 +320,19 @@ export function createSpotifyService({
     }
   }
 
-  async function play(contextUri) {
-    await sendPlaybackCommand('play', contextUri ? { contextUri } : {});
+  async function play(uri) {
+    const safeUri = typeof uri === 'string' ? uri.trim() : '';
+    if (!safeUri) {
+      await sendPlaybackCommand('play');
+      return;
+    }
+
+    if (safeUri.startsWith('spotify:track:')) {
+      await sendPlaybackCommand('play', { trackUri: safeUri });
+      return;
+    }
+
+    await sendPlaybackCommand('play', { contextUri: safeUri });
   }
 
   async function togglePlay() {
@@ -376,6 +396,12 @@ export function createSpotifyService({
       message: 'Forbind Spotify for at hente anbefalinger.',
       connectUrl,
       items: [],
+      search: {
+        query: '',
+        status: 'idle',
+        message: 'Søg for at finde musik og playlister.',
+        items: []
+      },
       playerReady: false,
       isPlaying: false,
       currentTrack: null,
@@ -517,6 +543,141 @@ export function createSpotifyService({
     }
   }
 
+  async function searchCatalog(query) {
+    const normalizedQuery = String(query || '').trim();
+
+    if (!enabled) {
+      tileState = {
+        ...tileState,
+        search: {
+          query: normalizedQuery,
+          status: 'error',
+          message: 'Spotify er slået fra.',
+          items: []
+        }
+      };
+      return getTileState();
+    }
+
+    if (!isOnline()) {
+      tileState = {
+        ...tileState,
+        search: {
+          query: normalizedQuery,
+          status: 'error',
+          message: 'Du er offline. Søgning er midlertidigt utilgængelig.',
+          items: []
+        }
+      };
+      return getTileState();
+    }
+
+    if (!normalizedQuery) {
+      tileState = {
+        ...tileState,
+        search: {
+          query: '',
+          status: 'idle',
+          message: 'Søg for at finde musik og playlister.',
+          items: []
+        }
+      };
+      return getTileState();
+    }
+
+    if (!searchEndpoint) {
+      tileState = {
+        ...tileState,
+        search: {
+          query: normalizedQuery,
+          status: 'error',
+          message: 'Spotify søge-endpoint mangler i app-konfigurationen.',
+          items: []
+        }
+      };
+      return getTileState();
+    }
+
+    tileState = {
+      ...tileState,
+      search: {
+        query: normalizedQuery,
+        status: 'loading',
+        message: `Søger efter “${normalizedQuery}”...`,
+        items: []
+      }
+    };
+
+    try {
+      const endpointUrl = new URL(searchEndpoint);
+      endpointUrl.searchParams.set('q', normalizedQuery);
+
+      const response = await fetchImpl(endpointUrl.toString(), {
+        method: 'GET',
+        headers: buildSupabaseHeaders(),
+        credentials: 'omit'
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      const responseConnectUrl = sanitizeUrl(payload?.connectUrl) || connectUrl;
+      const connected = payload?.connected === true;
+
+      if (response.status === 401 || !connected) {
+        tileState = {
+          ...tileState,
+          status: 'needs-auth',
+          message: typeof payload?.message === 'string' && payload.message.trim().length > 0
+            ? payload.message
+            : 'Forbind Spotify for at søge i musik og playlister.',
+          connectUrl: responseConnectUrl,
+          items: [],
+          search: {
+            query: normalizedQuery,
+            status: 'error',
+            message: 'Forbind Spotify for at bruge søgning.',
+            items: []
+          }
+        };
+        return getTileState();
+      }
+
+      const items = Array.isArray(payload?.items)
+        ? payload.items.map(normalizeItem).slice(0, 20)
+        : [];
+
+      tileState = {
+        ...tileState,
+        status: 'ready',
+        connectUrl: responseConnectUrl,
+        search: {
+          query: normalizedQuery,
+          status: 'ready',
+          message: typeof payload?.message === 'string' && payload.message.trim().length > 0
+            ? payload.message
+            : `${items.length} resultater fundet.`,
+          items
+        }
+      };
+
+      if (tokenEndpoint && !player) {
+        void initPlayer();
+      }
+
+      return getTileState();
+    } catch {
+      tileState = {
+        ...tileState,
+        search: {
+          query: normalizedQuery,
+          status: 'error',
+          message: 'Kunne ikke hente Spotify-søgeresultater lige nu.',
+          items: []
+        }
+      };
+      return getTileState();
+    }
+  }
+
   return {
     getTileState,
     refreshRecommendations,
@@ -527,6 +688,7 @@ export function createSpotifyService({
     togglePlay,
     next,
     previous,
+    searchCatalog,
     setOnStateChange,
     dispose
   };

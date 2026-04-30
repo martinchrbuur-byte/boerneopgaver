@@ -255,6 +255,144 @@ export async function fetchFeaturedPlaylists(accessToken: string, { limit = 6, c
   throw new Error(errors[0] || 'Failed to load Spotify playlists.');
 }
 
+type SpotifySearchItem = {
+  id: string;
+  kind: 'track' | 'playlist' | 'album' | 'artist';
+  title: string;
+  subtitle: string;
+  href: string;
+  uri: string;
+  canPlay: boolean;
+};
+
+function asSpotifyLink(input: unknown): string {
+  if (typeof input === 'object' && input && typeof (input as Record<string, unknown>).spotify === 'string') {
+    return (input as Record<string, string>).spotify;
+  }
+  return '';
+}
+
+function imageUrlFromImages(images: unknown): string {
+  if (!Array.isArray(images) || images.length === 0) {
+    return '';
+  }
+
+  for (const image of images) {
+    if (typeof image === 'object' && image && typeof (image as Record<string, unknown>).url === 'string') {
+      return (image as Record<string, string>).url;
+    }
+  }
+
+  return '';
+}
+
+export async function searchSpotifyCatalog(accessToken: string, query: string, { limit = 20 } = {}): Promise<SpotifySearchItem[]> {
+  const normalizedQuery = String(query || '').trim();
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  const perTypeLimit = Math.max(1, Math.min(8, Math.ceil(limit / 4)));
+  const url = new URL(`${SPOTIFY_API_BASE}/search`);
+  url.searchParams.set('q', normalizedQuery);
+  url.searchParams.set('type', 'track,playlist,album,artist');
+  url.searchParams.set('limit', String(perTypeLimit));
+  url.searchParams.set('market', 'DK');
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = typeof payload?.error?.message === 'string'
+      ? payload.error.message
+      : `Spotify request failed with status ${response.status}.`;
+    throw new Error(message);
+  }
+
+  const tracks = Array.isArray(payload?.tracks?.items) ? payload.tracks.items : [];
+  const playlists = Array.isArray(payload?.playlists?.items) ? payload.playlists.items : [];
+  const albums = Array.isArray(payload?.albums?.items) ? payload.albums.items : [];
+  const artists = Array.isArray(payload?.artists?.items) ? payload.artists.items : [];
+
+  const results: SpotifySearchItem[] = [];
+
+  for (const track of tracks) {
+    const artistsLabel = Array.isArray((track as Record<string, unknown>)?.artists)
+      ? ((track as Record<string, unknown>).artists as Array<Record<string, unknown>>)
+          .map(artist => typeof artist?.name === 'string' ? artist.name : '')
+          .filter(Boolean)
+          .join(', ')
+      : '';
+    const albumImages = typeof (track as Record<string, unknown>)?.album === 'object' && (track as Record<string, unknown>).album
+      ? ((track as Record<string, unknown>).album as Record<string, unknown>).images
+      : [];
+    const imageUrl = imageUrlFromImages(albumImages);
+
+    results.push({
+      id: typeof (track as Record<string, unknown>)?.id === 'string' ? (track as Record<string, string>).id : crypto.randomUUID(),
+      kind: 'track',
+      title: typeof (track as Record<string, unknown>)?.name === 'string' ? (track as Record<string, string>).name : 'Ukendt track',
+      subtitle: [artistsLabel, imageUrl ? 'Med cover' : ''].filter(Boolean).join(' · ') || 'Track',
+      href: asSpotifyLink((track as Record<string, unknown>)?.external_urls),
+      uri: typeof (track as Record<string, unknown>)?.uri === 'string' ? (track as Record<string, string>).uri : '',
+      canPlay: true
+    });
+  }
+
+  for (const playlist of playlists) {
+    const ownerName = typeof (playlist as Record<string, unknown>)?.owner === 'object' && (playlist as Record<string, unknown>).owner
+      ? ((playlist as Record<string, unknown>).owner as Record<string, unknown>).display_name
+      : '';
+
+    results.push({
+      id: typeof (playlist as Record<string, unknown>)?.id === 'string' ? (playlist as Record<string, string>).id : crypto.randomUUID(),
+      kind: 'playlist',
+      title: typeof (playlist as Record<string, unknown>)?.name === 'string' ? (playlist as Record<string, string>).name : 'Ukendt playliste',
+      subtitle: typeof ownerName === 'string' && ownerName.trim().length > 0 ? `Af ${ownerName}` : 'Playliste',
+      href: asSpotifyLink((playlist as Record<string, unknown>)?.external_urls),
+      uri: typeof (playlist as Record<string, unknown>)?.uri === 'string' ? (playlist as Record<string, string>).uri : '',
+      canPlay: true
+    });
+  }
+
+  for (const album of albums) {
+    const albumArtists = Array.isArray((album as Record<string, unknown>)?.artists)
+      ? ((album as Record<string, unknown>).artists as Array<Record<string, unknown>>)
+          .map(artist => typeof artist?.name === 'string' ? artist.name : '')
+          .filter(Boolean)
+          .join(', ')
+      : '';
+
+    results.push({
+      id: typeof (album as Record<string, unknown>)?.id === 'string' ? (album as Record<string, string>).id : crypto.randomUUID(),
+      kind: 'album',
+      title: typeof (album as Record<string, unknown>)?.name === 'string' ? (album as Record<string, string>).name : 'Ukendt album',
+      subtitle: albumArtists || 'Album',
+      href: asSpotifyLink((album as Record<string, unknown>)?.external_urls),
+      uri: typeof (album as Record<string, unknown>)?.uri === 'string' ? (album as Record<string, string>).uri : '',
+      canPlay: true
+    });
+  }
+
+  for (const artist of artists) {
+    results.push({
+      id: typeof (artist as Record<string, unknown>)?.id === 'string' ? (artist as Record<string, string>).id : crypto.randomUUID(),
+      kind: 'artist',
+      title: typeof (artist as Record<string, unknown>)?.name === 'string' ? (artist as Record<string, string>).name : 'Ukendt artist',
+      subtitle: 'Artist',
+      href: asSpotifyLink((artist as Record<string, unknown>)?.external_urls),
+      uri: typeof (artist as Record<string, unknown>)?.uri === 'string' ? (artist as Record<string, string>).uri : '',
+      canPlay: false
+    });
+  }
+
+  return results.slice(0, limit);
+}
+
 export function computeExpiresAtIso(expiresInSeconds: number): string {
   const safeSeconds = Number.isFinite(expiresInSeconds) ? Math.max(60, Math.floor(expiresInSeconds)) : 3600;
   return new Date(Date.now() + (safeSeconds * 1000)).toISOString();
