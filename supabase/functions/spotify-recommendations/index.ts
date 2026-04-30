@@ -64,33 +64,47 @@ Deno.serve(async (request) => {
     }
 
     if (isExpired(expiresAt)) {
-      const refreshed = await refreshSpotifyToken(refreshToken);
-      accessToken = refreshed.access_token;
-      refreshToken = refreshed.refresh_token || refreshToken;
-      expiresAt = computeExpiresAtIso(refreshed.expires_in);
+      try {
+        const refreshed = await refreshSpotifyToken(refreshToken);
+        accessToken = refreshed.access_token;
+        refreshToken = refreshed.refresh_token || refreshToken;
+        expiresAt = computeExpiresAtIso(refreshed.expires_in);
 
-      const { error: updateError } = await supabase
-        .from('spotify_connections')
-        .update({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          scope: refreshed.scope || null,
-          token_type: refreshed.token_type || null,
-          expires_at: expiresAt,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
+        const { error: updateError } = await supabase
+          .from('spotify_connections')
+          .update({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            scope: refreshed.scope || null,
+            token_type: refreshed.token_type || null,
+            expires_at: expiresAt,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
 
-      if (updateError) {
-        throw updateError;
+        if (updateError) {
+          throw updateError;
+        }
+      } catch (refreshError) {
+        return jsonResponse({
+          connected: false,
+          message: 'Spotify-sessionen er udløbet. Forbind Spotify igen.',
+          connectUrl: await buildSpotifyAuthorizeUrl(user.id)
+        }, { status: 401 });
       }
     }
 
-    const items = await fetchFeaturedPlaylists(accessToken, { limit: 6, country: 'DK' });
+    let items = [];
+    let message = 'Spotify-anbefalinger klar.';
+    try {
+      items = await fetchFeaturedPlaylists(accessToken, { limit: 6, country: 'DK' });
+    } catch (playlistError) {
+      message = 'Spotify er forbundet, men anbefalinger kunne ikke hentes lige nu.';
+    }
 
     return jsonResponse({
       connected: true,
-      message: 'Spotify-anbefalinger klar.',
+      message,
       items,
       connectUrl: await buildSpotifyAuthorizeUrl(user.id)
     });
