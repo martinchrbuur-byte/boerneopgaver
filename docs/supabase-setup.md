@@ -114,6 +114,14 @@ For local `npm run build` / CI artifact injection, also set public client env va
 - `SPOTIFY_CONNECT_URL=https://<project-ref>.supabase.co/functions/v1/spotify-connect`
 - `SPOTIFY_RECOMMENDATIONS_ENDPOINT=https://<project-ref>.supabase.co/functions/v1/spotify-recommendations`
 
+If you keep `SUPABASE_ACCESS_TOKEN` in `.env` locally, load it into the active PowerShell session with:
+
+```powershell
+.\scripts\load-env.ps1
+```
+
+Then run function deploy commands from the same terminal session.
+
 ## Important if you already ran the old public policy setup:
 
 If you already enabled RLS with public policies, replace them with auth-based policies once:
