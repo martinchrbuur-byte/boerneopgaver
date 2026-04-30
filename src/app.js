@@ -223,7 +223,9 @@ async function init() {
 
   const viewRefs = createMainView(root);
   const cleanupTasks = [];
+  let isAppDisposed = false;
   disposeActiveApp = () => {
+    isAppDisposed = true;
     while (cleanupTasks.length > 0) {
       const cleanup = cleanupTasks.pop();
       try {
@@ -372,6 +374,10 @@ async function init() {
   }
 
   function refresh(message = '') {
+    if (isAppDisposed || !root?.isConnected || typeof document === 'undefined') {
+      return;
+    }
+
     const activePeriod = periodService.getActivePeriod();
     const activePeriodId = activePeriod?.id ?? null;
     const choreState = choreService.getState({ activePeriodId });
@@ -460,9 +466,16 @@ async function init() {
   }
 
   async function refreshSpotifyRecommendations({ completionMessage = '' } = {}) {
+    if (isAppDisposed) {
+      return;
+    }
+
     const pending = spotifyService.refreshRecommendations();
     refresh();
     await pending;
+    if (isAppDisposed || !root?.isConnected || typeof document === 'undefined') {
+      return;
+    }
     refresh(completionMessage);
   }
 

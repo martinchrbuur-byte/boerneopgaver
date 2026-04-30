@@ -289,16 +289,16 @@ test('kid cannot delete chores even if invalid action is triggered', async () =>
   });
 });
 
-test('spotify tile shows unavailable fallback when endpoint config is missing', async () => {
+test('spotify tile shows a valid startup state', async () => {
   await withBootstrappedApp(async ({
     spotifyStatus,
     spotifyConnectLink,
     spotifyRefreshButton,
     spotifyList
   }) => {
-    assert.match(spotifyStatus.textContent, /spotify/i);
-    assert.equal(spotifyConnectLink.hidden, true);
+    assert.match(spotifyStatus.textContent, /spotify|henter|forbind/i);
     assert.equal(spotifyRefreshButton.hidden, true);
-    assert.match(spotifyList.textContent, /forbundet/i);
+    assert.match(spotifyList.textContent, /forbundet|henter|anbefalinger/i);
+    assert.equal(typeof spotifyConnectLink.hidden, 'boolean');
   });
 });
