@@ -175,35 +175,77 @@ export async function fetchSpotifyUser(accessToken: string): Promise<{ id: strin
 }
 
 export async function fetchFeaturedPlaylists(accessToken: string, { limit = 6, country = 'DK' } = {}) {
-  const url = new URL(`${SPOTIFY_API_BASE}/browse/featured-playlists`);
-  url.searchParams.set('limit', String(limit));
-  url.searchParams.set('country', country);
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message = typeof payload?.error?.message === 'string'
-      ? payload.error.message
-      : 'Failed to load Spotify playlists.';
-    throw new Error(message);
+  function normalizeItems(items: unknown[]) {
+    return items.slice(0, limit).map((item: Record<string, unknown>) => ({
+      id: typeof item?.id === 'string' ? item.id : crypto.randomUUID(),
+      title: typeof item?.name === 'string' ? item.name : 'Ukendt playliste',
+      subtitle: typeof item?.description === 'string' && item.description.trim().length > 0
+        ? item.description
+        : 'Spotify-anbefaling',
+      href: typeof item?.external_urls === 'object' && item.external_urls && typeof (item.external_urls as Record<string, unknown>).spotify === 'string'
+        ? (item.external_urls as Record<string, string>).spotify
+        : ''
+    }));
   }
 
-  const items = Array.isArray(payload?.playlists?.items) ? payload.playlists.items : [];
-  return items.slice(0, limit).map((item: Record<string, unknown>) => ({
-    id: typeof item?.id === 'string' ? item.id : crypto.randomUUID(),
-    title: typeof item?.name === 'string' ? item.name : 'Ukendt playliste',
-    subtitle: typeof item?.description === 'string' && item.description.trim().length > 0
-      ? item.description
-      : 'Spotify-anbefaling',
-    href: typeof item?.external_urls === 'object' && item.external_urls && typeof (item.external_urls as Record<string, unknown>).spotify === 'string'
-      ? (item.external_urls as Record<string, string>).spotify
-      : ''
-  }));
+  async function requestPlaylists(endpointUrl: URL): Promise<unknown[]> {
+    const response = await fetch(endpointUrl.toString(), {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = typeof payload?.error?.message === 'string'
+        ? payload.error.message
+        : `Spotify request failed with status ${response.status}.`;
+      throw new Error(message);
+    }
+
+    const items = Array.isArray(payload?.playlists?.items) ? payload.playlists.items : [];
+    return items;
+  }
+
+  const errors: string[] = [];
+
+  try {
+    const featuredUrl = new URL(`${SPOTIFY_API_BASE}/browse/featured-playlists`);
+    featuredUrl.searchParams.set('limit', String(limit));
+    featuredUrl.searchParams.set('country', country);
+    const featuredItems = await requestPlaylists(featuredUrl);
+    if (featuredItems.length > 0) {
+      return normalizeItems(featuredItems);
+    }
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : 'Featured playlists failed.');
+  }
+
+  try {
+    const featuredNoCountryUrl = new URL(`${SPOTIFY_API_BASE}/browse/featured-playlists`);
+    featuredNoCountryUrl.searchParams.set('limit', String(limit));
+    const featuredItemsNoCountry = await requestPlaylists(featuredNoCountryUrl);
+    if (featuredItemsNoCountry.length > 0) {
+      return normalizeItems(featuredItemsNoCountry);
+    }
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : 'Featured playlists without country failed.');
+  }
+
+  try {
+    const searchUrl = new URL(`${SPOTIFY_API_BASE}/search`);
+    searchUrl.searchParams.set('q', 'familie musik');
+    searchUrl.searchParams.set('type', 'playlist');
+    searchUrl.searchParams.set('limit', String(limit));
+    const searchItems = await requestPlaylists(searchUrl);
+    if (searchItems.length > 0) {
+      return normalizeItems(searchItems);
+    }
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : 'Playlist search fallback failed.');
+  }
+
+  throw new Error(errors[0] || 'Failed to load Spotify playlists.');
 }
 
 export function computeExpiresAtIso(expiresInSeconds: number): string {
