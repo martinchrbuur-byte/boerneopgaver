@@ -106,7 +106,7 @@ export function createSpotifyService({
       const response = await fetchImpl(recommendationsEndpoint, {
         method: 'GET',
         headers,
-        credentials: 'include'
+        credentials: 'omit'
       });
 
       const payload = await response.json().catch(() => ({}));
