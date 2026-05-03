@@ -1,9 +1,16 @@
 :root {
   --app-font-family: "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
   --emoji-font-family: "Noto Color Emoji", "Segoe UI Emoji", "Apple Color Emoji", "Twemoji Mozilla", "EmojiOne Color";
+  --touch-target-min: 48px;
+  --touch-gap: 0.75rem;
   font-family: var(--app-font-family), var(--emoji-font-family);
   color: #0f172a;
   background: #f8fafc;
+}
+
+html {
+  min-height: 100%;
+  height: 100%;
 }
 
 * {
@@ -17,8 +24,14 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100svh;
   background: #f8fafc;
   font-family: inherit;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .display-mode-standalone body {
@@ -31,6 +44,8 @@ body {
   padding: 1rem;
   display: grid;
   gap: 1rem;
+  align-content: start;
+  scroll-padding-top: 1rem;
 }
 
 #chores-workspace,
@@ -41,6 +56,7 @@ body {
 .display-mode-standalone .app-shell {
   width: min(100%, 1800px);
   min-height: 100vh;
+  min-height: 100svh;
   padding: 0.75rem;
 }
 
@@ -68,6 +84,7 @@ body {
   border-radius: 14px;
   padding: 1rem;
   min-width: 0;
+  scroll-margin-top: 0.75rem;
 }
 
 .app-brand {
@@ -423,7 +440,8 @@ body {
   color: #1d4ed8;
   font-weight: 600;
   cursor: pointer;
-  padding: 0;
+  min-height: var(--touch-target-min);
+  padding: 0.35rem 0.2rem;
 }
 
 .auth-link-button:hover {
@@ -471,36 +489,49 @@ body {
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.55rem;
   cursor: pointer;
   font-size: 0.95rem;
+  min-height: var(--touch-target-min);
+  padding: 0.2rem 0;
 }
 
 .checkbox-label input[type="checkbox"] {
   cursor: pointer;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   accent-color: #2563eb;
+  flex: 0 0 auto;
 }
 
 .input {
-  min-height: 44px;
+  min-height: var(--touch-target-min);
   border: 1px solid #cbd5e1;
   border-radius: 10px;
-  padding: 0.55rem 0.7rem;
+  padding: 0.65rem 0.8rem;
   font-size: 1rem;
   font-family: inherit;
 }
 
 .button {
-  min-height: 44px;
+  min-height: var(--touch-target-min);
   border: none;
   border-radius: 10px;
-  padding: 0.55rem 0.9rem;
+  padding: 0.65rem 1rem;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
+}
+
+button,
+[role="tab"],
+.button,
+.input,
+select,
+textarea,
+label[for] {
+  touch-action: manipulation;
 }
 
 .button:focus-visible,
@@ -576,8 +607,13 @@ body {
 
 .actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.65rem;
   flex-wrap: wrap;
+}
+
+.actions > .button,
+.actions > button {
+  flex: 0 1 auto;
 }
 
 .chore-edit-fields {
@@ -602,17 +638,18 @@ body {
 }
 
 .tab-btn {
-  min-height: 40px;
+  min-height: var(--touch-target-min);
   border: 1px solid #cbd5e1;
   border-radius: 10px;
   background: #ffffff;
-  padding: 0.45rem 0.7rem;
+  padding: 0.55rem 0.9rem;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
 }
 
 .tab-active {
@@ -673,7 +710,7 @@ body {
 
 .spotify-device-panel {
   margin-top: 0.35rem;
-  padding: 0.75rem;
+  padding: 0.9rem;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
@@ -700,7 +737,7 @@ body {
 
 .spotify-player {
   margin-top: 0.75rem;
-  padding: 0.75rem;
+  padding: 0.9rem;
   background: #f1f5f9;
   border-radius: 0.75rem;
   display: flex;
@@ -749,7 +786,8 @@ body {
 .spotify-controls {
   display: flex;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.9rem;
+  flex-wrap: wrap;
 }
 
 .spotify-ctrl-btn {
@@ -757,8 +795,8 @@ body {
   color: #fff;
   border: none;
   border-radius: 50%;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 3rem;
+  height: 3rem;
   font-size: 1rem;
   cursor: pointer;
   display: flex;
@@ -1058,6 +1096,183 @@ body {
   .earnings-grid,
   .history-earnings {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (pointer: coarse) {
+  :root {
+    --touch-target-min: 54px;
+    --touch-gap: 0.9rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  .role-switch,
+  .tab-nav,
+  .actions,
+  .spotify-actions,
+  .period-settings-row {
+    gap: var(--touch-gap);
+  }
+
+  .button,
+  .input,
+  .tab-btn,
+  .sync-status-button {
+    font-size: 1rem;
+  }
+
+  .tab-btn {
+    min-width: max-content;
+  }
+
+  .spotify-ctrl-btn {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1.1rem;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    width: 28px;
+    height: 28px;
+  }
+
+  .chore-item,
+  .history-item,
+  .earning-card,
+  .feedback-entry {
+    padding: 0.9rem;
+  }
+
+  .actions > .button,
+  .actions > button,
+  .spotify-actions > .button,
+  .spotify-actions > button {
+    flex: 1 1 10rem;
+  }
+}
+
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 600px) {
+  .display-mode-standalone .app-header-card {
+    position: static;
+  }
+
+  .app-shell,
+  .display-mode-standalone .app-shell {
+    width: 100%;
+    padding: 0.5rem;
+    gap: 0.6rem;
+  }
+
+  .card {
+    padding: 0.75rem;
+    border-radius: 12px;
+  }
+
+  .app-title {
+    font-size: 1.45rem;
+  }
+
+  .app-subtitle,
+  .pwa-install-hint,
+  .chore-meta,
+  .spotify-offline,
+  .feedback,
+  .sync-status-container {
+    font-size: 0.9rem;
+  }
+
+  .section-title {
+    margin-bottom: 0.4rem;
+    font-size: 1.1rem;
+  }
+
+  .app-header-row,
+  .status-row,
+  .period-header,
+  .feedback-entry-header,
+  .spotify-device-header,
+  .spotify-now-playing {
+    gap: 0.5rem;
+  }
+
+  .status-row {
+    align-items: center;
+  }
+
+  .status-container {
+    gap: 0.45rem;
+  }
+
+  .money-slider-group,
+  .tab-panel,
+  .chore-content-grid,
+  .feedback-form,
+  .period-parent-actions {
+    gap: 0.65rem;
+  }
+
+  .role-switch,
+  .app-tab-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.1rem;
+    scrollbar-width: thin;
+  }
+
+  .role-switch > .button,
+  .app-tab-nav > .tab-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .form-row,
+  .form-row-3,
+  .form-row-max,
+  .feedback-message-row,
+  .period-settings-row,
+  #spotify-search-form {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row,
+  .feedback-form,
+  .period-parent-actions {
+    gap: 0.55rem;
+  }
+
+  .assign-to-section,
+  .spotify-device-panel,
+  .spotify-player,
+  .collab-inbox-card {
+    padding: 0.75rem;
+  }
+
+  .actions,
+  .spotify-actions,
+  .assign-checkboxes {
+    gap: 0.55rem;
+  }
+
+  .actions > .button,
+  .actions > button,
+  .spotify-actions > .button,
+  .spotify-actions > button {
+    flex: 1 1 9rem;
+  }
+
+  .earnings-grid,
+  .history-earnings,
+  #period-history {
+    grid-template-columns: 1fr;
+  }
+
+  .mascot-overlay {
+    right: 0.75rem;
+    bottom: 0.75rem;
   }
 }
 
