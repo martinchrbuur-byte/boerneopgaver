@@ -270,6 +270,16 @@ export function createMainView(rootElement) {
             <button id="spotify-disconnect-btn" type="button" class="button button-danger-outline" hidden>Afbryd Spotify</button>
           </div>
           <ul id="spotify-list" class="list spotify-list"></ul>
+          <div id="spotify-device-panel" class="spotify-device-panel" hidden>
+            <div class="spotify-device-header">
+              <h3 class="section-title spotify-device-title">Afspil på</h3>
+              <button id="spotify-device-refresh-btn" type="button" class="button button-secondary" hidden>Opdater enheder</button>
+            </div>
+            <select id="spotify-device-select" class="input spotify-device-select" aria-label="Vælg Spotify Connect-enhed">
+              <option value="">Ingen enheder fundet endnu</option>
+            </select>
+            <p id="spotify-device-status" class="chore-meta">Vælg en højttaler eller anden Spotify Connect-enhed.</p>
+          </div>
           <div id="spotify-player" class="spotify-player" hidden>
             <div class="spotify-now-playing">
               <img id="spotify-track-image" class="spotify-track-image" src="" alt="" hidden>
@@ -355,6 +365,10 @@ export function createMainView(rootElement) {
     spotifyRefreshButton: rootElement.querySelector('#spotify-refresh-btn'),
     spotifyDisconnectButton: rootElement.querySelector('#spotify-disconnect-btn'),
     spotifyList: rootElement.querySelector('#spotify-list'),
+    spotifyDevicePanel: rootElement.querySelector('#spotify-device-panel'),
+    spotifyDeviceSelect: rootElement.querySelector('#spotify-device-select'),
+    spotifyDeviceStatus: rootElement.querySelector('#spotify-device-status'),
+    spotifyDeviceRefreshButton: rootElement.querySelector('#spotify-device-refresh-btn'),
     spotifyPlayer: rootElement.querySelector('#spotify-player'),
     spotifyTrackImage: rootElement.querySelector('#spotify-track-image'),
     spotifyTrackName: rootElement.querySelector('#spotify-track-name'),

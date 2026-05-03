@@ -53,6 +53,10 @@ async function withBootstrappedApp(run) {
     const spotifyConnectLink = document.querySelector('#spotify-connect-link');
     const spotifyRefreshButton = document.querySelector('#spotify-refresh-btn');
     const spotifyList = document.querySelector('#spotify-list');
+    const spotifyDevicePanel = document.querySelector('#spotify-device-panel');
+    const spotifyDeviceSelect = document.querySelector('#spotify-device-select');
+    const spotifyDeviceStatus = document.querySelector('#spotify-device-status');
+    const spotifyDeviceRefreshButton = document.querySelector('#spotify-device-refresh-btn');
 
     assert.ok(roleSwitch);
     assert.ok(modeSwitch);
@@ -74,6 +78,10 @@ async function withBootstrappedApp(run) {
     assert.ok(spotifyConnectLink);
     assert.ok(spotifyRefreshButton);
     assert.ok(spotifyList);
+    assert.ok(spotifyDevicePanel);
+    assert.ok(spotifyDeviceSelect);
+    assert.ok(spotifyDeviceStatus);
+    assert.ok(spotifyDeviceRefreshButton);
 
     await run({
       window,
@@ -96,7 +104,11 @@ async function withBootstrappedApp(run) {
       spotifyStatus,
       spotifyConnectLink,
       spotifyRefreshButton,
-      spotifyList
+      spotifyList,
+      spotifyDevicePanel,
+      spotifyDeviceSelect,
+      spotifyDeviceStatus,
+      spotifyDeviceRefreshButton
     });
   } finally {
     dom.window.close();
@@ -307,7 +319,11 @@ test('spotify tile shows a valid startup state', async () => {
     spotifyStatus,
     spotifyConnectLink,
     spotifyRefreshButton,
-    spotifyList
+    spotifyList,
+    spotifyDevicePanel,
+    spotifyDeviceSelect,
+    spotifyDeviceStatus,
+    spotifyDeviceRefreshButton
   }) => {
     const spotifyModeButton = modeSwitch.querySelector('button[data-mode="spotify"]');
     assert.ok(spotifyModeButton);
@@ -322,5 +338,9 @@ test('spotify tile shows a valid startup state', async () => {
     assert.equal(spotifyRefreshButton.hidden, true);
     assert.match(spotifyList.textContent, /forbundet|henter|anbefalinger/i);
     assert.equal(typeof spotifyConnectLink.hidden, 'boolean');
+    assert.equal(typeof spotifyDevicePanel.hidden, 'boolean');
+    assert.equal(spotifyDeviceSelect.tagName, 'SELECT');
+    assert.match(spotifyDeviceStatus.textContent, /enhed|højttaler/i);
+    assert.equal(typeof spotifyDeviceRefreshButton.hidden, 'boolean');
   });
 });

@@ -19,7 +19,22 @@ function renderEmptySpotifyItem(text) {
   return `<li class="chore-item"><p class="chore-meta">${text}</p></li>`;
 }
 
-function renderSpotifyItems(items = [], playerReady = false) {
+function renderSpotifyDeviceOptions(devices = [], selectedDeviceId = '') {
+  if (!Array.isArray(devices) || devices.length === 0) {
+    return '<option value="">Ingen enheder fundet endnu</option>';
+  }
+
+  return devices.map((device) => {
+    const id = escapeAttribute(device?.id || '');
+    const name = escapeHtml(device?.name || 'Ukendt enhed');
+    const type = escapeHtml(device?.type || 'Ukendt type');
+    const activeSuffix = device?.isActive ? ' · Aktiv' : '';
+    const selected = device?.id === selectedDeviceId ? ' selected' : '';
+    return `<option value="${id}"${selected}>${name} · ${type}${activeSuffix}</option>`;
+  }).join('');
+}
+
+function renderSpotifyItems(items = [], canControlPlayback = false) {
   if (!Array.isArray(items) || items.length === 0) {
     return renderEmptySpotifyItem('Ingen anbefalinger endnu.');
   }
@@ -37,7 +52,7 @@ function renderSpotifyItems(items = [], playerReady = false) {
     const subtitle = escapeHtml(item?.subtitle || 'Spotify');
     const href = escapeAttribute(item?.href || '');
     const uri = escapeAttribute(item?.uri || '');
-    const canPlay = playerReady && uri && item?.canPlay !== false;
+    const canPlay = canControlPlayback && uri && item?.canPlay !== false;
     const linkMarkup = href
       ? `<a class="button button-secondary" href="${href}" target="_blank" rel="noopener noreferrer">Åbn i Spotify</a>`
       : '';
@@ -57,7 +72,7 @@ function renderSpotifyItems(items = [], playerReady = false) {
   }).join('');
 }
 
-function renderSpotifySearchResults(viewRefs, spotifyUi, playerReady) {
+function renderSpotifySearchResults(viewRefs, spotifyUi, canControlPlayback) {
   if (!viewRefs.spotifySearchStatus || !viewRefs.spotifySearchResults) {
     return;
   }
@@ -76,7 +91,7 @@ function renderSpotifySearchResults(viewRefs, spotifyUi, playerReady) {
   }
 
   viewRefs.spotifySearchStatus.textContent = search.message || 'Søgning færdig.';
-  viewRefs.spotifySearchResults.innerHTML = renderSpotifyItems(search.items || [], playerReady);
+  viewRefs.spotifySearchResults.innerHTML = renderSpotifyItems(search.items || [], canControlPlayback);
 }
 
 function renderSpotifyTile(viewRefs, spotifyUi = null) {
@@ -91,8 +106,16 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
   const canConnect = status === 'needs-auth' && typeof spotifyUi?.connectUrl === 'string' && spotifyUi.connectUrl.length > 0;
   const canRefresh = isConnected;
   const playerReady = spotifyUi?.playerReady === true;
+  const canControlPlayback = spotifyUi?.canControlPlayback === true;
   const isPlaying = spotifyUi?.isPlaying === true;
   const currentTrack = spotifyUi?.currentTrack || null;
+  const devices = Array.isArray(spotifyUi?.devices) ? spotifyUi.devices : [];
+  const selectedDeviceId = typeof spotifyUi?.selectedDeviceId === 'string' ? spotifyUi.selectedDeviceId : '';
+  const deviceStatus = typeof spotifyUi?.deviceStatus === 'string' ? spotifyUi.deviceStatus : 'idle';
+  const deviceMessage = typeof spotifyUi?.deviceMessage === 'string'
+    ? spotifyUi.deviceMessage
+    : 'Vælg en højttaler eller anden Spotify Connect-enhed.';
+  const showDevicePicker = isConnected;
 
   viewRefs.spotifyStatus.textContent = message;
   if (viewRefs.spotifyOffline) {
@@ -114,14 +137,41 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
     viewRefs.spotifyDisconnectButton.disabled = status === 'loading';
   }
 
-  if (viewRefs.spotifyPlayer) {
-    viewRefs.spotifyPlayer.hidden = !playerReady;
+  if (viewRefs.spotifyDevicePanel) {
+    viewRefs.spotifyDevicePanel.hidden = !showDevicePicker;
   }
 
-  if (playerReady) {
+  if (viewRefs.spotifyDeviceStatus) {
+    viewRefs.spotifyDeviceStatus.textContent = deviceMessage;
+  }
+
+  if (viewRefs.spotifyDeviceSelect) {
+    viewRefs.spotifyDeviceSelect.innerHTML = renderSpotifyDeviceOptions(devices, selectedDeviceId);
+    viewRefs.spotifyDeviceSelect.disabled = !devices.length || status === 'loading' || deviceStatus === 'loading';
+  }
+
+  if (viewRefs.spotifyDeviceRefreshButton) {
+    viewRefs.spotifyDeviceRefreshButton.hidden = !showDevicePicker;
+    viewRefs.spotifyDeviceRefreshButton.disabled = status === 'loading' || deviceStatus === 'loading';
+  }
+
+  if (viewRefs.spotifyPlayer) {
+    viewRefs.spotifyPlayer.hidden = !canControlPlayback;
+  }
+
+  if (canControlPlayback) {
     if (viewRefs.spotifyPlayPauseBtn) {
       viewRefs.spotifyPlayPauseBtn.textContent = isPlaying ? '⏸' : '▶';
       viewRefs.spotifyPlayPauseBtn.title = isPlaying ? 'Pause' : 'Afspil';
+      viewRefs.spotifyPlayPauseBtn.disabled = false;
+    }
+
+    if (viewRefs.spotifyPrevBtn) {
+      viewRefs.spotifyPrevBtn.disabled = false;
+    }
+
+    if (viewRefs.spotifyNextBtn) {
+      viewRefs.spotifyNextBtn.disabled = false;
     }
 
     if (currentTrack) {
@@ -141,15 +191,23 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
         }
       }
     } else {
-      if (viewRefs.spotifyTrackName) viewRefs.spotifyTrackName.textContent = 'Intet spiller nu';
-      if (viewRefs.spotifyTrackArtist) viewRefs.spotifyTrackArtist.textContent = '';
+      if (viewRefs.spotifyTrackName) viewRefs.spotifyTrackName.textContent = spotifyUi?.selectedDeviceName || 'Intet spiller nu';
+      if (viewRefs.spotifyTrackArtist) {
+        viewRefs.spotifyTrackArtist.textContent = playerReady
+          ? ''
+          : 'Spotify-afspilning styres på den valgte enhed.';
+      }
       if (viewRefs.spotifyTrackImage) viewRefs.spotifyTrackImage.hidden = true;
     }
+  } else {
+    if (viewRefs.spotifyPlayPauseBtn) viewRefs.spotifyPlayPauseBtn.disabled = true;
+    if (viewRefs.spotifyPrevBtn) viewRefs.spotifyPrevBtn.disabled = true;
+    if (viewRefs.spotifyNextBtn) viewRefs.spotifyNextBtn.disabled = true;
   }
 
   if (status === 'loading') {
     viewRefs.spotifyList.innerHTML = renderEmptySpotifyItem('Henter anbefalinger...');
-    renderSpotifySearchResults(viewRefs, spotifyUi, playerReady);
+    renderSpotifySearchResults(viewRefs, spotifyUi, canControlPlayback);
     return;
   }
 
@@ -164,8 +222,8 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
     return;
   }
 
-  viewRefs.spotifyList.innerHTML = renderSpotifyItems(spotifyUi.items || [], playerReady);
-  renderSpotifySearchResults(viewRefs, spotifyUi, playerReady);
+  viewRefs.spotifyList.innerHTML = renderSpotifyItems(spotifyUi.items || [], canControlPlayback);
+  renderSpotifySearchResults(viewRefs, spotifyUi, canControlPlayback);
 }
 
 export function createSpotifyViewStateController({
@@ -210,6 +268,22 @@ export function createSpotifyViewStateController({
     refreshApp(completionMessage);
   }
 
+  async function refreshDevices({ completionMessage = '' } = {}) {
+    if (isAppDisposed()) {
+      return;
+    }
+
+    const pending = spotifyService.refreshDevices();
+    refreshApp();
+    const state = await pending;
+
+    if (isAppDisposed()) {
+      return;
+    }
+
+    refreshApp(completionMessage || state?.deviceMessage || 'Spotify-enheder opdateret.');
+  }
+
   bind(viewRefs.spotifyDisconnectButton, 'click', async () => {
     await spotifyService.disconnect();
     refreshApp('Spotify-forbindelsen er afbrudt.');
@@ -217,6 +291,10 @@ export function createSpotifyViewStateController({
 
   bind(viewRefs.spotifyRefreshButton, 'click', async () => {
     await refreshRecommendations({ completionMessage: 'Spotify-anbefalinger opdateret.' });
+  });
+
+  bind(viewRefs.spotifyDeviceRefreshButton, 'click', async () => {
+    await refreshDevices();
   });
 
   bind(viewRefs.spotifyPlayPauseBtn, 'click', () => {
@@ -262,6 +340,17 @@ export function createSpotifyViewStateController({
     refreshApp(result?.search?.message || (query ? `Søgning færdig for “${query}”.` : 'Søgefelt ryddet.'));
   });
 
+  bind(viewRefs.spotifyDeviceSelect, 'change', async (event) => {
+    const nextDeviceId = String(event.target?.value || '').trim();
+    const result = await spotifyService.selectPlaybackDevice(nextDeviceId);
+
+    if (isAppDisposed()) {
+      return;
+    }
+
+    refreshApp(result?.message || 'Spotify-enhed opdateret.');
+  });
+
   bind(root, 'click', (event) => {
     const playBtn = event.target.closest('[data-spotify-uri]');
     if (!playBtn) {
@@ -284,6 +373,7 @@ export function createSpotifyViewStateController({
   return {
     render,
     refreshRecommendations,
+    refreshDevices,
     dispose() {
       while (removeListeners.length > 0) {
         const remove = removeListeners.pop();

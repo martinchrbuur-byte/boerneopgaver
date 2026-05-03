@@ -684,6 +684,7 @@ async function init() {
       activeMode = nextMode;
       if (activeMode === 'spotify') {
         refresh('Spotify-visning åbnet.');
+        void spotifyViewStateController?.refreshDevices({ completionMessage: 'Spotify-enheder opdateret.' });
         return;
       }
 

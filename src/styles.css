@@ -671,6 +671,33 @@ body {
   margin-bottom: 0.45rem;
 }
 
+.spotify-device-panel {
+  margin-top: 0.35rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.spotify-device-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.spotify-device-title {
+  margin: 0;
+}
+
+.spotify-device-select {
+  width: 100%;
+}
+
 .spotify-player {
   margin-top: 0.75rem;
   padding: 0.75rem;

@@ -98,3 +98,158 @@ test('refreshRecommendations injects liked songs first when API does not return 
   assert.equal(state.items[0]?.uri, 'spotify:collection:tracks');
   assert.equal(state.items[1]?.title, 'Rec 1');
 });
+
+test('refreshDevices prioritizes speakers and selects the active speaker', async () => {
+  const fetchCalls = [];
+  const service = createSpotifyService({
+    spotifyConfig: {
+      recommendationsEndpoint: 'https://example.com/recommendations',
+      playbackEndpoint: 'https://example.com/playback',
+      connectUrl: 'https://example.com/connect'
+    },
+    fetchImpl: async (url, options = {}) => {
+      fetchCalls.push({ url, options });
+      if (url === 'https://example.com/recommendations') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ connected: true, items: [] })
+        };
+      }
+
+      if (url === 'https://example.com/playback') {
+        const body = JSON.parse(options.body || '{}');
+        if (body.action === 'devices') {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              ok: true,
+              devices: [
+                { id: 'phone', name: 'Telefon', type: 'Smartphone', isActive: false },
+                { id: 'sonos', name: 'Stue', type: 'Speaker', isActive: true },
+                { id: 'desktop', name: 'Computer', type: 'Computer', isActive: false }
+              ]
+            })
+          };
+        }
+      }
+
+      throw new Error(`Unexpected request: ${url}`);
+    },
+    navigatorRef: { onLine: true }
+  });
+
+  await service.refreshRecommendations();
+  const state = await service.refreshDevices();
+
+  assert.equal(state.devices.length, 1);
+  assert.equal(state.devices[0]?.id, 'sonos');
+  assert.equal(state.selectedDeviceId, 'sonos');
+  assert.equal(state.canControlPlayback, true);
+  assert.equal(state.showingAllDevices, false);
+  assert.ok(fetchCalls.some((call) => call.url === 'https://example.com/playback'));
+});
+
+test('refreshDevices falls back to all devices when no speakers are visible', async () => {
+  const service = createSpotifyService({
+    spotifyConfig: {
+      recommendationsEndpoint: 'https://example.com/recommendations',
+      playbackEndpoint: 'https://example.com/playback',
+      connectUrl: 'https://example.com/connect'
+    },
+    fetchImpl: async (url, options = {}) => {
+      if (url === 'https://example.com/recommendations') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ connected: true, items: [] })
+        };
+      }
+
+      if (url === 'https://example.com/playback') {
+        const body = JSON.parse(options.body || '{}');
+        if (body.action === 'devices') {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              ok: true,
+              devices: [
+                { id: 'phone', name: 'Telefon', type: 'Smartphone', isActive: true },
+                { id: 'desktop', name: 'Computer', type: 'Computer', isActive: false }
+              ]
+            })
+          };
+        }
+      }
+
+      throw new Error(`Unexpected request: ${url}`);
+    },
+    navigatorRef: { onLine: true }
+  });
+
+  await service.refreshRecommendations();
+  const state = await service.refreshDevices();
+
+  assert.equal(state.devices.length, 2);
+  assert.equal(state.showingAllDevices, true);
+  assert.equal(state.selectedDeviceId, 'phone');
+  assert.match(state.deviceMessage, /fallback/i);
+});
+
+test('selectPlaybackDevice transfers playback and enables controls without browser SDK readiness', async () => {
+  const playbackRequests = [];
+  const service = createSpotifyService({
+    spotifyConfig: {
+      recommendationsEndpoint: 'https://example.com/recommendations',
+      playbackEndpoint: 'https://example.com/playback',
+      connectUrl: 'https://example.com/connect'
+    },
+    fetchImpl: async (url, options = {}) => {
+      if (url === 'https://example.com/recommendations') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ connected: true, items: [] })
+        };
+      }
+
+      if (url === 'https://example.com/playback') {
+        const body = JSON.parse(options.body || '{}');
+        playbackRequests.push(body);
+
+        if (body.action === 'devices') {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ ok: true, devices: [{ id: 'sonos', name: 'Stue', type: 'Speaker', isActive: false }] })
+          };
+        }
+
+        if (body.action === 'transfer') {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ ok: true })
+          };
+        }
+      }
+
+      throw new Error(`Unexpected request: ${url}`);
+    },
+    navigatorRef: { onLine: true }
+  });
+
+  await service.refreshRecommendations();
+  await service.refreshDevices();
+  const result = await service.selectPlaybackDevice('sonos');
+  const state = service.getTileState();
+
+  assert.equal(result.ok, true);
+  assert.equal(state.selectedDeviceId, 'sonos');
+  assert.equal(state.canControlPlayback, true);
+  assert.equal(state.playerReady, false);
+  assert.equal(state.isPlaying, true);
+  assert.deepEqual(playbackRequests.at(-1), { action: 'transfer', deviceId: 'sonos', play: true });
+});

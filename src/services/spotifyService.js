@@ -25,6 +25,81 @@ function normalizeItem(item) {
   };
 }
 
+function normalizeDevice(device) {
+  return {
+    id: typeof device?.id === 'string' ? device.id : '',
+    name: typeof device?.name === 'string' ? device.name : 'Ukendt enhed',
+    type: typeof device?.type === 'string' ? device.type : 'Unknown',
+    isActive: device?.isActive === true,
+    isRestricted: device?.isRestricted === true,
+    volumePercent: typeof device?.volumePercent === 'number' ? device.volumePercent : null,
+    supportsVolume: device?.supportsVolume === true
+  };
+}
+
+function deviceSortValue(device) {
+  const type = typeof device?.type === 'string' ? device.type.toLowerCase() : '';
+  if (type === 'speaker') {
+    return 0;
+  }
+  if (device?.isActive) {
+    return 1;
+  }
+  if (type === 'tv') {
+    return 2;
+  }
+  if (type === 'computer') {
+    return 3;
+  }
+  if (type === 'smartphone') {
+    return 4;
+  }
+  return 5;
+}
+
+function sortDevices(devices = []) {
+  return [...devices].sort((left, right) => {
+    const rank = deviceSortValue(left) - deviceSortValue(right);
+    if (rank !== 0) {
+      return rank;
+    }
+
+    if (left.isActive !== right.isActive) {
+      return left.isActive ? -1 : 1;
+    }
+
+    return String(left.name || '').localeCompare(String(right.name || ''), 'da');
+  });
+}
+
+function createInitialTileState(enabled, connectUrl) {
+  return {
+    status: enabled ? (connectUrl ? 'needs-auth' : 'unavailable') : 'unavailable',
+    message: enabled
+      ? (connectUrl ? 'Forbind Spotify for at hente anbefalinger.' : 'Spotify er ikke sat op endnu.')
+      : 'Spotify er slået fra.',
+    connectUrl,
+    items: [],
+    search: {
+      query: '',
+      status: 'idle',
+      message: 'Søg for at finde musik og playlister.',
+      items: []
+    },
+    playerReady: false,
+    canControlPlayback: false,
+    isPlaying: false,
+    currentTrack: null,
+    deviceId: '',
+    selectedDeviceId: '',
+    selectedDeviceName: '',
+    devices: [],
+    deviceStatus: 'idle',
+    deviceMessage: 'Vælg en højttaler eller anden Spotify Connect-enhed.',
+    showingAllDevices: false
+  };
+}
+
 function isLikedSongsItem(item) {
   if (!item || typeof item !== 'object') {
     return false;
@@ -127,31 +202,41 @@ export function createSpotifyService({
   const playbackEndpoint = sanitizeUrl(spotifyConfig?.playbackEndpoint);
   const disconnectEndpoint = sanitizeUrl(spotifyConfig?.disconnectEndpoint);
 
-  let tileState = {
-    status: enabled ? (connectUrl ? 'needs-auth' : 'unavailable') : 'unavailable',
-    message: enabled
-      ? (connectUrl ? 'Forbind Spotify for at hente anbefalinger.' : 'Spotify er ikke sat op endnu.')
-      : 'Spotify er slået fra.',
-    connectUrl,
-    items: [],
-    search: {
-      query: '',
-      status: 'idle',
-      message: 'Søg for at finde musik og playlister.',
-      items: []
-    },
-    playerReady: false,
-    isPlaying: false,
-    currentTrack: null,
-    deviceId: ''
-  };
+  let tileState = createInitialTileState(enabled, connectUrl);
 
   // SDK player state
   let player = null;
-  let deviceId = '';
+  let browserDeviceId = '';
   let cachedToken = null; // { token, expiresAt (ms) }
   let playerInitPromise = null;
   let onStateChange = null;
+
+  function notifyStateChange() {
+    if (typeof onStateChange === 'function') {
+      onStateChange();
+    }
+  }
+
+  function getSelectedPlaybackDeviceId() {
+    return tileState.selectedDeviceId || browserDeviceId;
+  }
+
+  function getSelectedPlaybackDeviceName() {
+    if (tileState.selectedDeviceId) {
+      return tileState.selectedDeviceName || '';
+    }
+
+    const browserDevice = (tileState.devices || []).find((device) => device.id === browserDeviceId);
+    return browserDevice?.name || '';
+  }
+
+  function syncPlaybackAvailability() {
+    tileState = {
+      ...tileState,
+      deviceId: getSelectedPlaybackDeviceId(),
+      canControlPlayback: tileState.playerReady || Boolean(tileState.selectedDeviceId)
+    };
+  }
 
   function isOnline() {
     if (!navigatorRef || typeof navigatorRef.onLine !== 'boolean') {
@@ -228,6 +313,7 @@ export function createSpotifyService({
   function updatePlayerState(sdkState) {
     if (!sdkState) {
       tileState = { ...tileState, isPlaying: false, currentTrack: null };
+      syncPlaybackAvailability();
       return;
     }
 
@@ -243,10 +329,8 @@ export function createSpotifyService({
       : null;
 
     tileState = { ...tileState, isPlaying: !sdkState.paused, currentTrack };
-
-    if (typeof onStateChange === 'function') {
-      onStateChange();
-    }
+    syncPlaybackAvailability();
+    notifyStateChange();
   }
 
   async function initPlayer() {
@@ -280,19 +364,21 @@ export function createSpotifyService({
         });
 
         player.addListener('ready', ({ device_id }) => {
-          deviceId = device_id;
-          tileState = { ...tileState, playerReady: true, deviceId };
-          if (typeof onStateChange === 'function') {
-            onStateChange();
-          }
+          browserDeviceId = device_id;
+          tileState = {
+            ...tileState,
+            playerReady: true
+          };
+          syncPlaybackAvailability();
+          notifyStateChange();
+          void refreshDevices({ preserveMessage: true });
         });
 
         player.addListener('not_ready', () => {
-          deviceId = '';
-          tileState = { ...tileState, playerReady: false, deviceId: '', isPlaying: false };
-          if (typeof onStateChange === 'function') {
-            onStateChange();
-          }
+          browserDeviceId = '';
+          tileState = { ...tileState, playerReady: false, isPlaying: false };
+          syncPlaybackAvailability();
+          notifyStateChange();
         });
 
         player.addListener('player_state_changed', (state) => {
@@ -303,12 +389,14 @@ export function createSpotifyService({
           console.warn('Spotify init error:', message);
           playerInitPromise = null;
           tileState = { ...tileState, playerReady: false };
+          syncPlaybackAvailability();
         });
 
         player.addListener('authentication_error', ({ message }) => {
           console.warn('Spotify auth error:', message);
           cachedToken = null;
           tileState = { ...tileState, playerReady: false };
+          syncPlaybackAvailability();
         });
 
         player.addListener('account_error', ({ message }) => {
@@ -318,9 +406,8 @@ export function createSpotifyService({
             playerReady: false,
             message: 'Spotify Premium kræves for afspilning i browseren.'
           };
-          if (typeof onStateChange === 'function') {
-            onStateChange();
-          }
+          syncPlaybackAvailability();
+          notifyStateChange();
         });
 
         await player.connect();
@@ -348,10 +435,14 @@ export function createSpotifyService({
         method: 'POST',
         headers: { ...buildSupabaseHeaders(), 'Content-Type': 'application/json' },
         credentials: 'omit',
-        body: JSON.stringify({ action, deviceId, ...extra })
+        body: JSON.stringify({ action, deviceId: getSelectedPlaybackDeviceId(), ...extra })
       });
 
       const payload = await response.json().catch(() => ({}));
+
+      if (response.ok && payload?.ok) {
+        return payload;
+      }
 
       if (payload?.needsReconnect) {
         // stored token lacks playback scopes – prompt reconnect
@@ -361,45 +452,217 @@ export function createSpotifyService({
           message: payload.message || 'Forbind Spotify igen for at aktivere afspilning.',
           connectUrl: sanitizeUrl(payload.reconnectUrl) || connectUrl
         };
-        if (typeof onStateChange === 'function') {
-          onStateChange();
-        }
+        notifyStateChange();
       }
+
+      return payload;
     } catch (error) {
       console.warn(`Spotify ${action} failed:`, error);
+      return { ok: false, message: error instanceof Error ? error.message : 'Ukendt fejl.' };
     }
+  }
+
+  async function refreshDevices({ preserveMessage = false } = {}) {
+    if (!enabled) {
+      tileState = {
+        ...tileState,
+        deviceStatus: 'error',
+        deviceMessage: 'Spotify er slået fra.',
+        devices: []
+      };
+      syncPlaybackAvailability();
+      return getTileState();
+    }
+
+    if (!isOnline()) {
+      tileState = {
+        ...tileState,
+        deviceStatus: 'error',
+        deviceMessage: 'Du er offline. Enhedslisten kan ikke opdateres lige nu.',
+        devices: []
+      };
+      syncPlaybackAvailability();
+      return getTileState();
+    }
+
+    if (!playbackEndpoint) {
+      tileState = {
+        ...tileState,
+        deviceStatus: 'error',
+        deviceMessage: 'Spotify afspilnings-endpoint mangler i app-konfigurationen.',
+        devices: []
+      };
+      syncPlaybackAvailability();
+      return getTileState();
+    }
+
+    tileState = {
+      ...tileState,
+      deviceStatus: 'loading',
+      deviceMessage: 'Henter Spotify Connect-enheder...'
+    };
+    notifyStateChange();
+
+    const payload = await sendPlaybackCommand('devices');
+    if (!payload?.ok) {
+      tileState = {
+        ...tileState,
+        deviceStatus: 'error',
+        deviceMessage: typeof payload?.message === 'string' && payload.message.trim().length > 0
+          ? payload.message
+          : 'Kunne ikke hente Spotify Connect-enheder lige nu.',
+        devices: []
+      };
+      syncPlaybackAvailability();
+      notifyStateChange();
+      return getTileState();
+    }
+
+    const devices = Array.isArray(payload?.devices)
+      ? sortDevices(payload.devices.map(normalizeDevice).filter((device) => device.id))
+      : [];
+    const speakerDevices = devices.filter((device) => String(device.type || '').toLowerCase() === 'speaker');
+    const visibleDevices = speakerDevices.length > 0 ? speakerDevices : devices;
+    const activeDevice = devices.find((device) => device.isActive);
+    const selectedDevice = visibleDevices.find((device) => device.id === tileState.selectedDeviceId)
+      || visibleDevices.find((device) => device.id === activeDevice?.id)
+      || visibleDevices[0]
+      || null;
+
+    tileState = {
+      ...tileState,
+      devices: visibleDevices,
+      selectedDeviceId: selectedDevice?.id || '',
+      selectedDeviceName: selectedDevice?.name || '',
+      deviceStatus: devices.length > 0 ? 'ready' : 'empty',
+      deviceMessage: devices.length === 0
+        ? 'Ingen Spotify Connect-enheder fundet. Åbn Spotify på din Sonos-højttaler eller en anden enhed, og prøv igen.'
+        : speakerDevices.length > 0
+          ? 'Højttalere vises først, så Sonos og andre Spotify Connect-højttalere er nemmere at vælge.'
+          : 'Ingen højttalere fundet lige nu, så alle Spotify Connect-enheder vises som fallback.',
+      showingAllDevices: speakerDevices.length === 0 && devices.length > 0
+    };
+
+    if (!preserveMessage && tileState.status === 'ready' && !tileState.message) {
+      tileState = { ...tileState, message: 'Spotify er klar.' };
+    }
+
+    syncPlaybackAvailability();
+    notifyStateChange();
+    return getTileState();
+  }
+
+  async function selectPlaybackDevice(nextDeviceId) {
+    const normalizedId = String(nextDeviceId || '').trim();
+    if (!normalizedId) {
+      tileState = {
+        ...tileState,
+        selectedDeviceId: '',
+        selectedDeviceName: '',
+        isPlaying: false
+      };
+      syncPlaybackAvailability();
+      notifyStateChange();
+      return { ok: true, message: 'Valg af Spotify-enhed nulstillet.' };
+    }
+
+    const selectedDevice = (tileState.devices || []).find((device) => device.id === normalizedId);
+    if (!selectedDevice) {
+      return { ok: false, message: 'Den valgte Spotify-enhed kunne ikke findes længere.' };
+    }
+
+    tileState = {
+      ...tileState,
+      deviceStatus: 'loading',
+      deviceMessage: `Skifter afspilning til ${selectedDevice.name}...`
+    };
+    notifyStateChange();
+
+    const payload = await sendPlaybackCommand('transfer', { deviceId: normalizedId, play: true });
+    if (!payload?.ok) {
+      tileState = {
+        ...tileState,
+        deviceStatus: 'error',
+        deviceMessage: typeof payload?.message === 'string' && payload.message.trim().length > 0
+          ? payload.message
+          : 'Kunne ikke skifte Spotify-enhed lige nu.'
+      };
+      notifyStateChange();
+      return { ok: false, message: tileState.deviceMessage };
+    }
+
+    tileState = {
+      ...tileState,
+      selectedDeviceId: normalizedId,
+      selectedDeviceName: selectedDevice.name,
+      isPlaying: true,
+      deviceStatus: 'ready',
+      deviceMessage: `${selectedDevice.name} er valgt til Spotify-afspilning.`,
+      devices: (tileState.devices || []).map((device) => ({
+        ...device,
+        isActive: device.id === normalizedId
+      }))
+    };
+    syncPlaybackAvailability();
+    notifyStateChange();
+    return { ok: true, message: tileState.deviceMessage };
   }
 
   async function play(uri) {
     const safeUri = typeof uri === 'string' ? uri.trim() : '';
     if (!safeUri) {
-      await sendPlaybackCommand('play');
+      const result = await sendPlaybackCommand('play');
+      if (result?.ok) {
+        tileState = { ...tileState, isPlaying: true };
+        syncPlaybackAvailability();
+        notifyStateChange();
+      }
       return;
     }
 
     if (safeUri.startsWith('spotify:track:')) {
-      await sendPlaybackCommand('play', { trackUri: safeUri });
+      const result = await sendPlaybackCommand('play', { trackUri: safeUri });
+      if (result?.ok) {
+        tileState = { ...tileState, isPlaying: true };
+        syncPlaybackAvailability();
+        notifyStateChange();
+      }
       return;
     }
 
-    await sendPlaybackCommand('play', { contextUri: safeUri });
+    const result = await sendPlaybackCommand('play', { contextUri: safeUri });
+    if (result?.ok) {
+      tileState = { ...tileState, isPlaying: true };
+      syncPlaybackAvailability();
+      notifyStateChange();
+    }
   }
 
   async function togglePlay() {
-    if (!player) {
+    if (!tileState.canControlPlayback) {
       return;
     }
 
     try {
-      // Get current state from SDK to know if playing or paused
-      const state = await player.getCurrentState();
-      if (!state) {
-        return;
+      if (player && tileState.playerReady) {
+        const state = await player.getCurrentState();
+        if (state) {
+          const result = await sendPlaybackCommand(state.paused ? 'play' : 'pause');
+          if (result?.ok) {
+            tileState = { ...tileState, isPlaying: state.paused };
+            syncPlaybackAvailability();
+            notifyStateChange();
+          }
+          return;
+        }
       }
-      if (state.paused) {
-        await sendPlaybackCommand('play');
-      } else {
-        await sendPlaybackCommand('pause');
+
+      const nextAction = tileState.isPlaying ? 'pause' : 'play';
+      const result = await sendPlaybackCommand(nextAction);
+      if (result?.ok) {
+        tileState = { ...tileState, isPlaying: nextAction === 'play' };
+        syncPlaybackAvailability();
+        notifyStateChange();
       }
     } catch (error) {
       console.warn('Spotify togglePlay failed:', error);
@@ -427,7 +690,7 @@ export function createSpotifyService({
     // Stop and clean up SDK player
     dispose();
     cachedToken = null;
-    deviceId = '';
+    browserDeviceId = '';
 
     if (disconnectEndpoint) {
       try {
@@ -441,22 +704,7 @@ export function createSpotifyService({
       }
     }
 
-    tileState = {
-      status: connectUrl ? 'needs-auth' : 'unavailable',
-      message: 'Forbind Spotify for at hente anbefalinger.',
-      connectUrl,
-      items: [],
-      search: {
-        query: '',
-        status: 'idle',
-        message: 'Søg for at finde musik og playlister.',
-        items: []
-      },
-      playerReady: false,
-      isPlaying: false,
-      currentTrack: null,
-      deviceId: ''
-    };
+    tileState = createInitialTileState(enabled, connectUrl);
   }
 
   async function beginAuthorization() {
@@ -575,11 +823,14 @@ export function createSpotifyService({
         connectUrl: responseConnectUrl,
         items
       };
+      syncPlaybackAvailability();
 
       // Auto-initialize the player when connected
       if (tokenEndpoint && !player) {
         void initPlayer();
       }
+
+      void refreshDevices({ preserveMessage: true });
 
       return getTileState();
     } catch {
@@ -708,6 +959,7 @@ export function createSpotifyService({
           items
         }
       };
+      syncPlaybackAvailability();
 
       if (tokenEndpoint && !player) {
         void initPlayer();
@@ -738,6 +990,8 @@ export function createSpotifyService({
     togglePlay,
     next,
     previous,
+    refreshDevices,
+    selectPlaybackDevice,
     searchCatalog,
     setOnStateChange,
     dispose

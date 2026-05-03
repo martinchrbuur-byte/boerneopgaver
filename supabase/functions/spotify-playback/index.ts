@@ -87,6 +87,7 @@ Deno.serve(async (request) => {
   const deviceId = typeof body.deviceId === 'string' ? body.deviceId : '';
   const contextUri = typeof body.contextUri === 'string' ? body.contextUri : '';
   const trackUri = typeof body.trackUri === 'string' ? body.trackUri : '';
+  const transferPlay = body.play !== false;
 
   const spotifyHeaders = {
     Authorization: `Bearer ${accessToken}`,
@@ -96,7 +97,21 @@ Deno.serve(async (request) => {
   try {
     let spotifyResp: Response;
 
-    if (action === 'play') {
+    if (action === 'devices') {
+      spotifyResp = await fetch(`${SPOTIFY_API_BASE}/me/player/devices`, {
+        method: 'GET',
+        headers: spotifyHeaders
+      });
+    } else if (action === 'transfer') {
+      spotifyResp = await fetch(`${SPOTIFY_API_BASE}/me/player`, {
+        method: 'PUT',
+        headers: spotifyHeaders,
+        body: JSON.stringify({
+          device_ids: deviceId ? [deviceId] : [],
+          play: transferPlay
+        })
+      });
+    } else if (action === 'play') {
       const url = new URL(`${SPOTIFY_API_BASE}/me/player/play`);
       if (deviceId) url.searchParams.set('device_id', deviceId);
       const playBody: Record<string, unknown> = {};
@@ -136,6 +151,23 @@ Deno.serve(async (request) => {
     }
 
     // Spotify returns 204 No Content for successful playback commands
+    if (action === 'devices' && spotifyResp.ok) {
+      const payload = await spotifyResp.json().catch(() => ({}));
+      const devices = Array.isArray(payload?.devices)
+        ? payload.devices.map((device: Record<string, unknown>) => ({
+            id: typeof device?.id === 'string' ? device.id : '',
+            name: typeof device?.name === 'string' ? device.name : 'Ukendt enhed',
+            type: typeof device?.type === 'string' ? device.type : 'Unknown',
+            isActive: device?.is_active === true,
+            isRestricted: device?.is_restricted === true,
+            volumePercent: typeof device?.volume_percent === 'number' ? device.volume_percent : null,
+            supportsVolume: device?.supports_volume === true
+          })).filter((device: Record<string, unknown>) => typeof device.id === 'string' && device.id.length > 0)
+        : [];
+
+      return jsonResponse({ ok: true, devices });
+    }
+
     if (spotifyResp.status === 204 || spotifyResp.ok) {
       return jsonResponse({ ok: true });
     }
