@@ -25,6 +25,45 @@ function normalizeItem(item) {
   };
 }
 
+function isLikedSongsItem(item) {
+  if (!item || typeof item !== 'object') {
+    return false;
+  }
+
+  const title = typeof item.title === 'string' ? item.title.trim().toLowerCase() : '';
+  const uri = typeof item.uri === 'string' ? item.uri.trim().toLowerCase() : '';
+  const href = typeof item.href === 'string' ? item.href.trim().toLowerCase() : '';
+
+  if (uri === 'spotify:collection' || uri === 'spotify:collection:tracks') {
+    return true;
+  }
+
+  if (href.includes('/collection/tracks')) {
+    return true;
+  }
+
+  return title === 'liked songs' || title === 'sange, du synes om';
+}
+
+function prioritizeLikedSongs(items = []) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return [];
+  }
+
+  const likedSongs = [];
+  const remaining = [];
+
+  for (const item of items) {
+    if (isLikedSongsItem(item)) {
+      likedSongs.push(item);
+    } else {
+      remaining.push(item);
+    }
+  }
+
+  return [...likedSongs, ...remaining];
+}
+
 let sdkLoadPromise = null;
 
 function loadSpotifySdk() {
@@ -513,7 +552,7 @@ export function createSpotifyService({
       }
 
       const items = Array.isArray(payload?.items)
-        ? payload.items.map(normalizeItem).slice(0, 6)
+        ? prioritizeLikedSongs(payload.items.map(normalizeItem)).slice(0, 6)
         : [];
 
       tileState = {
