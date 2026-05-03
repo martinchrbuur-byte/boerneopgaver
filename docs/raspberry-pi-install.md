@@ -110,6 +110,28 @@ Categories=Education;Utility;
 4. Confirm the app opens in app mode, not a normal browser tab
 5. Confirm data sync still works
 
+## 6. Optional: auto-select AirPlay output on boot
+
+If you want Raspberry Pi audio to route to an AirPlay speaker automatically after login, use:
+
+- `chmod +x scripts/pi/setup-airplay-autostart.sh`
+- `./scripts/pi/setup-airplay-autostart.sh --speaker "Stue"`
+
+If PulseAudio/RAOP packages are not installed yet:
+
+- `sudo ./scripts/pi/setup-airplay-autostart.sh --install-packages --speaker "Stue"`
+
+This creates:
+
+- `~/.local/bin/opgavehelte-select-airplay-sink.sh`
+- `~/.config/systemd/user/opgavehelte-airplay-default.service`
+
+The service runs at desktop login, discovers RAOP sinks, and sets the first matching AirPlay sink as default output.
+
+Manual test:
+
+- `sudo -u pi ~/.local/bin/opgavehelte-select-airplay-sink.sh`
+
 ## Troubleshooting
 
 ### Install button does not appear
@@ -145,6 +167,20 @@ Check that:
 - the Pi has internet access
 - the deployed build has the correct Supabase publishable key
 - Supabase is reachable from Chromium on the Pi
+
+### AirPlay sink is not found
+
+Check that:
+
+- the speaker and Pi are on the same network/subnet
+- `avahi-daemon` is running
+- the speaker supports AirPlay/RAOP discovery
+- the optional `--speaker` filter matches the device name shown by PulseAudio
+
+Useful diagnostics:
+
+- `pactl list short sinks`
+- `systemctl --user status opgavehelte-airplay-default.service`
 
 ### Emoji are missing or show as boxes
 

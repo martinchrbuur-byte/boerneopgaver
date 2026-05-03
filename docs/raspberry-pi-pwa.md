@@ -21,6 +21,14 @@ Recommended Raspberry Pi OS settings:
 2. Run `scripts/pi/setup-pi-app.sh <app-url>` on the Pi to create the launcher and autostart entry.
 3. Reboot and verify the app opens automatically.
 
+## Optional AirPlay audio routing
+
+If you want Pi audio to default to an AirPlay speaker after login, run:
+
+- `scripts/pi/setup-airplay-autostart.sh --speaker "Stue"`
+
+The helper creates a user-level systemd service that discovers RAOP sinks and sets your preferred AirPlay output as default.
+
 ## Notes
 
 - The app shell is cached locally by the service worker.
