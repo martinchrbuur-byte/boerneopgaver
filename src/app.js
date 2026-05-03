@@ -20,6 +20,7 @@ import {
   updateCurrentUserPassword
 } from './services/supabaseService.js';
 import { createAuthView, createMainView } from './ui/mainView.js';
+import { createSpotifyViewStateController } from './ui/spotifyViewState.js';
 import { renderFeedback, renderState, showCoinToWallet, showMascot, showRoleSwitchWalk } from './ui/choreView.js';
 import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
 
@@ -257,11 +258,8 @@ async function init() {
     getAccessToken: () => currentSession?.access_token || ''
   });
 
-  spotifyService.setOnStateChange(() => {
-    if (!isAppDisposed && root?.isConnected) {
-      refresh();
-    }
-  });
+  let spotifyViewStateController = null;
+  cleanupTasks.push(() => spotifyViewStateController?.dispose());
   cleanupTasks.push(() => spotifyService.dispose());
   let activeMode = 'chores';
   let activeTab = 'opgaver';
@@ -424,18 +422,16 @@ async function init() {
       entries: feedbackService.listEntries()
     };
 
-    const spotifyUi = spotifyService.getTileState();
-
     renderState(viewRefs, choreState, {
       activeRole,
       activeMode,
       activeTab,
       periodUi,
       feedbackUi,
-      spotifyUi,
       editState: periodUi.editState
     });
     renderFeedback(viewRefs, message);
+    spotifyViewStateController?.render();
 
     const feedbackEl = viewRefs.feedback;
     const existingSyncStatus = document.getElementById('sync-status');
@@ -481,24 +477,18 @@ async function init() {
     }
   }
 
-  async function refreshSpotifyRecommendations({ completionMessage = '' } = {}) {
-    if (isAppDisposed) {
-      return;
-    }
-
-    const pending = spotifyService.refreshRecommendations();
-    refresh();
-    await pending;
-    if (isAppDisposed || !root?.isConnected || typeof document === 'undefined') {
-      return;
-    }
-    refresh(completionMessage);
-  }
+  spotifyViewStateController = createSpotifyViewStateController({
+    root,
+    viewRefs,
+    spotifyService,
+    refreshApp: refresh,
+    isAppDisposed: () => isAppDisposed || !root?.isConnected || typeof document === 'undefined'
+  });
 
   seedStarterChores(choreService);
   persistActiveRole();
   refresh();
-  void refreshSpotifyRecommendations();
+  void spotifyViewStateController.refreshRecommendations();
 
   if (isSupabaseConfigured()) {
     lastSyncStateSnapshot = createSyncStateSnapshot(storageService.getSyncState());
@@ -583,7 +573,7 @@ async function init() {
 
     const onOnline = async () => {
       try {
-        await spotifyService.refreshRecommendations();
+        await spotifyViewStateController.refreshRecommendations();
         await storageService.syncNow();
         const supabaseData = await initializeSupabaseData();
         if (!supabaseData) {
@@ -616,83 +606,6 @@ async function init() {
       await signOutAndReturnToAuth('Log ind med en anden konto.');
     });
   }
-
-  if (viewRefs.spotifyDisconnectButton) {
-    viewRefs.spotifyDisconnectButton.addEventListener('click', async () => {
-      await spotifyService.disconnect();
-      refresh('Spotify-forbindelsen er afbrudt.');
-    });
-  }
-
-  if (viewRefs.spotifyRefreshButton) {
-    viewRefs.spotifyRefreshButton.addEventListener('click', async () => {
-      await refreshSpotifyRecommendations({ completionMessage: 'Spotify-anbefalinger opdateret.' });
-    });
-  }
-
-  if (viewRefs.spotifyPlayPauseBtn) {
-    viewRefs.spotifyPlayPauseBtn.addEventListener('click', () => {
-      void spotifyService.togglePlay();
-    });
-  }
-
-  if (viewRefs.spotifyPrevBtn) {
-    viewRefs.spotifyPrevBtn.addEventListener('click', () => {
-      void spotifyService.previous();
-    });
-  }
-
-  if (viewRefs.spotifyNextBtn) {
-    viewRefs.spotifyNextBtn.addEventListener('click', () => {
-      void spotifyService.next();
-    });
-  }
-
-  if (viewRefs.spotifyConnectLink) {
-    viewRefs.spotifyConnectLink.addEventListener('click', async () => {
-      const pending = spotifyService.beginAuthorization();
-      refresh();
-      const result = await pending;
-
-      if (result?.ok && typeof result.authorizationUrl === 'string' && result.authorizationUrl.length > 0) {
-        window.location.assign(result.authorizationUrl);
-        return;
-      }
-
-      if (isAppDisposed || !root?.isConnected || typeof document === 'undefined') {
-        return;
-      }
-
-      refresh(result?.message || 'Kunne ikke starte Spotify-login.');
-    });
-  }
-
-  if (viewRefs.spotifySearchForm && viewRefs.spotifySearchInput) {
-    viewRefs.spotifySearchForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      const query = String(viewRefs.spotifySearchInput.value || '').trim();
-      const pending = spotifyService.searchCatalog(query);
-      refresh();
-      const result = await pending;
-
-      if (isAppDisposed || !root?.isConnected || typeof document === 'undefined') {
-        return;
-      }
-
-      refresh(result?.search?.message || (query ? `Søgning færdig for “${query}”.` : 'Søgefelt ryddet.'));
-    });
-  }
-
-  root.addEventListener('click', (event) => {
-    const playBtn = event.target.closest('[data-spotify-uri]');
-    if (playBtn) {
-      const uri = playBtn.getAttribute('data-spotify-uri');
-      if (uri) {
-        void spotifyService.play(uri);
-      }
-    }
-  });
 
   root.addEventListener('click', async (event) => {
     const actionElement = event.target.closest('[data-app-action]');
