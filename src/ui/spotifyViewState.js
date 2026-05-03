@@ -27,7 +27,8 @@ function renderSpotifyDeviceOptions(devices = [], selectedDeviceId = '') {
   return devices.map((device) => {
     const id = escapeAttribute(device?.id || '');
     const name = escapeHtml(device?.name || 'Ukendt enhed');
-    const type = escapeHtml(device?.type || 'Ukendt type');
+    const sourceLabel = device?.source === 'sonos' ? 'Sonos' : 'Spotify';
+    const type = escapeHtml(`${sourceLabel} · ${device?.type || 'Ukendt type'}`);
     const activeSuffix = device?.isActive ? ' · Aktiv' : '';
     const selected = device?.id === selectedDeviceId ? ' selected' : '';
     return `<option value="${id}"${selected}>${name} · ${type}${activeSuffix}</option>`;
@@ -105,6 +106,9 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
   const isConnected = status === 'ready';
   const canConnect = status === 'needs-auth' && typeof spotifyUi?.connectUrl === 'string' && spotifyUi.connectUrl.length > 0;
   const canRefresh = isConnected;
+  const sonosCanConnect = typeof spotifyUi?.sonosConnectUrl === 'string'
+    && spotifyUi.sonosConnectUrl.length > 0
+    && spotifyUi?.sonosConnected !== true;
   const playerReady = spotifyUi?.playerReady === true;
   const canControlPlayback = spotifyUi?.canControlPlayback === true;
   const isPlaying = spotifyUi?.isPlaying === true;
@@ -127,6 +131,11 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
     viewRefs.spotifyConnectLink.disabled = status === 'loading';
   }
 
+  if (viewRefs.sonosConnectLink) {
+    viewRefs.sonosConnectLink.hidden = !sonosCanConnect;
+    viewRefs.sonosConnectLink.disabled = status === 'loading';
+  }
+
   if (viewRefs.spotifyRefreshButton) {
     viewRefs.spotifyRefreshButton.hidden = !canRefresh;
     viewRefs.spotifyRefreshButton.disabled = status === 'loading';
@@ -135,6 +144,11 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
   if (viewRefs.spotifyDisconnectButton) {
     viewRefs.spotifyDisconnectButton.hidden = !isConnected;
     viewRefs.spotifyDisconnectButton.disabled = status === 'loading';
+  }
+
+  if (viewRefs.sonosDisconnectButton) {
+    viewRefs.sonosDisconnectButton.hidden = !spotifyUi?.sonosConnected;
+    viewRefs.sonosDisconnectButton.disabled = status === 'loading';
   }
 
   if (viewRefs.spotifyDevicePanel) {
@@ -289,6 +303,11 @@ export function createSpotifyViewStateController({
     refreshApp('Spotify-forbindelsen er afbrudt.');
   });
 
+  bind(viewRefs.sonosDisconnectButton, 'click', async () => {
+    await spotifyService.disconnectSonos();
+    refreshApp('Sonos-forbindelsen er afbrudt.');
+  });
+
   bind(viewRefs.spotifyRefreshButton, 'click', async () => {
     await refreshRecommendations({ completionMessage: 'Spotify-anbefalinger opdateret.' });
   });
@@ -324,6 +343,23 @@ export function createSpotifyViewStateController({
     }
 
     refreshApp(result?.message || 'Kunne ikke starte Spotify-login.');
+  });
+
+  bind(viewRefs.sonosConnectLink, 'click', async () => {
+    const pending = spotifyService.beginSonosAuthorization();
+    refreshApp();
+    const result = await pending;
+
+    if (result?.ok && typeof result.authorizationUrl === 'string' && result.authorizationUrl.length > 0) {
+      navigate(result.authorizationUrl);
+      return;
+    }
+
+    if (isAppDisposed()) {
+      return;
+    }
+
+    refreshApp(result?.message || 'Kunne ikke starte Sonos-login.');
   });
 
   bind(viewRefs.spotifySearchForm, 'submit', async (event) => {

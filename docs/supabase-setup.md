@@ -89,6 +89,7 @@ CREATE POLICY "Users can delete own ui_state" ON ui_state
 For Spotify OAuth + recommendations, run this additional SQL migration in Supabase SQL Editor:
 
 - `scripts/supabase-spotify-migration.sql`
+- `scripts/supabase-sonos-migration.sql`
 
 Then deploy these Edge Functions from the repository root:
 
@@ -96,6 +97,14 @@ Then deploy these Edge Functions from the repository root:
 supabase functions deploy spotify-connect
 supabase functions deploy spotify-callback
 supabase functions deploy spotify-recommendations
+supabase functions deploy spotify-playback
+supabase functions deploy spotify-token
+supabase functions deploy spotify-disconnect
+supabase functions deploy sonos-connect
+supabase functions deploy sonos-callback
+supabase functions deploy sonos-devices
+supabase functions deploy sonos-playback
+supabase functions deploy sonos-disconnect
 ```
 
 Required function secrets:
@@ -107,6 +116,12 @@ supabase secrets set SPOTIFY_REDIRECT_URI=https://<project-ref>.supabase.co/func
 supabase secrets set SPOTIFY_STATE_SECRET=<long-random-value>
 supabase secrets set SPOTIFY_SCOPES="user-read-email user-read-private"
 supabase secrets set SPOTIFY_POST_AUTH_REDIRECT_URL=https://<your-app-origin>/
+supabase secrets set SONOS_CLIENT_ID=your_sonos_client_id
+supabase secrets set SONOS_CLIENT_SECRET=your_sonos_client_secret
+supabase secrets set SONOS_REDIRECT_URI=https://<project-ref>.supabase.co/functions/v1/sonos-callback
+supabase secrets set SONOS_STATE_SECRET=<long-random-value>
+supabase secrets set SONOS_SCOPES="household-read-all playback-control-all"
+supabase secrets set SONOS_POST_AUTH_REDIRECT_URL=https://<your-app-origin>/
 ```
 
 For local `npm run build` / CI artifact injection, also set public client env vars:

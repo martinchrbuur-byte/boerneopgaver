@@ -9,7 +9,11 @@ const DEFAULT_CONFIG = Object.freeze({
     searchEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-search',
     tokenEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-token',
     playbackEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-playback',
-    disconnectEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-disconnect'
+    disconnectEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/spotify-disconnect',
+    sonosConnectEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/sonos-connect',
+    sonosDevicesEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/sonos-devices',
+    sonosPlaybackEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/sonos-playback',
+    sonosDisconnectEndpoint: 'https://mfydufcizonxjmgyrwkj.supabase.co/functions/v1/sonos-disconnect'
   })
 });
 
@@ -38,6 +42,18 @@ function normalizeSpotifyConfig(spotifyConfig) {
   const disconnectEndpoint = typeof spotifyConfig.disconnectEndpoint === 'string'
     ? spotifyConfig.disconnectEndpoint.trim()
     : fallback.disconnectEndpoint;
+  const sonosConnectEndpoint = typeof spotifyConfig.sonosConnectEndpoint === 'string'
+    ? spotifyConfig.sonosConnectEndpoint.trim()
+    : fallback.sonosConnectEndpoint;
+  const sonosDevicesEndpoint = typeof spotifyConfig.sonosDevicesEndpoint === 'string'
+    ? spotifyConfig.sonosDevicesEndpoint.trim()
+    : fallback.sonosDevicesEndpoint;
+  const sonosPlaybackEndpoint = typeof spotifyConfig.sonosPlaybackEndpoint === 'string'
+    ? spotifyConfig.sonosPlaybackEndpoint.trim()
+    : fallback.sonosPlaybackEndpoint;
+  const sonosDisconnectEndpoint = typeof spotifyConfig.sonosDisconnectEndpoint === 'string'
+    ? spotifyConfig.sonosDisconnectEndpoint.trim()
+    : fallback.sonosDisconnectEndpoint;
 
   return {
     enabled,
@@ -46,7 +62,11 @@ function normalizeSpotifyConfig(spotifyConfig) {
     searchEndpoint,
     tokenEndpoint,
     playbackEndpoint,
-    disconnectEndpoint
+    disconnectEndpoint,
+    sonosConnectEndpoint,
+    sonosDevicesEndpoint,
+    sonosPlaybackEndpoint,
+    sonosDisconnectEndpoint
   };
 }
 

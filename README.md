@@ -46,6 +46,12 @@ This app integrates with Supabase for cloud data persistence while maintaining o
 - `SUPABASE_PUBLISHABLE_KEY` - Your Supabase publishable key for the client app
 - `SPOTIFY_CONNECT_URL` - Public URL to your Spotify OAuth connect endpoint (Edge Function/web handler)
 - `SPOTIFY_RECOMMENDATIONS_ENDPOINT` - Public API endpoint returning Spotify recommendation tiles
+- `SONOS_CLIENT_ID` - Sonos integration client id for Sonos OAuth
+- `SONOS_CLIENT_SECRET` - Sonos integration client secret for Sonos OAuth
+- `SONOS_REDIRECT_URI` - Sonos OAuth callback URL (Edge Function)
+- `SONOS_STATE_SECRET` - Random secret for signed Sonos OAuth state
+- `SONOS_SCOPES` - Sonos OAuth scopes (for example `household-read-all playback-control-all`)
+- `SONOS_POST_AUTH_REDIRECT_URL` - App URL to return to after Sonos login
 
 Spotify Edge Functions additionally require Supabase secrets:
 
@@ -56,7 +62,10 @@ Spotify Edge Functions additionally require Supabase secrets:
 - `SPOTIFY_SCOPES`
 - `SPOTIFY_POST_AUTH_REDIRECT_URL`
 
-Run `scripts/supabase-spotify-migration.sql` in Supabase SQL Editor before deploying Spotify functions.
+Run these in Supabase SQL Editor before deploying Spotify/Sonos functions:
+
+- `scripts/supabase-spotify-migration.sql`
+- `scripts/supabase-sonos-migration.sql`
 
 See [docs/supabase-setup.md](docs/supabase-setup.md) for complete setup instructions.
 
