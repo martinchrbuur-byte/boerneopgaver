@@ -72,7 +72,56 @@ function sortDevices(devices = []) {
   });
 }
 
-function createInitialTileState(enabled, connectUrl) {
+function getNavigatorProfile(navigatorRef) {
+  const userAgent = typeof navigatorRef?.userAgent === 'string' ? navigatorRef.userAgent : '';
+  const vendor = typeof navigatorRef?.vendor === 'string' ? navigatorRef.vendor : '';
+  const platform = typeof navigatorRef?.platform === 'string' ? navigatorRef.platform : '';
+
+  return {
+    userAgentLower: userAgent.toLowerCase(),
+    vendorLower: vendor.toLowerCase(),
+    platformLower: platform.toLowerCase()
+  };
+}
+
+function isAppleDeviceEnvironment(navigatorRef) {
+  const profile = getNavigatorProfile(navigatorRef);
+  return /iphone|ipad|ipod|mac/.test(profile.userAgentLower)
+    || /iphone|ipad|ipod|mac/.test(profile.platformLower);
+}
+
+function isSafariEnvironment(navigatorRef) {
+  const profile = getNavigatorProfile(navigatorRef);
+  const looksLikeSafari = profile.vendorLower.includes('apple') || profile.userAgentLower.includes('safari');
+  const excludedBrowsers = /crios|chrome|chromium|edg|opr|opera|firefox|fxios|android/;
+  return looksLikeSafari && !excludedBrowsers.test(profile.userAgentLower);
+}
+
+function resolvePlaybackPreference(navigatorRef) {
+  const airplaySupported = isAppleDeviceEnvironment(navigatorRef) && isSafariEnvironment(navigatorRef);
+
+  if (airplaySupported) {
+    return {
+      preferredPlaybackMode: 'airplay-handoff',
+      fallbackPlaybackMode: 'spotify-connect',
+      airplaySupported: true,
+      playbackPreferenceLabel: 'AirPlay først',
+      playbackPreferenceMessage: 'På denne Apple-enhed er AirPlay den foretrukne måde at sende lyden videre på.',
+      airplayInstructions: 'Åbn musikken i Spotify, brug systemets AirPlay-menu, og vælg derefter Spotify Connect nedenfor hvis du vil styre afspilningen herfra.'
+    };
+  }
+
+  return {
+    preferredPlaybackMode: 'spotify-connect',
+    fallbackPlaybackMode: 'spotify-connect',
+    airplaySupported: false,
+    playbackPreferenceLabel: 'Spotify Connect først',
+    playbackPreferenceMessage: 'Denne enhed bruger Spotify Connect som primær afspilning.',
+    airplayInstructions: ''
+  };
+}
+
+function createInitialTileState(enabled, connectUrl, playbackPreference = resolvePlaybackPreference(globalThis.navigator)) {
   return {
     status: enabled ? (connectUrl ? 'needs-auth' : 'unavailable') : 'unavailable',
     message: enabled
@@ -96,7 +145,8 @@ function createInitialTileState(enabled, connectUrl) {
     devices: [],
     deviceStatus: 'idle',
     deviceMessage: 'Vælg en højttaler eller anden Spotify Connect-enhed.',
-    showingAllDevices: false
+    showingAllDevices: false,
+    ...playbackPreference
   };
 }
 
@@ -201,8 +251,9 @@ export function createSpotifyService({
   const tokenEndpoint = sanitizeUrl(spotifyConfig?.tokenEndpoint);
   const playbackEndpoint = sanitizeUrl(spotifyConfig?.playbackEndpoint);
   const disconnectEndpoint = sanitizeUrl(spotifyConfig?.disconnectEndpoint);
+  const playbackPreference = resolvePlaybackPreference(navigatorRef);
 
-  let tileState = createInitialTileState(enabled, connectUrl);
+  let tileState = createInitialTileState(enabled, connectUrl, playbackPreference);
 
   // SDK player state
   let player = null;
@@ -499,7 +550,9 @@ export function createSpotifyService({
     tileState = {
       ...tileState,
       deviceStatus: 'loading',
-      deviceMessage: 'Henter Spotify Connect-enheder...'
+      deviceMessage: tileState.airplaySupported
+        ? 'AirPlay er foretrukket på denne enhed. Henter Spotify Connect-fallbackenheder...'
+        : 'Henter Spotify Connect-enheder...'
     };
     notifyStateChange();
 
@@ -537,7 +590,9 @@ export function createSpotifyService({
       deviceStatus: devices.length > 0 ? 'ready' : 'empty',
       deviceMessage: devices.length === 0
         ? 'Ingen Spotify Connect-enheder fundet. Åbn Spotify på en anden enhed, og prøv igen.'
-        : speakerDevices.length > 0
+        : tileState.airplaySupported
+          ? 'AirPlay er foretrukket på denne Apple-enhed. Spotify Connect-enheder vises som fallback, hvis du vil styre afspilning herfra.'
+          : speakerDevices.length > 0
           ? 'Højttalere vises først, så Spotify Connect-højttalere er nemmere at vælge.'
           : 'Ingen højttalere fundet lige nu, så alle Spotify Connect-enheder vises som fallback.',
       showingAllDevices: speakerDevices.length === 0 && devices.length > 0
@@ -705,7 +760,7 @@ export function createSpotifyService({
       }
     }
 
-    tileState = createInitialTileState(enabled, connectUrl);
+    tileState = createInitialTileState(enabled, connectUrl, playbackPreference);
   }
 
   async function beginAuthorization() {

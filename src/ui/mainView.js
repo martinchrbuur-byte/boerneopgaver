@@ -269,10 +269,18 @@ export function createMainView(rootElement) {
             <button id="spotify-refresh-btn" type="button" class="button button-secondary" hidden>Opdater anbefalinger</button>
             <button id="spotify-disconnect-btn" type="button" class="button button-danger-outline" hidden>Afbryd Spotify</button>
           </div>
+          <div id="spotify-playback-preference-panel" class="spotify-device-panel" hidden>
+            <div class="spotify-device-header">
+              <h3 class="section-title spotify-device-title">Foretrukken afspilning</h3>
+              <strong id="spotify-playback-preference-label" class="chore-meta">Spotify Connect først</strong>
+            </div>
+            <p id="spotify-playback-preference-status" class="chore-meta">Denne enhed bruger Spotify Connect som primær afspilning.</p>
+            <p id="spotify-playback-preference-hint" class="chore-meta">Hvis du vil styre afspilningen fra appen, skal du vælge en Spotify Connect-enhed nedenfor.</p>
+          </div>
           <ul id="spotify-list" class="list spotify-list"></ul>
           <div id="spotify-device-panel" class="spotify-device-panel" hidden>
             <div class="spotify-device-header">
-              <h3 class="section-title spotify-device-title">Afspil på</h3>
+              <h3 id="spotify-device-title" class="section-title spotify-device-title">Afspil på</h3>
               <button id="spotify-device-refresh-btn" type="button" class="button button-secondary" hidden>Opdater enheder</button>
             </div>
             <select id="spotify-device-select" class="input spotify-device-select" aria-label="Vælg Spotify Connect-enhed">
@@ -364,8 +372,13 @@ export function createMainView(rootElement) {
     spotifyConnectLink: rootElement.querySelector('#spotify-connect-link'),
     spotifyRefreshButton: rootElement.querySelector('#spotify-refresh-btn'),
     spotifyDisconnectButton: rootElement.querySelector('#spotify-disconnect-btn'),
+    spotifyPlaybackPreferencePanel: rootElement.querySelector('#spotify-playback-preference-panel'),
+    spotifyPlaybackPreferenceLabel: rootElement.querySelector('#spotify-playback-preference-label'),
+    spotifyPlaybackPreferenceStatus: rootElement.querySelector('#spotify-playback-preference-status'),
+    spotifyPlaybackPreferenceHint: rootElement.querySelector('#spotify-playback-preference-hint'),
     spotifyList: rootElement.querySelector('#spotify-list'),
     spotifyDevicePanel: rootElement.querySelector('#spotify-device-panel'),
+    spotifyDeviceTitle: rootElement.querySelector('#spotify-device-title'),
     spotifyDeviceSelect: rootElement.querySelector('#spotify-device-select'),
     spotifyDeviceStatus: rootElement.querySelector('#spotify-device-status'),
     spotifyDeviceRefreshButton: rootElement.querySelector('#spotify-device-refresh-btn'),

@@ -253,3 +253,78 @@ test('selectPlaybackDevice transfers playback and enables controls without brows
   assert.equal(state.isPlaying, true);
   assert.deepEqual(playbackRequests.at(-1), { action: 'transfer', deviceId: 'speaker-1', play: true });
 });
+
+test('Apple Safari environments prefer AirPlay handoff with Spotify Connect fallback messaging', async () => {
+  const service = createSpotifyService({
+    spotifyConfig: {
+      recommendationsEndpoint: 'https://example.com/recommendations',
+      playbackEndpoint: 'https://example.com/playback',
+      connectUrl: 'https://example.com/connect'
+    },
+    fetchImpl: async (url, options = {}) => {
+      if (url === 'https://example.com/recommendations') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ connected: true, items: [] })
+        };
+      }
+
+      if (url === 'https://example.com/playback') {
+        const body = JSON.parse(options.body || '{}');
+        if (body.action === 'devices') {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              ok: true,
+              devices: [{ id: 'speaker-1', name: 'Stue', type: 'Speaker', isActive: true }]
+            })
+          };
+        }
+      }
+
+      throw new Error(`Unexpected request: ${url}`);
+    },
+    navigatorRef: {
+      onLine: true,
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+      vendor: 'Apple Computer, Inc.',
+      platform: 'MacIntel'
+    }
+  });
+
+  await service.refreshRecommendations();
+  const state = await service.refreshDevices();
+
+  assert.equal(state.preferredPlaybackMode, 'airplay-handoff');
+  assert.equal(state.fallbackPlaybackMode, 'spotify-connect');
+  assert.equal(state.airplaySupported, true);
+  assert.match(state.playbackPreferenceLabel, /airplay/i);
+  assert.match(state.deviceMessage, /airplay/i);
+});
+
+test('Raspberry Pi Chromium environments stay Spotify Connect first', () => {
+  const service = createSpotifyService({
+    spotifyConfig: {
+      connectUrl: 'https://example.com/connect'
+    },
+    fetchImpl: async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ connected: true, items: [] })
+    }),
+    navigatorRef: {
+      onLine: true,
+      userAgent: 'Mozilla/5.0 (X11; Linux armv7l) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      vendor: 'Google Inc.',
+      platform: 'Linux armv7l'
+    }
+  });
+
+  const state = service.getTileState();
+
+  assert.equal(state.preferredPlaybackMode, 'spotify-connect');
+  assert.equal(state.airplaySupported, false);
+  assert.match(state.playbackPreferenceMessage, /spotify connect/i);
+});

@@ -34,7 +34,7 @@ function renderSpotifyDeviceOptions(devices = [], selectedDeviceId = '') {
   }).join('');
 }
 
-function renderSpotifyItems(items = [], canControlPlayback = false) {
+function renderSpotifyItems(items = [], canControlPlayback = false, preferredPlaybackMode = 'spotify-connect') {
   if (!Array.isArray(items) || items.length === 0) {
     return renderEmptySpotifyItem('Ingen anbefalinger endnu.');
   }
@@ -53,11 +53,12 @@ function renderSpotifyItems(items = [], canControlPlayback = false) {
     const href = escapeAttribute(item?.href || '');
     const uri = escapeAttribute(item?.uri || '');
     const canPlay = canControlPlayback && uri && item?.canPlay !== false;
+    const prefersAirplay = preferredPlaybackMode === 'airplay-handoff';
     const linkMarkup = href
-      ? `<a class="button button-secondary" href="${href}" target="_blank" rel="noopener noreferrer">Åbn i Spotify</a>`
+      ? `<a class="button ${prefersAirplay ? 'button-primary' : 'button-secondary'}" href="${href}" target="_blank" rel="noopener noreferrer">${prefersAirplay ? 'Åbn og brug AirPlay' : 'Åbn i Spotify'}</a>`
       : '';
     const playMarkup = canPlay
-      ? `<button class="button button-primary spotify-play-item-btn" type="button" data-spotify-uri="${uri}" title="Afspil">▶ Afspil</button>`
+      ? `<button class="button ${prefersAirplay ? 'button-secondary' : 'button-primary'} spotify-play-item-btn" type="button" data-spotify-uri="${uri}" title="Afspil">▶ ${prefersAirplay ? 'Brug Spotify Connect' : 'Afspil'}</button>`
       : '';
 
     return `
@@ -78,8 +79,13 @@ function renderSpotifySearchResults(viewRefs, spotifyUi, canControlPlayback) {
   }
 
   const search = spotifyUi?.search || null;
+  const preferredPlaybackMode = typeof spotifyUi?.preferredPlaybackMode === 'string'
+    ? spotifyUi.preferredPlaybackMode
+    : 'spotify-connect';
   if (!search || !search.query) {
-    viewRefs.spotifySearchStatus.textContent = 'Søg for at finde musik og playlister.';
+    viewRefs.spotifySearchStatus.textContent = preferredPlaybackMode === 'airplay-handoff'
+      ? 'Søg efter musik, åbn den i Spotify, og brug AirPlay hvis din enhed understøtter det.'
+      : 'Søg for at finde musik og playlister.';
     viewRefs.spotifySearchResults.innerHTML = renderEmptySpotifyItem('Ingen søgeresultater endnu.');
     return;
   }
@@ -91,7 +97,35 @@ function renderSpotifySearchResults(viewRefs, spotifyUi, canControlPlayback) {
   }
 
   viewRefs.spotifySearchStatus.textContent = search.message || 'Søgning færdig.';
-  viewRefs.spotifySearchResults.innerHTML = renderSpotifyItems(search.items || [], canControlPlayback);
+  viewRefs.spotifySearchResults.innerHTML = renderSpotifyItems(search.items || [], canControlPlayback, preferredPlaybackMode);
+}
+
+function renderPlaybackPreference(viewRefs, spotifyUi, isConnected) {
+  if (!viewRefs.spotifyPlaybackPreferencePanel || !viewRefs.spotifyPlaybackPreferenceStatus) {
+    return;
+  }
+
+  viewRefs.spotifyPlaybackPreferencePanel.hidden = !isConnected;
+
+  if (!isConnected) {
+    return;
+  }
+
+  if (viewRefs.spotifyPlaybackPreferenceLabel) {
+    viewRefs.spotifyPlaybackPreferenceLabel.textContent = typeof spotifyUi?.playbackPreferenceLabel === 'string'
+      ? spotifyUi.playbackPreferenceLabel
+      : 'Spotify Connect først';
+  }
+
+  viewRefs.spotifyPlaybackPreferenceStatus.textContent = typeof spotifyUi?.playbackPreferenceMessage === 'string'
+    ? spotifyUi.playbackPreferenceMessage
+    : 'Denne enhed bruger Spotify Connect som primær afspilning.';
+
+  if (viewRefs.spotifyPlaybackPreferenceHint) {
+    viewRefs.spotifyPlaybackPreferenceHint.textContent = spotifyUi?.preferredPlaybackMode === 'airplay-handoff'
+      ? (spotifyUi?.airplayInstructions || 'Brug systemets AirPlay-menu, og fald tilbage til Spotify Connect når du vil styre afspilningen herfra.')
+      : 'Hvis du vil styre afspilningen fra appen, skal du vælge en Spotify Connect-enhed nedenfor.';
+  }
 }
 
 function renderSpotifyTile(viewRefs, spotifyUi = null) {
@@ -112,6 +146,9 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
   const devices = Array.isArray(spotifyUi?.devices) ? spotifyUi.devices : [];
   const selectedDeviceId = typeof spotifyUi?.selectedDeviceId === 'string' ? spotifyUi.selectedDeviceId : '';
   const deviceStatus = typeof spotifyUi?.deviceStatus === 'string' ? spotifyUi.deviceStatus : 'idle';
+  const preferredPlaybackMode = typeof spotifyUi?.preferredPlaybackMode === 'string'
+    ? spotifyUi.preferredPlaybackMode
+    : 'spotify-connect';
   const deviceMessage = typeof spotifyUi?.deviceMessage === 'string'
     ? spotifyUi.deviceMessage
     : 'Vælg en højttaler eller anden Spotify Connect-enhed.';
@@ -137,8 +174,16 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
     viewRefs.spotifyDisconnectButton.disabled = status === 'loading';
   }
 
+  renderPlaybackPreference(viewRefs, spotifyUi, isConnected);
+
   if (viewRefs.spotifyDevicePanel) {
     viewRefs.spotifyDevicePanel.hidden = !showDevicePicker;
+  }
+
+  if (viewRefs.spotifyDeviceTitle) {
+    viewRefs.spotifyDeviceTitle.textContent = preferredPlaybackMode === 'airplay-handoff'
+      ? 'Spotify Connect-fallback'
+      : 'Afspil på';
   }
 
   if (viewRefs.spotifyDeviceStatus) {
@@ -222,7 +267,7 @@ function renderSpotifyTile(viewRefs, spotifyUi = null) {
     return;
   }
 
-  viewRefs.spotifyList.innerHTML = renderSpotifyItems(spotifyUi.items || [], canControlPlayback);
+  viewRefs.spotifyList.innerHTML = renderSpotifyItems(spotifyUi.items || [], canControlPlayback, preferredPlaybackMode);
   renderSpotifySearchResults(viewRefs, spotifyUi, canControlPlayback);
 }
 

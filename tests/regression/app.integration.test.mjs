@@ -52,8 +52,11 @@ async function withBootstrappedApp(run) {
     const spotifyStatus = document.querySelector('#spotify-status');
     const spotifyConnectLink = document.querySelector('#spotify-connect-link');
     const spotifyRefreshButton = document.querySelector('#spotify-refresh-btn');
+    const spotifyPlaybackPreferencePanel = document.querySelector('#spotify-playback-preference-panel');
+    const spotifyPlaybackPreferenceLabel = document.querySelector('#spotify-playback-preference-label');
     const spotifyList = document.querySelector('#spotify-list');
     const spotifyDevicePanel = document.querySelector('#spotify-device-panel');
+    const spotifyDeviceTitle = document.querySelector('#spotify-device-title');
     const spotifyDeviceSelect = document.querySelector('#spotify-device-select');
     const spotifyDeviceStatus = document.querySelector('#spotify-device-status');
     const spotifyDeviceRefreshButton = document.querySelector('#spotify-device-refresh-btn');
@@ -77,8 +80,11 @@ async function withBootstrappedApp(run) {
     assert.ok(spotifyStatus);
     assert.ok(spotifyConnectLink);
     assert.ok(spotifyRefreshButton);
+    assert.ok(spotifyPlaybackPreferencePanel);
+    assert.ok(spotifyPlaybackPreferenceLabel);
     assert.ok(spotifyList);
     assert.ok(spotifyDevicePanel);
+    assert.ok(spotifyDeviceTitle);
     assert.ok(spotifyDeviceSelect);
     assert.ok(spotifyDeviceStatus);
     assert.ok(spotifyDeviceRefreshButton);
@@ -104,8 +110,11 @@ async function withBootstrappedApp(run) {
       spotifyStatus,
       spotifyConnectLink,
       spotifyRefreshButton,
+      spotifyPlaybackPreferencePanel,
+      spotifyPlaybackPreferenceLabel,
       spotifyList,
       spotifyDevicePanel,
+      spotifyDeviceTitle,
       spotifyDeviceSelect,
       spotifyDeviceStatus,
       spotifyDeviceRefreshButton
@@ -319,8 +328,11 @@ test('spotify tile shows a valid startup state', async () => {
     spotifyStatus,
     spotifyConnectLink,
     spotifyRefreshButton,
+    spotifyPlaybackPreferencePanel,
+    spotifyPlaybackPreferenceLabel,
     spotifyList,
     spotifyDevicePanel,
+    spotifyDeviceTitle,
     spotifyDeviceSelect,
     spotifyDeviceStatus,
     spotifyDeviceRefreshButton
@@ -336,9 +348,12 @@ test('spotify tile shows a valid startup state', async () => {
 
     assert.match(spotifyStatus.textContent, /spotify|henter|forbind/i);
     assert.equal(spotifyRefreshButton.hidden, true);
+    assert.equal(typeof spotifyPlaybackPreferencePanel.hidden, 'boolean');
+    assert.match(spotifyPlaybackPreferenceLabel.textContent, /spotify connect|airplay/i);
     assert.match(spotifyList.textContent, /forbundet|henter|anbefalinger/i);
     assert.equal(typeof spotifyConnectLink.hidden, 'boolean');
     assert.equal(typeof spotifyDevicePanel.hidden, 'boolean');
+    assert.match(spotifyDeviceTitle.textContent, /afspil på|spotify connect/i);
     assert.equal(spotifyDeviceSelect.tagName, 'SELECT');
     assert.match(spotifyDeviceStatus.textContent, /enhed|højttaler/i);
     assert.equal(typeof spotifyDeviceRefreshButton.hidden, 'boolean');
