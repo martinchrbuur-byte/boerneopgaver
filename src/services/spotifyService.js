@@ -26,16 +26,10 @@ function normalizeItem(item) {
 }
 
 function normalizeDevice(device) {
-  const source = device?.source === 'sonos' ? 'sonos' : 'spotify';
-  const fallbackId = typeof device?.id === 'string' ? device.id : '';
-  const transportId = typeof device?.transportId === 'string' ? device.transportId : fallbackId;
-
   return {
-    id: fallbackId,
-    source,
-    transportId,
+    id: typeof device?.id === 'string' ? device.id : '',
     name: typeof device?.name === 'string' ? device.name : 'Ukendt enhed',
-    type: typeof device?.type === 'string' ? device.type : (source === 'sonos' ? 'Sonos-gruppe' : 'Unknown'),
+    type: typeof device?.type === 'string' ? device.type : 'Unknown',
     isActive: device?.isActive === true,
     isRestricted: device?.isRestricted === true,
     volumePercent: typeof device?.volumePercent === 'number' ? device.volumePercent : null,
@@ -44,10 +38,6 @@ function normalizeDevice(device) {
 }
 
 function deviceSortValue(device) {
-  if (device?.source === 'sonos') {
-    return -1;
-  }
-
   const type = typeof device?.type === 'string' ? device.type.toLowerCase() : '';
   if (type === 'speaker') {
     return 0;
@@ -107,10 +97,6 @@ function createInitialTileState(enabled, connectUrl) {
     deviceStatus: 'idle',
     deviceMessage: 'Vælg en højttaler eller anden Spotify Connect-enhed.',
     showingAllDevices: false
-    ,
-    sonosConnectUrl: '',
-    sonosConnected: false,
-    sonosMessage: 'Forbind Sonos for at styre netværkshøjttalere.'
   };
 }
 
@@ -215,15 +201,8 @@ export function createSpotifyService({
   const tokenEndpoint = sanitizeUrl(spotifyConfig?.tokenEndpoint);
   const playbackEndpoint = sanitizeUrl(spotifyConfig?.playbackEndpoint);
   const disconnectEndpoint = sanitizeUrl(spotifyConfig?.disconnectEndpoint);
-  const sonosConnectEndpoint = sanitizeUrl(spotifyConfig?.sonosConnectEndpoint);
-  const sonosDevicesEndpoint = sanitizeUrl(spotifyConfig?.sonosDevicesEndpoint);
-  const sonosPlaybackEndpoint = sanitizeUrl(spotifyConfig?.sonosPlaybackEndpoint);
-  const sonosDisconnectEndpoint = sanitizeUrl(spotifyConfig?.sonosDisconnectEndpoint);
 
-  let tileState = {
-    ...createInitialTileState(enabled, connectUrl),
-    sonosConnectUrl: sonosConnectEndpoint
-  };
+  let tileState = createInitialTileState(enabled, connectUrl);
 
   // SDK player state
   let player = null;
@@ -238,26 +217,13 @@ export function createSpotifyService({
     }
   }
 
-  function getSelectedDevice() {
-    if (!tileState.selectedDeviceId) {
-      return null;
-    }
-
-    return (tileState.devices || []).find((device) => device.id === tileState.selectedDeviceId) || null;
-  }
-
-  function getSelectedSpotifyDeviceId() {
-    const selectedDevice = getSelectedDevice();
-    if (selectedDevice?.source === 'spotify' && selectedDevice.transportId) {
-      return selectedDevice.transportId;
-    }
-    return browserDeviceId;
+  function getSelectedPlaybackDeviceId() {
+    return tileState.selectedDeviceId || browserDeviceId;
   }
 
   function getSelectedPlaybackDeviceName() {
-    const selectedDevice = getSelectedDevice();
-    if (selectedDevice?.name) {
-      return selectedDevice.name;
+    if (tileState.selectedDeviceId) {
+      return tileState.selectedDeviceName || '';
     }
 
     const browserDevice = (tileState.devices || []).find((device) => device.id === browserDeviceId);
@@ -265,12 +231,10 @@ export function createSpotifyService({
   }
 
   function syncPlaybackAvailability() {
-    const selectedDevice = getSelectedDevice();
-
     tileState = {
       ...tileState,
-      deviceId: selectedDevice?.source === 'spotify' ? getSelectedSpotifyDeviceId() : '',
-      canControlPlayback: tileState.playerReady || Boolean(selectedDevice)
+      deviceId: getSelectedPlaybackDeviceId(),
+      canControlPlayback: tileState.playerReady || Boolean(tileState.selectedDeviceId)
     };
   }
 
@@ -460,10 +424,10 @@ export function createSpotifyService({
     onStateChange = callback;
   }
 
-  async function sendSpotifyPlaybackCommand(action, extra = {}) {
+  async function sendPlaybackCommand(action, extra = {}) {
     if (!playbackEndpoint) {
       console.warn('Playback endpoint not configured.');
-      return { ok: false, message: 'Spotify afspilning er ikke konfigureret.' };
+      return;
     }
 
     try {
@@ -471,7 +435,7 @@ export function createSpotifyService({
         method: 'POST',
         headers: { ...buildSupabaseHeaders(), 'Content-Type': 'application/json' },
         credentials: 'omit',
-        body: JSON.stringify({ action, deviceId: getSelectedSpotifyDeviceId(), ...extra })
+        body: JSON.stringify({ action, deviceId: getSelectedPlaybackDeviceId(), ...extra })
       });
 
       const payload = await response.json().catch(() => ({}));
@@ -498,126 +462,6 @@ export function createSpotifyService({
     }
   }
 
-  async function sendSonosPlaybackCommand(action, { groupId = '' } = {}) {
-    if (!sonosPlaybackEndpoint) {
-      return { ok: false, message: 'Sonos afspilning er ikke konfigureret.' };
-    }
-
-    const normalizedGroupId = String(groupId || '').trim();
-    if (!normalizedGroupId) {
-      return { ok: false, message: 'Mangler Sonos-gruppe.' };
-    }
-
-    try {
-      const response = await fetchImpl(sonosPlaybackEndpoint, {
-        method: 'POST',
-        headers: { ...buildSupabaseHeaders(), 'Content-Type': 'application/json' },
-        credentials: 'omit',
-        body: JSON.stringify({ action, groupId: normalizedGroupId })
-      });
-
-      const payload = await response.json().catch(() => ({}));
-      if (response.ok && payload?.ok) {
-        tileState = {
-          ...tileState,
-          sonosConnected: true,
-          sonosMessage: 'Sonos-forbindelsen er aktiv.'
-        };
-        return payload;
-      }
-
-      if (payload?.needsReconnect) {
-        tileState = {
-          ...tileState,
-          sonosConnected: false,
-          sonosConnectUrl: sanitizeUrl(payload.connectUrl) || sonosConnectEndpoint,
-          sonosMessage: payload.message || 'Forbind Sonos igen for at styre afspilning.'
-        };
-        notifyStateChange();
-      }
-
-      return payload;
-    } catch (error) {
-      console.warn(`Sonos ${action} failed:`, error);
-      return { ok: false, message: error instanceof Error ? error.message : 'Ukendt Sonos-fejl.' };
-    }
-  }
-
-  async function fetchSonosDevices() {
-    if (!sonosDevicesEndpoint) {
-      return {
-        ok: true,
-        connected: false,
-        devices: [],
-        connectUrl: sonosConnectEndpoint,
-        message: ''
-      };
-    }
-
-    try {
-      const response = await fetchImpl(sonosDevicesEndpoint, {
-        method: 'GET',
-        headers: buildSupabaseHeaders(),
-        credentials: 'omit'
-      });
-
-      const payload = await response.json().catch(() => ({}));
-      const connectUrl = sanitizeUrl(payload?.connectUrl) || sonosConnectEndpoint;
-      const devices = Array.isArray(payload?.devices)
-        ? payload.devices
-          .map((device) => normalizeDevice({
-            ...device,
-            id: `sonos:${device?.groupId || device?.id || ''}`,
-            transportId: typeof device?.groupId === 'string' ? device.groupId : device?.id,
-            source: 'sonos',
-            type: 'Højttaler'
-          }))
-          .filter((device) => device.id && device.transportId)
-        : [];
-
-      return {
-        ok: response.ok,
-        connected: payload?.connected === true,
-        devices,
-        connectUrl,
-        message: typeof payload?.message === 'string' ? payload.message : ''
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        connected: false,
-        devices: [],
-        connectUrl: sonosConnectEndpoint,
-        message: error instanceof Error ? error.message : 'Kunne ikke hente Sonos-enheder.'
-      };
-    }
-  }
-
-  async function sendPlaybackCommand(action, extra = {}) {
-    const selectedDevice = getSelectedDevice();
-    if (selectedDevice?.source === 'sonos') {
-      const sonosAction = action === 'toggle'
-        ? 'toggle'
-        : action === 'play'
-          ? 'play'
-          : action === 'pause'
-            ? 'pause'
-            : action === 'next'
-              ? 'next'
-              : action === 'previous'
-                ? 'previous'
-                : '';
-
-      if (!sonosAction) {
-        return { ok: false, message: 'Denne handling understøttes ikke på Sonos.' };
-      }
-
-      return sendSonosPlaybackCommand(sonosAction, { groupId: selectedDevice.transportId });
-    }
-
-    return sendSpotifyPlaybackCommand(action, extra);
-  }
-
   async function refreshDevices({ preserveMessage = false } = {}) {
     if (!enabled) {
       tileState = {
@@ -641,11 +485,11 @@ export function createSpotifyService({
       return getTileState();
     }
 
-    if (!playbackEndpoint && !sonosDevicesEndpoint) {
+    if (!playbackEndpoint) {
       tileState = {
         ...tileState,
         deviceStatus: 'error',
-        deviceMessage: 'Afspilnings-endpoints mangler i app-konfigurationen.',
+        deviceMessage: 'Spotify afspilnings-endpoint mangler i app-konfigurationen.',
         devices: []
       };
       syncPlaybackAvailability();
@@ -655,24 +499,18 @@ export function createSpotifyService({
     tileState = {
       ...tileState,
       deviceStatus: 'loading',
-      deviceMessage: 'Henter Sonos- og Spotify-enheder...'
+      deviceMessage: 'Henter Spotify Connect-enheder...'
     };
     notifyStateChange();
 
-    const spotifyPayload = playbackEndpoint
-      ? await sendSpotifyPlaybackCommand('devices')
-      : { ok: true, devices: [] };
-    const sonosPayload = await fetchSonosDevices();
-
-    if (!spotifyPayload?.ok && !sonosPayload?.ok) {
+    const payload = await sendPlaybackCommand('devices');
+    if (!payload?.ok) {
       tileState = {
         ...tileState,
         deviceStatus: 'error',
-        deviceMessage: typeof sonosPayload?.message === 'string' && sonosPayload.message.trim().length > 0
-          ? sonosPayload.message
-          : typeof spotifyPayload?.message === 'string' && spotifyPayload.message.trim().length > 0
-            ? spotifyPayload.message
-            : 'Kunne ikke hente afspilningsenheder lige nu.',
+        deviceMessage: typeof payload?.message === 'string' && payload.message.trim().length > 0
+          ? payload.message
+          : 'Kunne ikke hente Spotify Connect-enheder lige nu.',
         devices: []
       };
       syncPlaybackAvailability();
@@ -680,59 +518,29 @@ export function createSpotifyService({
       return getTileState();
     }
 
-    const spotifyDevices = Array.isArray(spotifyPayload?.devices)
-      ? sortDevices(spotifyPayload.devices
-        .map((device) => normalizeDevice({
-          ...device,
-          id: typeof device?.id === 'string' ? device.id : '',
-          transportId: device?.id,
-          source: 'spotify'
-        }))
-        .filter((device) => device.id && device.transportId))
+    const devices = Array.isArray(payload?.devices)
+      ? sortDevices(payload.devices.map(normalizeDevice).filter((device) => device.id))
       : [];
-    const sonosDevices = Array.isArray(sonosPayload?.devices)
-      ? sortDevices(sonosPayload.devices)
-      : [];
-
-    const spotifySpeakers = spotifyDevices.filter((device) => String(device.type || '').toLowerCase() === 'speaker');
-    const visibleSpotifyDevices = spotifySpeakers.length > 0 ? spotifySpeakers : spotifyDevices;
-    const combinedDevices = sortDevices([...sonosDevices, ...visibleSpotifyDevices]);
-    const activeDevice = combinedDevices.find((device) => device.isActive);
-    const selectedDevice = combinedDevices.find((device) => device.id === tileState.selectedDeviceId)
-      || combinedDevices.find((device) => device.id === activeDevice?.id)
-      || combinedDevices[0]
+    const speakerDevices = devices.filter((device) => String(device.type || '').toLowerCase() === 'speaker');
+    const visibleDevices = speakerDevices.length > 0 ? speakerDevices : devices;
+    const activeDevice = devices.find((device) => device.isActive);
+    const selectedDevice = visibleDevices.find((device) => device.id === tileState.selectedDeviceId)
+      || visibleDevices.find((device) => device.id === activeDevice?.id)
+      || visibleDevices[0]
       || null;
-
-    const sonosConnected = sonosPayload?.connected === true || sonosDevices.length > 0;
-    const sonosConnectUrl = sanitizeUrl(sonosPayload?.connectUrl) || sonosConnectEndpoint;
-
-    const emptyMessage = sonosConnectUrl && !sonosConnected
-      ? 'Ingen enheder fundet endnu. Forbind Sonos for at finde netværkshøjttalere, og prøv igen.'
-      : 'Ingen afspilningsenheder fundet. Åbn Spotify eller Sonos på en enhed, og prøv igen.';
 
     tileState = {
       ...tileState,
-      devices: combinedDevices,
+      devices: visibleDevices,
       selectedDeviceId: selectedDevice?.id || '',
       selectedDeviceName: selectedDevice?.name || '',
-      deviceStatus: combinedDevices.length > 0 ? 'ready' : 'empty',
-      deviceMessage: combinedDevices.length === 0
-        ? emptyMessage
-        : sonosDevices.length > 0 && visibleSpotifyDevices.length > 0
-          ? 'Sonos- og Spotify-enheder er klar. Vælg hvor afspilningen skal styres.'
-          : sonosDevices.length > 0
-            ? 'Sonos-enheder fundet. Afspilning styres via Sonos Control API.'
-            : spotifySpeakers.length > 0
-              ? 'Spotify-højttalere vises først.'
-              : 'Ingen højttalere fundet lige nu, så alle Spotify Connect-enheder vises som fallback.',
-      showingAllDevices: spotifySpeakers.length === 0 && spotifyDevices.length > 0,
-      sonosConnected,
-      sonosConnectUrl,
-      sonosMessage: typeof sonosPayload?.message === 'string' && sonosPayload.message.trim().length > 0
-        ? sonosPayload.message
-        : sonosConnected
-          ? 'Sonos-forbindelsen er aktiv.'
-          : 'Forbind Sonos for at styre netværkshøjttalere.'
+      deviceStatus: devices.length > 0 ? 'ready' : 'empty',
+      deviceMessage: devices.length === 0
+        ? 'Ingen Spotify Connect-enheder fundet. Åbn Spotify på en anden enhed, og prøv igen.'
+        : speakerDevices.length > 0
+          ? 'Højttalere vises først, så Spotify Connect-højttalere er nemmere at vælge.'
+          : 'Ingen højttalere fundet lige nu, så alle Spotify Connect-enheder vises som fallback.',
+      showingAllDevices: speakerDevices.length === 0 && devices.length > 0
     };
 
     if (!preserveMessage && tileState.status === 'ready' && !tileState.message) {
@@ -770,9 +578,7 @@ export function createSpotifyService({
     };
     notifyStateChange();
 
-    const payload = selectedDevice?.source === 'sonos'
-      ? await sendSonosPlaybackCommand('play', { groupId: selectedDevice.transportId })
-      : await sendSpotifyPlaybackCommand('transfer', { deviceId: selectedDevice?.transportId || normalizedId, play: true });
+    const payload = await sendPlaybackCommand('transfer', { deviceId: normalizedId, play: true });
     if (!payload?.ok) {
       tileState = {
         ...tileState,
@@ -791,9 +597,7 @@ export function createSpotifyService({
       selectedDeviceName: selectedDevice.name,
       isPlaying: true,
       deviceStatus: 'ready',
-      deviceMessage: selectedDevice?.source === 'sonos'
-        ? `${selectedDevice.name} er valgt til Sonos-afspilning.`
-        : `${selectedDevice.name} er valgt til Spotify-afspilning.`,
+      deviceMessage: `${selectedDevice.name} er valgt til Spotify-afspilning.`,
       devices: (tileState.devices || []).map((device) => ({
         ...device,
         isActive: device.id === normalizedId
@@ -805,30 +609,10 @@ export function createSpotifyService({
   }
 
   async function play(uri) {
-    const selectedDevice = getSelectedDevice();
     const safeUri = typeof uri === 'string' ? uri.trim() : '';
 
-    if (selectedDevice?.source === 'sonos') {
-      if (safeUri) {
-        tileState = {
-          ...tileState,
-          deviceMessage: 'Sonos-tilstand kan styre play/pause/skip, men ikke starte specifikke Spotify-URI’er direkte.'
-        };
-        notifyStateChange();
-        return;
-      }
-
-      const sonosResult = await sendSonosPlaybackCommand('play', { groupId: selectedDevice.transportId });
-      if (sonosResult?.ok) {
-        tileState = { ...tileState, isPlaying: true };
-        syncPlaybackAvailability();
-        notifyStateChange();
-      }
-      return;
-    }
-
     if (!safeUri) {
-      const result = await sendSpotifyPlaybackCommand('play');
+      const result = await sendPlaybackCommand('play');
       if (result?.ok) {
         tileState = { ...tileState, isPlaying: true };
         syncPlaybackAvailability();
@@ -838,7 +622,7 @@ export function createSpotifyService({
     }
 
     if (safeUri.startsWith('spotify:track:')) {
-      const result = await sendSpotifyPlaybackCommand('play', { trackUri: safeUri });
+      const result = await sendPlaybackCommand('play', { trackUri: safeUri });
       if (result?.ok) {
         tileState = { ...tileState, isPlaying: true };
         syncPlaybackAvailability();
@@ -847,7 +631,7 @@ export function createSpotifyService({
       return;
     }
 
-    const result = await sendSpotifyPlaybackCommand('play', { contextUri: safeUri });
+    const result = await sendPlaybackCommand('play', { contextUri: safeUri });
     if (result?.ok) {
       tileState = { ...tileState, isPlaying: true };
       syncPlaybackAvailability();
@@ -857,17 +641,6 @@ export function createSpotifyService({
 
   async function togglePlay() {
     if (!tileState.canControlPlayback) {
-      return;
-    }
-
-    const selectedDevice = getSelectedDevice();
-    if (selectedDevice?.source === 'sonos') {
-      const result = await sendSonosPlaybackCommand('toggle', { groupId: selectedDevice.transportId });
-      if (result?.ok) {
-        tileState = { ...tileState, isPlaying: !tileState.isPlaying };
-        syncPlaybackAvailability();
-        notifyStateChange();
-      }
       return;
     }
 
@@ -932,50 +705,7 @@ export function createSpotifyService({
       }
     }
 
-    const sonosDevices = (tileState.devices || []).filter((device) => device.source === 'sonos');
-    const sonosConnected = tileState.sonosConnected;
-    const sonosConnectUrl = tileState.sonosConnectUrl || sonosConnectEndpoint;
-    const sonosMessage = tileState.sonosMessage;
-
-    tileState = {
-      ...createInitialTileState(enabled, connectUrl),
-      sonosConnected,
-      sonosConnectUrl,
-      sonosMessage,
-      devices: sonosDevices,
-      selectedDeviceId: sonosDevices[0]?.id || '',
-      selectedDeviceName: sonosDevices[0]?.name || ''
-    };
-    syncPlaybackAvailability();
-  }
-
-  async function disconnectSonos() {
-    if (sonosDisconnectEndpoint) {
-      try {
-        await fetchImpl(sonosDisconnectEndpoint, {
-          method: 'POST',
-          headers: buildSupabaseHeaders(),
-          credentials: 'omit'
-        });
-      } catch {
-        // best-effort
-      }
-    }
-
-    const spotifyDevices = (tileState.devices || []).filter((device) => device.source === 'spotify');
-    const selectedDevice = spotifyDevices.find((device) => device.id === tileState.selectedDeviceId) || spotifyDevices[0] || null;
-
-    tileState = {
-      ...tileState,
-      sonosConnected: false,
-      sonosConnectUrl: sonosConnectEndpoint,
-      sonosMessage: 'Forbind Sonos for at styre netværkshøjttalere.',
-      devices: spotifyDevices,
-      selectedDeviceId: selectedDevice?.id || '',
-      selectedDeviceName: selectedDevice?.name || ''
-    };
-    syncPlaybackAvailability();
-    return getTileState();
+    tileState = createInitialTileState(enabled, connectUrl);
   }
 
   async function beginAuthorization() {
@@ -1011,13 +741,16 @@ export function createSpotifyService({
 
       if (!response.ok || !authorizationUrl) {
         tileState = {
-          ...tileState,
           status: 'needs-auth',
           message: typeof payload?.message === 'string' && payload.message.trim().length > 0
             ? payload.message
             : 'Forbind Spotify for at hente anbefalinger.',
           connectUrl,
-          items: []
+          items: [],
+          playerReady: false,
+          isPlaying: false,
+          currentTrack: null,
+          deviceId: ''
         };
         return { ok: false, message: tileState.message, authorizationUrl: '' };
       }
@@ -1027,49 +760,6 @@ export function createSpotifyService({
     } catch {
       tileState = { ...tileState, status: 'unavailable', message: 'Kunne ikke starte Spotify-login lige nu.' };
       return { ok: false, message: tileState.message, authorizationUrl: '' };
-    }
-  }
-
-  async function beginSonosAuthorization() {
-    if (!enabled) {
-      return { ok: false, message: 'Spotify/Sonos-funktionen er slået fra.', authorizationUrl: '' };
-    }
-
-    if (!isOnline()) {
-      return { ok: false, message: 'Du er offline. Prøv igen når forbindelsen er tilbage.', authorizationUrl: '' };
-    }
-
-    if (!sonosConnectEndpoint) {
-      return { ok: false, message: 'Sonos connect-endpoint mangler i app-konfigurationen.', authorizationUrl: '' };
-    }
-
-    try {
-      const response = await fetchImpl(sonosConnectEndpoint, {
-        method: 'GET',
-        headers: buildSupabaseHeaders(),
-        credentials: 'omit'
-      });
-
-      const payload = await response.json().catch(() => ({}));
-      const authorizationUrl = sanitizeUrl(payload?.connectUrl);
-      if (!response.ok || !authorizationUrl) {
-        return {
-          ok: false,
-          message: typeof payload?.message === 'string' && payload.message.trim().length > 0
-            ? payload.message
-            : 'Kunne ikke starte Sonos-login.',
-          authorizationUrl: ''
-        };
-      }
-
-      tileState = {
-        ...tileState,
-        sonosConnectUrl: authorizationUrl,
-        sonosMessage: 'Åbner Sonos-login...'
-      };
-      return { ok: true, message: tileState.sonosMessage, authorizationUrl };
-    } catch {
-      return { ok: false, message: 'Kunne ikke starte Sonos-login lige nu.', authorizationUrl: '' };
     }
   }
 
@@ -1295,9 +985,7 @@ export function createSpotifyService({
     getTileState,
     refreshRecommendations,
     beginAuthorization,
-    beginSonosAuthorization,
     disconnect,
-    disconnectSonos,
     initPlayer,
     play,
     togglePlay,

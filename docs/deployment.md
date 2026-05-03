@@ -72,11 +72,6 @@ Deploy the Spotify functions once per Supabase project:
 - `supabase functions deploy spotify-token`
 - `supabase functions deploy spotify-playback`
 - `supabase functions deploy spotify-disconnect`
-- `supabase functions deploy sonos-connect`
-- `supabase functions deploy sonos-callback`
-- `supabase functions deploy sonos-devices`
-- `supabase functions deploy sonos-playback`
-- `supabase functions deploy sonos-disconnect`
 
 Set these function secrets in Supabase before using the tile:
 
@@ -86,12 +81,6 @@ Set these function secrets in Supabase before using the tile:
 - `SPOTIFY_STATE_SECRET`
 - `SPOTIFY_SCOPES`
 - `SPOTIFY_POST_AUTH_REDIRECT_URL`
-- `SONOS_CLIENT_ID`
-- `SONOS_CLIENT_SECRET`
-- `SONOS_REDIRECT_URI`
-- `SONOS_STATE_SECRET`
-- `SONOS_SCOPES`
-- `SONOS_POST_AUTH_REDIRECT_URL`
 
 Set these public env vars for build-time injection into `dist/`:
 

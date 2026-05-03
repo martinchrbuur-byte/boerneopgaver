@@ -266,10 +266,8 @@ export function createMainView(rootElement) {
           </div>
           <div id="spotify-actions" class="actions spotify-actions">
             <button id="spotify-connect-link" type="button" class="button button-primary" hidden>Forbind Spotify</button>
-            <button id="sonos-connect-link" type="button" class="button button-primary" hidden>Forbind Sonos</button>
             <button id="spotify-refresh-btn" type="button" class="button button-secondary" hidden>Opdater anbefalinger</button>
             <button id="spotify-disconnect-btn" type="button" class="button button-danger-outline" hidden>Afbryd Spotify</button>
-            <button id="sonos-disconnect-btn" type="button" class="button button-danger-outline" hidden>Afbryd Sonos</button>
           </div>
           <ul id="spotify-list" class="list spotify-list"></ul>
           <div id="spotify-device-panel" class="spotify-device-panel" hidden>
@@ -364,10 +362,8 @@ export function createMainView(rootElement) {
     spotifyOffline: rootElement.querySelector('#spotify-offline'),
     spotifyActions: rootElement.querySelector('#spotify-actions'),
     spotifyConnectLink: rootElement.querySelector('#spotify-connect-link'),
-    sonosConnectLink: rootElement.querySelector('#sonos-connect-link'),
     spotifyRefreshButton: rootElement.querySelector('#spotify-refresh-btn'),
     spotifyDisconnectButton: rootElement.querySelector('#spotify-disconnect-btn'),
-    sonosDisconnectButton: rootElement.querySelector('#sonos-disconnect-btn'),
     spotifyList: rootElement.querySelector('#spotify-list'),
     spotifyDevicePanel: rootElement.querySelector('#spotify-device-panel'),
     spotifyDeviceSelect: rootElement.querySelector('#spotify-device-select'),

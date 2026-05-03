@@ -127,7 +127,7 @@ test('refreshDevices prioritizes speakers and selects the active speaker', async
               ok: true,
               devices: [
                 { id: 'phone', name: 'Telefon', type: 'Smartphone', isActive: false },
-                { id: 'sonos', name: 'Stue', type: 'Speaker', isActive: true },
+                { id: 'speaker-1', name: 'Stue', type: 'Speaker', isActive: true },
                 { id: 'desktop', name: 'Computer', type: 'Computer', isActive: false }
               ]
             })
@@ -144,8 +144,8 @@ test('refreshDevices prioritizes speakers and selects the active speaker', async
   const state = await service.refreshDevices();
 
   assert.equal(state.devices.length, 1);
-  assert.equal(state.devices[0]?.id, 'sonos');
-  assert.equal(state.selectedDeviceId, 'sonos');
+  assert.equal(state.devices[0]?.id, 'speaker-1');
+  assert.equal(state.selectedDeviceId, 'speaker-1');
   assert.equal(state.canControlPlayback, true);
   assert.equal(state.showingAllDevices, false);
   assert.ok(fetchCalls.some((call) => call.url === 'https://example.com/playback'));
@@ -223,7 +223,7 @@ test('selectPlaybackDevice transfers playback and enables controls without brows
           return {
             ok: true,
             status: 200,
-            json: async () => ({ ok: true, devices: [{ id: 'sonos', name: 'Stue', type: 'Speaker', isActive: false }] })
+            json: async () => ({ ok: true, devices: [{ id: 'speaker-1', name: 'Stue', type: 'Speaker', isActive: false }] })
           };
         }
 
@@ -243,13 +243,13 @@ test('selectPlaybackDevice transfers playback and enables controls without brows
 
   await service.refreshRecommendations();
   await service.refreshDevices();
-  const result = await service.selectPlaybackDevice('sonos');
+  const result = await service.selectPlaybackDevice('speaker-1');
   const state = service.getTileState();
 
   assert.equal(result.ok, true);
-  assert.equal(state.selectedDeviceId, 'sonos');
+  assert.equal(state.selectedDeviceId, 'speaker-1');
   assert.equal(state.canControlPlayback, true);
   assert.equal(state.playerReady, false);
   assert.equal(state.isPlaying, true);
-  assert.deepEqual(playbackRequests.at(-1), { action: 'transfer', deviceId: 'sonos', play: true });
+  assert.deepEqual(playbackRequests.at(-1), { action: 'transfer', deviceId: 'speaker-1', play: true });
 });
