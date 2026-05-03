@@ -68,3 +68,33 @@ test('refreshRecommendations keeps liked songs in top 6 by prioritizing before s
   assert.ok(state.items.some((item) => item.title === 'Sange, du synes om'));
   assert.ok(!state.items.some((item) => item.title === 'Rec 6'));
 });
+
+test('refreshRecommendations injects liked songs first when API does not return it', async () => {
+  const payload = {
+    connected: true,
+    items: [
+      { id: '1', title: 'Rec 1', uri: 'spotify:playlist:1', kind: 'playlist' },
+      { id: '2', title: 'Rec 2', uri: 'spotify:playlist:2', kind: 'playlist' }
+    ]
+  };
+
+  const service = createSpotifyService({
+    spotifyConfig: {
+      recommendationsEndpoint: 'https://example.com/recommendations',
+      connectUrl: 'https://example.com/connect'
+    },
+    fetchImpl: async () => ({
+      ok: true,
+      status: 200,
+      json: async () => payload
+    }),
+    navigatorRef: { onLine: true }
+  });
+
+  await service.refreshRecommendations();
+  const state = service.getTileState();
+
+  assert.equal(state.items[0]?.title, 'Sange, du synes om');
+  assert.equal(state.items[0]?.uri, 'spotify:collection:tracks');
+  assert.equal(state.items[1]?.title, 'Rec 1');
+});

@@ -46,8 +46,18 @@ function isLikedSongsItem(item) {
 }
 
 function prioritizeLikedSongs(items = []) {
+  const likedSongsFallback = {
+    id: 'spotify-liked-songs',
+    title: 'Sange, du synes om',
+    subtitle: 'Din Spotify-samling',
+    href: 'https://open.spotify.com/collection/tracks',
+    uri: 'spotify:collection:tracks',
+    kind: 'playlist',
+    canPlay: true
+  };
+
   if (!Array.isArray(items) || items.length === 0) {
-    return [];
+    return [likedSongsFallback];
   }
 
   const likedSongs = [];
@@ -61,7 +71,8 @@ function prioritizeLikedSongs(items = []) {
     }
   }
 
-  return [...likedSongs, ...remaining];
+  const primaryLikedSongs = likedSongs[0] || likedSongsFallback;
+  return [primaryLikedSongs, ...remaining];
 }
 
 let sdkLoadPromise = null;
