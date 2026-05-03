@@ -33,6 +33,11 @@ body {
   gap: 1rem;
 }
 
+#chores-workspace,
+#spotify-workspace {
+  display: contents;
+}
+
 .display-mode-standalone .app-shell {
   width: min(100%, 1800px);
   min-height: 100vh;
@@ -1042,6 +1047,12 @@ body {
   .app-header-card {
     grid-column: 1 / -1;
     padding: 1rem 1.25rem;
+  }
+
+  .app-mode-card {
+    grid-column: 1 / -1;
+    padding: 0.9rem 1rem;
+    align-self: stretch;
   }
 
   .app-role-card {
