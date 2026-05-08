@@ -393,6 +393,23 @@ let mascotTimer = null;
 let roleSwitchWalkTimer = null;
 let walletHitTimer = null;
 
+/** Fire canvas-confetti if the library is available on the page. */
+function fireConfetti({ particleCount = 120, spread = 80, origin = { y: 0.65 }, big = false } = {}) {
+  if (typeof window.confetti !== 'function') return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  if (big) {
+    // Two cannons from each side for a big celebration
+    window.confetti({ particleCount: 80, angle: 60, spread: 70, origin: { x: 0, y: 0.75 } });
+    window.confetti({ particleCount: 80, angle: 120, spread: 70, origin: { x: 1, y: 0.75 } });
+    setTimeout(() => {
+      window.confetti({ particleCount: 60, angle: 90, spread: 120, origin: { x: 0.5, y: 0.5 } });
+    }, 350);
+  } else {
+    window.confetti({ particleCount, spread, origin });
+  }
+}
+
 function clearMascotTimers() {
   if (mascotTimer) {
     clearTimeout(mascotTimer);
@@ -480,13 +497,15 @@ export function showCoinToWallet(viewRefs) {
   };
 }
 
-export function showRoleSwitchWalk(mascotOverlay, role, { duration = 2000 } = {}) {
+export function showRoleSwitchWalk(mascotOverlay, role, { duration = 2200 } = {}) {
   if (!mascotOverlay || !BOTH_KIDS.includes(role)) return;
 
   const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
   const messageEl = mascotOverlay.querySelector('.mascot-message');
 
-  if (emojiEl) setElementIcon(emojiEl, getNextMascotIcon(role), { decorative: true });
+  // Use the dedicated kid avatar for the walk-across animation
+  const walkIcon = role === 'Andrea' ? 'kidAndrea' : 'kidHans';
+  if (emojiEl) setElementIcon(emojiEl, walkIcon, { decorative: true });
   if (messageEl) messageEl.textContent = '';
 
   clearMascotTimers();
@@ -516,6 +535,13 @@ export function showMascot(mascotOverlay, activeRole, message, { type = 'pop', d
   void mascotOverlay.offsetWidth;
   mascotOverlay.classList.add(`mascot-${type}`);
   mascotOverlay.hidden = false;
+
+  // 🎉 Fire confetti for celebration moments
+  if (type === 'celebrate') {
+    fireConfetti({ particleCount: 100, spread: 75, origin: { y: 0.7 } });
+  } else if (type === 'confetti') {
+    fireConfetti({ big: true });
+  }
 
   mascotTimer = setTimeout(() => {
     mascotOverlay.hidden = true;
