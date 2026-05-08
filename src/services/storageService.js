@@ -5,6 +5,9 @@ import { saveChores, saveFeedback, savePeriods, saveRecords, saveSettings, saveU
 import { createSyncQueue } from './syncQueueService.js';
 
 export const STORAGE_KEY = 'kids_chore_tracker_v1';
+export const STORAGE_JOURNAL_SUFFIX = '__journal';
+export const STORAGE_BACKUP_LATEST_SUFFIX = '__backup_latest';
+export const STORAGE_BACKUP_PREVIOUS_SUFFIX = '__backup_previous';
 
 export const KIDS = ['Hans Jørgen', 'Andrea'];
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
@@ -341,6 +344,46 @@ function normalizePayload(value) {
 export function createStorageService({ storage = globalThis.localStorage, storageKey = STORAGE_KEY } = {}) {
   let userId = 'anonymous';
   const syncQueue = createSyncQueue();
+  const journalKey = `${storageKey}${STORAGE_JOURNAL_SUFFIX}`;
+  const backupLatestKey = `${storageKey}${STORAGE_BACKUP_LATEST_SUFFIX}`;
+  const backupPreviousKey = `${storageKey}${STORAGE_BACKUP_PREVIOUS_SUFFIX}`;
+
+  function safeGetItem(key) {
+    if (!storage) {
+      return null;
+    }
+
+    try {
+      return storage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  function safeSetItem(key, value) {
+    if (!storage) {
+      return false;
+    }
+
+    try {
+      storage.setItem(key, value);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function safeRemoveItem(key) {
+    if (!storage || typeof storage.removeItem !== 'function') {
+      return;
+    }
+
+    try {
+      storage.removeItem(key);
+    } catch {
+      // Ignore storage remove failures
+    }
+  }
 
   syncQueue.registerHandler('chores', data => saveChores(data, userId));
   syncQueue.registerHandler('records', data => saveRecords(data, userId));
@@ -361,17 +404,38 @@ export function createStorageService({ storage = globalThis.localStorage, storag
       return createEmptyPayload();
     }
 
-    const raw = storage.getItem(storageKey);
-    if (!raw) {
-      return createEmptyPayload();
+    const candidates = [
+      { key: storageKey, source: 'main' },
+      { key: journalKey, source: 'journal' },
+      { key: backupLatestKey, source: 'backup-latest' },
+      { key: backupPreviousKey, source: 'backup-previous' }
+    ];
+
+    for (const candidate of candidates) {
+      const raw = safeGetItem(candidate.key);
+      if (!raw) {
+        continue;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        const normalized = normalizePayload(parsed);
+        if (!isPayload(normalized)) {
+          continue;
+        }
+
+        if (candidate.source !== 'main') {
+          safeSetItem(storageKey, JSON.stringify(normalized));
+          safeRemoveItem(journalKey);
+        }
+
+        return normalized;
+      } catch {
+        // Try next candidate
+      }
     }
 
-    try {
-      const parsed = JSON.parse(raw);
-      return normalizePayload(parsed);
-    } catch {
-      return createEmptyPayload();
-    }
+    return createEmptyPayload();
   }
 
   function saveData(nextData) {
@@ -412,7 +476,24 @@ export function createStorageService({ storage = globalThis.localStorage, storag
       syncMeta
     };
 
-    storage.setItem(storageKey, JSON.stringify(normalizedNextData));
+    const serializedNextData = JSON.stringify(normalizedNextData);
+    const existingRaw = safeGetItem(storageKey);
+
+    if (existingRaw && existingRaw !== serializedNextData) {
+      const previousLatest = safeGetItem(backupLatestKey);
+      if (previousLatest) {
+        safeSetItem(backupPreviousKey, previousLatest);
+      }
+
+      safeSetItem(backupLatestKey, existingRaw);
+    }
+
+    safeSetItem(journalKey, serializedNextData);
+    const didWriteMain = safeSetItem(storageKey, serializedNextData);
+    if (!didWriteMain) {
+      throw new Error('Failed to persist storage payload to primary key.');
+    }
+    safeRemoveItem(journalKey);
 
     if (!skipCloudSync && isSupabaseConfigured()) {
       syncQueue.enqueue('chores', normalizedNextData.chores);
@@ -456,6 +537,13 @@ export function createStorageService({ storage = globalThis.localStorage, storag
     setUserId,
     getSyncState,
     syncNow,
-    retryFailedSync
+    retryFailedSync,
+    getPersistenceKeys: () => ({ journalKey, backupLatestKey, backupPreviousKey }),
+    getRecoverySnapshot: () => ({
+      main: safeGetItem(storageKey),
+      journal: safeGetItem(journalKey),
+      latestBackup: safeGetItem(backupLatestKey),
+      previousBackup: safeGetItem(backupPreviousKey)
+    })
   };
 }
