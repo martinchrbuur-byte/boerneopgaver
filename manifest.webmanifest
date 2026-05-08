@@ -24,5 +24,33 @@
       "type": "image/svg+xml",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Se opgaver",
+      "short_name": "Opgaver",
+      "description": "Vis alle aktive opgaver",
+      "url": "./?source=pwa&view=chores",
+      "icons": [
+        {
+          "src": "./favicon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Lommepenge",
+      "short_name": "Penge",
+      "description": "Oversigt over lommepenge og indtjening",
+      "url": "./?source=pwa&view=status",
+      "icons": [
+        {
+          "src": "./favicon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
   ]
 }

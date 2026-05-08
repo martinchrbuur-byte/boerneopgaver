@@ -4,6 +4,7 @@ import { resolveAppConfig } from './config/appConfig.js';
 import { isSupabaseConfigured } from './config/supabaseConfig.js';
 import { applyDisplayMode, bindInstallPromptUi, createInstallPromptManager } from './pwa/installPrompt.js';
 import { registerServiceWorker } from './pwa/registerServiceWorker.js';
+import { initializeTouchScroll } from './pwa/touchScroll.js';
 import { createChoreService } from './services/choreService.js';
 import { createPeriodService } from './services/periodService.js';
 import { createFeedbackService } from './services/feedbackService.js';
@@ -30,6 +31,7 @@ let disposeActiveApp = null;
 let isAuthTransitioning = false;
 const installPromptManager = createInstallPromptManager();
 applyDisplayMode();
+initializeTouchScroll();
 
 function seedStarterChores(choreService) {
   const state = choreService.getState();
