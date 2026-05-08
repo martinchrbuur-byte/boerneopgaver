@@ -238,22 +238,22 @@ main > * {
   display: block;
 }
 
-/* Twemoji img fill — applies everywhere icon images are used */
-.emoji-img {
+/* Twemoji SVG fill — applies everywhere icon SVGs are used */
+.emoji-svg {
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: contain;
-  image-rendering: auto;
 }
 
 /* Ensure coin flight and wallet/coin status icons fill their container */
+.coin-flight svg,
 .coin-flight img,
+.wallet-icon svg,
 .wallet-icon img,
+.coin-icon svg,
 .coin-icon img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
 }
 
 .icon-label {

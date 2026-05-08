@@ -81,7 +81,7 @@ const ICON_CODEPOINTS = Object.freeze({
 
 function emojiImgMarkup(codepoint) {
   const src = `${TWEMOJI_BASE}${codepoint}.svg`;
-  return `<img src="${src}" alt="" aria-hidden="true" draggable="false" class="emoji-img">`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" class="emoji-svg" aria-hidden="true" focusable="false"><image href="${src}" width="36" height="36" /></svg>`;
 }
 
 function escapeHtml(value) {
