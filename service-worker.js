@@ -1,4 +1,4 @@
-const CACHE_NAME = 'opgavehelte-app-shell-v2';
+const CACHE_NAME = 'opgavehelte-app-shell-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -9,12 +9,15 @@ const APP_SHELL = [
   './src/vendor/supabase-js.js',
   './src/config/appConfig.js',
   './src/config/supabaseConfig.js',
+  './src/pwa/installPrompt.js',
   './src/pwa/registerServiceWorker.js',
+  './src/pwa/touchScroll.js',
   './src/services/choreService.js',
   './src/services/corruptionRecoveryService.js',
   './src/services/feedbackService.js',
   './src/services/orphanedRecordService.js',
   './src/services/periodService.js',
+  './src/services/remoteSyncService.js',
   './src/services/sprintService.js',
   './src/services/storageService.js',
   './src/services/supabaseService.js',
@@ -26,6 +29,7 @@ const APP_SHELL = [
   './src/shared/sectionDiff.js',
   './src/ui/choreView.js',
   './src/ui/mainView.js',
+  './src/ui/spotifyViewState.js',
   './src/ui/syncStatusUI.js'
 ];
 

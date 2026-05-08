@@ -341,6 +341,7 @@ function normalizePayload(value) {
 export function createStorageService({ storage = globalThis.localStorage, storageKey = STORAGE_KEY } = {}) {
   let userId = 'anonymous';
   const syncQueue = createSyncQueue();
+  const backupKey = `${storageKey}_backup`;
 
   syncQueue.registerHandler('chores', data => saveChores(data, userId));
   syncQueue.registerHandler('records', data => saveRecords(data, userId));
@@ -363,6 +364,20 @@ export function createStorageService({ storage = globalThis.localStorage, storag
 
     const raw = storage.getItem(storageKey);
     if (!raw) {
+      // Try restoring from backup if primary key is empty
+      const backupRaw = storage.getItem(backupKey);
+      if (backupRaw) {
+        try {
+          const parsed = JSON.parse(backupRaw);
+          const normalized = normalizePayload(parsed);
+          if (isPayload(normalized) && hasMeaningfulData(normalized)) {
+            console.warn('Restored data from backup key.');
+            return normalized;
+          }
+        } catch {
+          // Backup also unreadable
+        }
+      }
       return createEmptyPayload();
     }
 
@@ -370,7 +385,39 @@ export function createStorageService({ storage = globalThis.localStorage, storag
       const parsed = JSON.parse(raw);
       return normalizePayload(parsed);
     } catch {
+      // Primary data corrupted — try backup
+      const backupRaw = storage.getItem(backupKey);
+      if (backupRaw) {
+        try {
+          const parsed = JSON.parse(backupRaw);
+          const normalized = normalizePayload(parsed);
+          if (isPayload(normalized)) {
+            console.warn('Primary data corrupted, restored from backup.');
+            return normalized;
+          }
+        } catch {
+          // Backup also corrupted
+        }
+      }
       return createEmptyPayload();
+    }
+  }
+
+  function hasMeaningfulData(data) {
+    return (
+      (data?.chores || []).length > 0 ||
+      (data?.records || []).length > 0 ||
+      (data?.periods || []).length > 0
+    );
+  }
+
+  function persistToStorage(key, serialized) {
+    try {
+      storage.setItem(key, serialized);
+      return true;
+    } catch (error) {
+      console.warn(`Failed to write to localStorage key "${key}":`, error);
+      return false;
     }
   }
 
@@ -412,7 +459,18 @@ export function createStorageService({ storage = globalThis.localStorage, storag
       syncMeta
     };
 
-    storage.setItem(storageKey, JSON.stringify(normalizedNextData));
+    const serialized = JSON.stringify(normalizedNextData);
+
+    // Write to primary key; on failure attempt to preserve backup
+    const primaryOk = persistToStorage(storageKey, serialized);
+    if (!primaryOk) {
+      console.warn('Primary storage write failed. Data may not be saved.');
+    }
+
+    // Keep a rolling backup so corruption of the primary key can be recovered
+    if (hasMeaningfulData(normalizedNextData)) {
+      persistToStorage(backupKey, serialized);
+    }
 
     if (!skipCloudSync && isSupabaseConfigured()) {
       syncQueue.enqueue('chores', normalizedNextData.chores);

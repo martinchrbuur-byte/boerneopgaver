@@ -503,8 +503,8 @@ export function showRoleSwitchWalk(mascotOverlay, role, { duration = 2200 } = {}
   const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
   const messageEl = mascotOverlay.querySelector('.mascot-message');
 
-  // Use the dedicated kid avatar for the walk-across animation
-  const walkIcon = role === 'Andrea' ? 'kidAndrea' : 'kidHans';
+  // Use a mascot icon from the kid's icon set for the walk-across animation
+  const walkIcon = getNextMascotIcon(role);
   if (emojiEl) setElementIcon(emojiEl, walkIcon, { decorative: true });
   if (messageEl) messageEl.textContent = '';
 
