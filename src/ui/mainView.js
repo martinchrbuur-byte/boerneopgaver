@@ -260,6 +260,9 @@ export function createMainView(rootElement) {
         <span class="mascot-message"></span>
       </div>
 
+      <button id="mute-toggle" type="button" class="mute-toggle-btn" aria-label="Slå lyd fra" title="Lyd til/fra">
+      </button>
+
       </div>
 
       <div id="spotify-workspace" hidden>
@@ -376,6 +379,7 @@ export function createMainView(rootElement) {
     choreUnlimitedCapInput: rootElement.querySelector('#chore-unlimited-cap-input'),
     collabInbox: rootElement.querySelector('#collab-inbox'),
     mascotOverlay: rootElement.querySelector('#mascot-overlay'),
+    muteToggle: rootElement.querySelector('#mute-toggle'),
     statusText: rootElement.querySelector('#status-text'),
     moneySliderGroup: rootElement.querySelector('#money-slider-group'),
     statusRow: rootElement.querySelector('#status-row'),

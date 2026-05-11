@@ -1842,3 +1842,219 @@ label[for] {
     will-change: auto !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MAGICAL EMOJI SYSTEM — new animations & components
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Mute toggle button ────────────────────────────────────────── */
+.mute-toggle-btn {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  z-index: 9998;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  backdrop-filter: blur(6px);
+}
+
+.mute-toggle-btn:hover {
+  transform: scale(1.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.mute-toggle-btn .emoji-img {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* ─── Emoji rain ────────────────────────────────────────────────── */
+.emoji-rain-drop {
+  position: fixed;
+  top: -3rem;
+  left: var(--rain-left, 50vw);
+  width: var(--rain-size, 2rem);
+  height: var(--rain-size, 2rem);
+  pointer-events: none;
+  z-index: 9997;
+  animation: emojiRain var(--rain-duration, 2s) var(--rain-delay, 0s) cubic-bezier(0.45, 0, 0.55, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.emoji-rain-drop .emoji-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes emojiRain {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  8%   { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translateY(110vh) rotate(var(--rain-rotate, 30deg)); opacity: 0; }
+}
+
+/* ─── Emoji trail (pointer sparkles) ───────────────────────────── */
+.emoji-trail-spark {
+  position: absolute;
+  width: 1.4rem;
+  height: 1.4rem;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: emojiTrail 0.45s ease-out forwards;
+  z-index: 100;
+}
+
+.emoji-trail-spark .emoji-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes emojiTrail {
+  0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.9; }
+  60%  { transform: translate(-50%, -110%) scale(0.7); opacity: 0.6; }
+  100% { transform: translate(-50%, -160%) scale(0.3); opacity: 0; }
+}
+
+/* ─── Helper cast entrance animations ──────────────────────────── */
+
+/* Star Wizard — falls from the top */
+.helper-fall-from-top {
+  top: 2rem;
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+
+.helper-fall-from-top .mascot-emoji {
+  animation: helperFallFromTop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes helperFallFromTop {
+  0%   { transform: translateY(-120px) scale(0.4) rotate(-20deg); opacity: 0; }
+  55%  { transform: translateY(10px) scale(1.2) rotate(6deg); opacity: 1; }
+  75%  { transform: translateY(-6px) scale(0.95) rotate(-3deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Rocket Pilot — zooms from the right */
+.helper-zoom-from-right {
+  right: 1.5rem;
+  bottom: 8rem;
+}
+
+.helper-zoom-from-right .mascot-emoji {
+  animation: helperZoomFromRight 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes helperZoomFromRight {
+  0%   { transform: translateX(140px) scale(0.3) rotate(25deg); opacity: 0; }
+  60%  { transform: translateX(-8px) scale(1.15) rotate(-5deg); opacity: 1; }
+  100% { transform: translateX(0) scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Party Fairy — spirals in from centre */
+.helper-spiral-center {
+  top: 50%;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+}
+
+.helper-spiral-center .mascot-emoji {
+  width: 7rem;
+  height: 7rem;
+  animation: helperSpiralCenter 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes helperSpiralCenter {
+  0%   { transform: scale(0.1) rotate(-360deg); opacity: 0;
+         filter: drop-shadow(0 0 0 rgba(255, 200, 0, 0)); }
+  40%  { transform: scale(1.5) rotate(20deg); opacity: 1; }
+  65%  { transform: scale(0.9) rotate(-8deg); }
+  80%  { transform: scale(1.15) rotate(4deg);
+         filter: drop-shadow(0 0 20px rgba(255, 200, 50, 0.7)); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1;
+         filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.22)); }
+}
+
+/* Coin Dragon — crawls up from below */
+.helper-crawl-up {
+  bottom: 0;
+  right: 1.5rem;
+}
+
+.helper-crawl-up .mascot-emoji {
+  animation: helperCrawlUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes helperCrawlUp {
+  0%   { transform: translateY(120px) scale(0.5) rotate(10deg); opacity: 0; }
+  60%  { transform: translateY(-10px) scale(1.2) rotate(-4deg); opacity: 1; }
+  100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Sleepy Ghost — floats in from the left */
+.helper-float-from-left {
+  left: 1.5rem;
+  right: auto;
+  bottom: 5rem;
+}
+
+.helper-float-from-left .mascot-emoji {
+  animation: helperFloatFromLeft 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes helperFloatFromLeft {
+  0%   { transform: translateX(-120px) translateY(10px) scale(0.6); opacity: 0; }
+  50%  { transform: translateX(6px) translateY(-8px) scale(1.1); opacity: 1; }
+  100% { transform: translateX(0) translateY(0) scale(1); opacity: 1; }
+}
+
+/* Trophy Knight — drops from a star burst */
+.helper-drop-from-star {
+  top: 3rem;
+  right: 1.5rem;
+  left: auto;
+  bottom: auto;
+}
+
+.helper-drop-from-star .mascot-emoji {
+  animation: helperDropFromStar 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes helperDropFromStar {
+  0%   { transform: scale(2.5) rotate(0deg); opacity: 0;
+         filter: drop-shadow(0 0 30px rgba(255, 200, 0, 0.9)); }
+  35%  { transform: scale(0.8) rotate(15deg); opacity: 1;
+         filter: drop-shadow(0 0 12px rgba(255, 200, 0, 0.5)); }
+  65%  { transform: scale(1.15) rotate(-5deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1;
+         filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.22)); }
+}
+
+/* ─── Accessibility: disable new animations under reduced-motion ─ */
+@media (prefers-reduced-motion: reduce) {
+  .emoji-rain-drop,
+  .emoji-trail-spark { animation: none; display: none; }
+
+  .helper-fall-from-top .mascot-emoji,
+  .helper-zoom-from-right .mascot-emoji,
+  .helper-spiral-center .mascot-emoji,
+  .helper-crawl-up .mascot-emoji,
+  .helper-float-from-left .mascot-emoji,
+  .helper-drop-from-star .mascot-emoji { animation: none; opacity: 1; transform: none; }
+}

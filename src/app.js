@@ -22,7 +22,9 @@ import {
 } from './services/supabaseService.js';
 import { createAuthView, createMainView } from './ui/mainView.js';
 import { createSpotifyViewStateController } from './ui/spotifyViewState.js';
-import { renderFeedback, renderState, showCoinToWallet, showMascot, showRoleSwitchWalk } from './ui/choreView.js';
+import { renderFeedback, renderState, showCoinToWallet, showMascot, showRoleSwitchWalk, showCinematicCelebration, showHelperByTrigger, initChoreTrails } from './ui/choreView.js';
+import { unlockAudio, toggleMute, isMuted, playSound } from './shared/soundManager.js';
+import { renderIcon } from './shared/iconRegistry.js';
 import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
@@ -226,6 +228,24 @@ async function init() {
   }
 
   const viewRefs = createMainView(root);
+
+  // Unlock Web Audio on first gesture and initialise chore emoji trails
+  document.addEventListener('pointerdown', unlockAudio, { once: true });
+  document.addEventListener('keydown', unlockAudio, { once: true });
+
+  // Wire up the mute toggle button (added in mainView)
+  if (viewRefs.muteToggle) {
+    viewRefs.muteToggle.setAttribute('aria-label', isMuted() ? 'Slå lyd til' : 'Slå lyd fra');
+    viewRefs.muteToggle.innerHTML = isMuted()
+      ? `${renderIcon('mute')}` : `${renderIcon('speaker')}`;
+    viewRefs.muteToggle.addEventListener('click', () => {
+      unlockAudio();
+      const muted = toggleMute();
+      viewRefs.muteToggle.innerHTML = muted
+        ? `${renderIcon('mute')}` : `${renderIcon('speaker')}`;
+      viewRefs.muteToggle.setAttribute('aria-label', muted ? 'Slå lyd til' : 'Slå lyd fra');
+    });
+  }
   const cleanupTasks = [];
   let isAppDisposed = false;
   disposeActiveApp = () => {
@@ -244,6 +264,9 @@ async function init() {
     viewRefs.accountSection.hidden = false;
     viewRefs.accountEmail.textContent = currentSession.user.email;
   }
+
+  // Attach delegated emoji trail to the chore list (once)
+  initChoreTrails(viewRefs.choreList);
 
   cleanupTasks.push(bindInstallPromptUi({
     manager: installPromptManager,
@@ -737,6 +760,17 @@ async function init() {
     }
 
     activeTab = nextTab;
+    // Small emoji confetti burst on tab switch
+    if (typeof window.confetti === 'function' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      window.confetti({
+        particleCount: 18,
+        spread: 55,
+        origin: { x: 0.5, y: 0.55 },
+        gravity: 1.4,
+        scalar: 0.7,
+      });
+    }
+    playSound('pop');
     refresh();
   });
 
@@ -862,7 +896,7 @@ async function init() {
         const kidChores = chores.filter(c => c.assignedTo?.includes(activeRole));
         const allDone = kidChores.length > 0 && kidChores.every(c => c.isFullyDone || c.isCompleted);
         if (allDone) {
-          showMascot(viewRefs.mascotOverlay, activeRole, 'Alle opgaver klaret!', { type: 'celebrate', duration: 4000 });
+          showCinematicCelebration(viewRefs.mascotOverlay, activeRole);
         } else {
           showMascot(viewRefs.mascotOverlay, activeRole, 'Flot klaret!');
         }

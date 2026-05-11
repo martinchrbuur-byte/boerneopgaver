@@ -77,6 +77,25 @@ const ICON_CODEPOINTS = Object.freeze({
   school:          '1f4da',    // 📚  books
   bath:            '1f6c1',    // 🛁  bathtub
   food:            '1f37d',    // 🍽️  fork and knife with plate
+
+  // ── Mood / atmosphere ─────────────────────────────────────────────────────
+  moon:            '1f319',    // 🌙  crescent moon
+  sparkle:         '2728',     // ✨  sparkles
+  fire:            '1f525',    // 🔥  fire
+  sun:             '2600',     // ☀️  sun
+  butterfly:       '1f98b',    // 🦋  butterfly
+
+  // ── Helper cast ───────────────────────────────────────────────────────────
+  wizard:          '1f9d9',    // 🧙  mage / wizard
+  astronaut:       '1f9d1-200d-1f680', // 🧑‍🚀  astronaut (ZWJ sequence)
+  fairy:           '1f9da',    // 🧚  fairy
+  dragon:          '1f409',    // 🐉  dragon
+  ghost:           '1f47b',    // 👻  ghost
+  knight:          '1f3c7',    // 🏇  horse racing / knight
+
+  // ── Sound controls ────────────────────────────────────────────────────────
+  speaker:         '1f50a',    // 🔊  speaker high volume
+  mute:            '1f507',    // 🔇  muted speaker
 });
 
 function emojiImgMarkup(codepoint) {

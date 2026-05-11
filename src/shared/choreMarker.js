@@ -1,3 +1,5 @@
+import { getDailyMoodIconForChore } from './emojiMoodRegistry.js';
+
 const CATEGORY_RULES = Object.freeze([
   {
     label: 'Søvn',
@@ -41,37 +43,12 @@ const CATEGORY_RULES = Object.freeze([
   }
 ]);
 
-const FALLBACK_VISUALS = Object.freeze([
-  { iconKey: 'star', label: 'Stjerne' },
-  { iconKey: 'target', label: 'Mål' },
-  { iconKey: 'rocket', label: 'Mission' },
-  { iconKey: 'puzzle', label: 'Puslespil' },
-  { iconKey: 'balloon', label: 'Sjov' },
-  { iconKey: 'rainbow', label: 'Regnbue' },
-  { iconKey: 'trophy', label: 'Sejr' },
-  { iconKey: 'music', label: 'Rytme' },
-  { iconKey: 'paint', label: 'Kreativ' },
-  { iconKey: 'build', label: 'Byg' },
-  { iconKey: 'idea', label: 'Idé' },
-  { iconKey: 'magic', label: 'Magi' },
-  { iconKey: 'medal', label: 'Guld' }
-]);
-
 function normalizeText(value) {
   return String(value ?? '')
     .trim()
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
-}
-
-function hashString(value) {
-  let hash = 0;
-  for (const char of value) {
-    hash = (hash << 5) - hash + char.charCodeAt(0);
-    hash |= 0;
-  }
-  return Math.abs(hash);
 }
 
 function findRule(normalizedName) {
@@ -85,31 +62,28 @@ function findRule(normalizedName) {
   return null;
 }
 
-export function getChoreVisual(choreName) {
+export function getChoreVisual(choreName, choreId) {
   const normalizedName = normalizeText(choreName);
   const keywordRule = findRule(normalizedName);
-  const hash = hashString(normalizedName);
 
   if (keywordRule) {
-    const visuals = Array.isArray(keywordRule.visuals) && keywordRule.visuals.length > 0
-      ? keywordRule.visuals
-      : ['star'];
-    const iconKey = visuals[hash % visuals.length];
+    // Use the first visuals entry as the category key for the mood registry,
+    // falling back to the original hash-based pick if no mood icon is found.
+    const categoryKey = keywordRule.visuals[0] ?? 'star';
+    const iconKey = getDailyMoodIconForChore(categoryKey, normalizedName, choreId);
 
     return {
       iconKey,
       label: keywordRule.label,
-      source: 'keyword'
+      source: 'keyword',
     };
   }
 
-  const fallbackIndex = normalizedName.length > 0
-    ? hash % FALLBACK_VISUALS.length
-    : 0;
-  const fallback = FALLBACK_VISUALS[fallbackIndex];
+  // No keyword match — daily-varying fallback
+  const iconKey = getDailyMoodIconForChore('fallback', normalizedName, choreId);
   return {
-    iconKey: fallback.iconKey,
-    label: fallback.label,
-    source: 'fallback'
+    iconKey,
+    label: 'Opgave',
+    source: 'fallback',
   };
 }

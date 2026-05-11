@@ -1,6 +1,8 @@
 import { toDateTimeLabel } from '../shared/dateTime.js';
 import { getChoreVisual } from '../shared/choreMarker.js';
 import { getIconSvgMarkup, renderIcon, renderIconText, setElementIcon } from '../shared/iconRegistry.js';
+import { getHelperByTrigger, pickPhrase } from '../shared/helperCast.js';
+import { playSound, unlockAudio, toggleMute, isMuted } from '../shared/soundManager.js';
 
 const MASCOT_MAP = Object.freeze({
   'Hans Jørgen': 'trophy',
@@ -152,8 +154,8 @@ function renderParentEditFields(chore, draft) {
   `;
 }
 
-function renderChoreMarker(choreName) {
-  const visual = getChoreVisual(choreName);
+function renderChoreMarker(choreName, choreId) {
+  const visual = getChoreVisual(choreName, choreId);
   return `<span class="chore-marker" role="img" aria-label="${escapeAttribute(visual.label)} opgave" data-icon-key="${escapeAttribute(visual.iconKey)}">${getIconSvgMarkup(visual.iconKey)}</span>`;
 }
 
@@ -268,7 +270,7 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
       const maxPerPeriod = chore.maxPerPeriod ?? 1;
       const periodCount = chore.periodCompletionCount ?? 0;
       const isFullyDone = chore.isFullyDone ?? false;
-      const choreMarker = renderChoreMarker(chore.name);
+      const choreMarker = renderChoreMarker(chore.name, chore.id);
 
       const repeatBadge = maxPerPeriod > 1
         ? `<span class="repeat-badge">${periodCount}/${maxPerPeriod} gange</span>`
@@ -421,22 +423,77 @@ export function renderCollabInbox(viewRefs, pendingCollaborations, activeRole, c
 let mascotTimer = null;
 let roleSwitchWalkTimer = null;
 let walletHitTimer = null;
+let cinematicTimer = null;
+
+/**
+ * Safe reduced-motion check — works in Node/JSDOM where matchMedia doesn't exist.
+ */
+function prefersReducedMotion() {
+  return typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 
 /** Fire canvas-confetti if the library is available on the page. */
 function fireConfetti({ particleCount = 120, spread = 80, origin = { y: 0.65 }, big = false } = {}) {
   if (typeof window.confetti !== 'function') return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (prefersReducedMotion()) return;
 
   if (big) {
-    // Two cannons from each side for a big celebration
-    window.confetti({ particleCount: 80, angle: 60, spread: 70, origin: { x: 0, y: 0.75 } });
-    window.confetti({ particleCount: 80, angle: 120, spread: 70, origin: { x: 1, y: 0.75 } });
+    // Three cannons: left, right, and center for the cinematic celebration
+    window.confetti({ particleCount: 120, angle: 60, spread: 80, origin: { x: 0, y: 0.75 } });
+    window.confetti({ particleCount: 120, angle: 120, spread: 80, origin: { x: 1, y: 0.75 } });
     setTimeout(() => {
-      window.confetti({ particleCount: 60, angle: 90, spread: 120, origin: { x: 0.5, y: 0.5 } });
+      window.confetti({ particleCount: 100, angle: 90, spread: 130, origin: { x: 0.5, y: 0.5 } });
     }, 350);
+    setTimeout(() => {
+      window.confetti({ particleCount: 80, angle: 75, spread: 100, origin: { x: 0.25, y: 0.3 } });
+      window.confetti({ particleCount: 80, angle: 105, spread: 100, origin: { x: 0.75, y: 0.3 } });
+    }, 700);
   } else {
     window.confetti({ particleCount, spread, origin });
   }
+}
+
+/**
+ * Rain emoji icons down the screen (Act 3 of the cinematic celebration).
+ * Creates lightweight <span> elements, animates them with CSS, then removes them.
+ */
+function fireEmojiRain(iconKeys = ['star', 'sparkle', 'trophy', 'rocket', 'party', 'magic'], count = 35) {
+  if (prefersReducedMotion()) return;
+
+  for (let i = 0; i < count; i++) {
+    const iconKey = iconKeys[Math.floor(Math.random() * iconKeys.length)];
+    const span = document.createElement('span');
+    span.className = 'emoji-rain-drop';
+    span.innerHTML = getIconSvgMarkup(iconKey);
+    span.style.setProperty('--rain-left', `${Math.random() * 100}vw`);
+    span.style.setProperty('--rain-delay', `${Math.random() * 2.2}s`);
+    span.style.setProperty('--rain-duration', `${1.4 + Math.random() * 1.2}s`);
+    span.style.setProperty('--rain-rotate', `${(Math.random() - 0.5) * 60}deg`);
+    span.style.setProperty('--rain-size', `${1.6 + Math.random() * 1.6}rem`);
+    document.body.appendChild(span);
+    span.addEventListener('animationend', () => span.remove(), { once: true });
+  }
+}
+
+/**
+ * Attach emoji trail sparkles to pointer movement on a chore list item.
+ * Called once per chore item element.
+ */
+function attachEmojiTrail(itemEl, iconKey) {
+  if (prefersReducedMotion()) return;
+
+  itemEl.addEventListener('pointermove', (e) => {
+    if (Math.random() > 0.35) return; // throttle — fire ~35% of events
+    const trail = document.createElement('span');
+    trail.className = 'emoji-trail-spark';
+    trail.innerHTML = getIconSvgMarkup(iconKey);
+    const rect = itemEl.getBoundingClientRect();
+    trail.style.left = `${e.clientX - rect.left}px`;
+    trail.style.top = `${e.clientY - rect.top}px`;
+    itemEl.appendChild(trail);
+    trail.addEventListener('animationend', () => trail.remove(), { once: true });
+  });
 }
 
 function clearMascotTimers() {
@@ -457,7 +514,13 @@ function resetMascotAnimations(mascotOverlay) {
     'mascot-celebrate',
     'mascot-collab',
     'mascot-confetti',
-    'mascot-role-walk'
+    'mascot-role-walk',
+    'helper-fall-from-top',
+    'helper-zoom-from-right',
+    'helper-spiral-center',
+    'helper-crawl-up',
+    'helper-float-from-left',
+    'helper-drop-from-star'
   );
 }
 
@@ -549,9 +612,100 @@ export function showRoleSwitchWalk(mascotOverlay, role, { duration = 2200 } = {}
   }, duration);
 }
 
+/** Map mascot type → helper cast trigger for routing. */
+const TYPE_TO_HELPER_TRIGGER = Object.freeze({
+  celebrate: 'allChoresDone',
+  confetti:  'periodPaid',
+  collab:    null, // collab keeps its own animation for now
+});
+
+/** The full icon pool used for emoji rain per kid. */
+const KID_RAIN_ICONS = Object.freeze({
+  'Andrea':      ['heart', 'flower', 'gift', 'diamond', 'rainbow', 'magic', 'sparkle', 'butterfly'],
+  'Hans Jørgen': ['rocket', 'target', 'trophy', 'build', 'idea', 'star', 'fire', 'sparkle'],
+  parent:        ['star', 'sparkle', 'party', 'trophy', 'magic', 'rainbow'],
+});
+
+/**
+ * Three-act cinematic celebration for all-chores-done.
+ *  Act 1 (0–1.2s)  : Party Fairy flies in, speech bubble appears.
+ *  Act 2 (1.2–3s)  : Triple confetti cannons.
+ *  Act 3 (2–4.5s)  : Emoji rain from above.
+ */
+export function showCinematicCelebration(mascotOverlay, activeRole) {
+  if (!mascotOverlay) return;
+
+  const helper = getHelperByTrigger('allChoresDone');
+  if (!helper) return;
+
+  const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
+  const messageEl = mascotOverlay.querySelector('.mascot-message');
+
+  if (emojiEl) setElementIcon(emojiEl, helper.iconKey, { decorative: true });
+  if (messageEl) messageEl.textContent = pickPhrase(helper);
+
+  clearMascotTimers();
+  resetMascotAnimations(mascotOverlay);
+  void mascotOverlay.offsetWidth;
+
+  // Act 1: hero entrance
+  mascotOverlay.classList.add('helper-spiral-center');
+  mascotOverlay.hidden = false;
+  playSound('firework');
+
+  // Act 2: confetti cannons
+  if (cinematicTimer) clearTimeout(cinematicTimer);
+  cinematicTimer = setTimeout(() => {
+    fireConfetti({ big: true });
+  }, 1200);
+
+  // Act 3: emoji rain overlapping with confetti
+  setTimeout(() => {
+    const rainIcons = KID_RAIN_ICONS[activeRole] ?? KID_RAIN_ICONS.parent;
+    fireEmojiRain([...rainIcons, 'party', 'sparkle'], 40);
+  }, 2000);
+
+  // Hide mascot after full sequence
+  mascotTimer = setTimeout(() => {
+    mascotOverlay.hidden = true;
+    mascotTimer = null;
+    cinematicTimer = null;
+  }, 4500);
+}
+
 export function showMascot(mascotOverlay, activeRole, message, { type = 'pop', duration = 2500 } = {}) {
   if (!mascotOverlay) return;
 
+  // Route celebration/confetti types to their helper characters
+  const helperTrigger = TYPE_TO_HELPER_TRIGGER[type];
+  if (helperTrigger !== undefined && helperTrigger !== null) {
+    const helper = getHelperByTrigger(helperTrigger);
+    if (helper) {
+      const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
+      const messageEl = mascotOverlay.querySelector('.mascot-message');
+      if (emojiEl) setElementIcon(emojiEl, helper.iconKey, { decorative: true });
+      if (messageEl) messageEl.textContent = pickPhrase(helper);
+
+      clearMascotTimers();
+      resetMascotAnimations(mascotOverlay);
+      void mascotOverlay.offsetWidth;
+
+      const entranceClass = `helper-${helper.entrance.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+      mascotOverlay.classList.add(entranceClass);
+      mascotOverlay.hidden = false;
+      playSound(helper.soundCue ?? 'chime');
+
+      if (type === 'confetti') fireConfetti({ big: true });
+
+      mascotTimer = setTimeout(() => {
+        mascotOverlay.hidden = true;
+        mascotTimer = null;
+      }, duration);
+      return;
+    }
+  }
+
+  // Default: use the rotating per-kid icon with pop/collab animation
   const iconKey = BOTH_KIDS.includes(activeRole) ? getNextMascotIcon(activeRole) : MASCOT_MAP[activeRole] ?? 'star';
   const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
   const messageEl = mascotOverlay.querySelector('.mascot-message');
@@ -564,18 +718,74 @@ export function showMascot(mascotOverlay, activeRole, message, { type = 'pop', d
   void mascotOverlay.offsetWidth;
   mascotOverlay.classList.add(`mascot-${type}`);
   mascotOverlay.hidden = false;
-
-  // 🎉 Fire confetti for celebration moments
-  if (type === 'celebrate') {
-    fireConfetti({ particleCount: 100, spread: 75, origin: { y: 0.7 } });
-  } else if (type === 'confetti') {
-    fireConfetti({ big: true });
-  }
+  playSound(type === 'collab' ? 'chime' : 'pop');
 
   mascotTimer = setTimeout(() => {
     mascotOverlay.hidden = true;
     mascotTimer = null;
   }, duration);
+}
+
+/**
+ * Attach a single delegated pointer-trail listener to the chore list container.
+ * Call this once after the view is created.  It auto-picks the icon from the
+ * chore item's data-icon-key attribute so it works after every re-render.
+ */
+export function initChoreTrails(choreListEl) {
+  if (!choreListEl || choreListEl.dataset.trailsAttached) return;
+  choreListEl.dataset.trailsAttached = '1';
+
+  if (prefersReducedMotion()) return;
+
+  choreListEl.addEventListener('pointermove', (e) => {
+    if (Math.random() > 0.3) return; // throttle to ~30%
+    const itemEl = e.target.closest('.chore-item');
+    if (!itemEl) return;
+
+    const marker = itemEl.querySelector('[data-icon-key]');
+    const iconKey = marker?.dataset.iconKey ?? 'sparkle';
+
+    const trail = document.createElement('span');
+    trail.className = 'emoji-trail-spark';
+    trail.innerHTML = getIconSvgMarkup(iconKey);
+    const rect = itemEl.getBoundingClientRect();
+    trail.style.left = `${e.clientX - rect.left}px`;
+    trail.style.top = `${e.clientY - rect.top}px`;
+    itemEl.style.position = 'relative'; // ensure containment
+    itemEl.appendChild(trail);
+    trail.addEventListener('animationend', () => trail.remove(), { once: true });
+  });
+}
+
+/**
+ * Show a specific helper character from the cast by their trigger name.
+ * @param {Element} mascotOverlay
+ * @param {string}  trigger  – one of the HELPER_CAST trigger values
+ */
+export function showHelperByTrigger(mascotOverlay, trigger) {
+  if (!mascotOverlay) return;
+  const helper = getHelperByTrigger(trigger);
+  if (!helper) return;
+
+  const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
+  const messageEl = mascotOverlay.querySelector('.mascot-message');
+  if (emojiEl) setElementIcon(emojiEl, helper.iconKey, { decorative: true });
+  if (messageEl) messageEl.textContent = pickPhrase(helper);
+
+  clearMascotTimers();
+  resetMascotAnimations(mascotOverlay);
+  void mascotOverlay.offsetWidth;
+
+  // Convert camelCase entrance → kebab-case CSS class
+  const entranceClass = `helper-${helper.entrance.replace(/([A-Z])/g, (_, c) => `-${c.toLowerCase()}`)}`;
+  mascotOverlay.classList.add(entranceClass);
+  mascotOverlay.hidden = false;
+  playSound(helper.soundCue ?? 'chime');
+
+  mascotTimer = setTimeout(() => {
+    mascotOverlay.hidden = true;
+    mascotTimer = null;
+  }, 3200);
 }
 
 function renderTabs(viewRefs, activeTab, activeRole) {
