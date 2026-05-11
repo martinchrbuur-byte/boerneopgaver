@@ -86,18 +86,18 @@ function getOrCreateContext() {
   return audioCtx;
 }
 
-/** Pre-load bundled audio files (/sounds/<name>.mp3) in the background. */
+/** Pre-load bundled audio files from soundsBasePath in the background. */
 async function preloadAudioFiles() {
   if (loadAttempted) return;
   loadAttempted = true;
 
   const ctx = getOrCreateContext();
-  if (!ctx) return;
+  if (!ctx || !soundsBasePath) return;
 
   await Promise.allSettled(
     SOUND_NAMES.map(async name => {
       try {
-        const resp = await fetch(`/sounds/${name}.mp3`);
+        const resp = await fetch(`${soundsBasePath}/${name}.mp3`);
         if (!resp.ok) return;
         const arrayBuffer = await resp.arrayBuffer();
         audioBuffers[name] = await ctx.decodeAudioData(arrayBuffer);
@@ -180,11 +180,28 @@ export function isMuted() {
 
 /**
  * Must be called once from any user-gesture handler (click/touchstart) to
- * unlock audio and pre-load bundled files.
+ * unlock the Web Audio context.
+ *
+ * Bundled .mp3 files are loaded lazily on first play only when a custom
+ * sounds path is explicitly registered via registerSoundsPath().  This avoids
+ * noisy 404 console errors when no audio files are deployed.
  */
 export function unlockAudio() {
   if (gestureUnlocked) return;
   gestureUnlocked = true;
   getOrCreateContext();
-  preloadAudioFiles();
+  // Only attempt file preload if a sounds path was registered
+  if (soundsBasePath) preloadAudioFiles();
+}
+
+let soundsBasePath = null;
+
+/**
+ * Opt-in to loading bundled .mp3 files from a specific path.
+ * Call this before the first user gesture if you have deployed audio assets.
+ * Example: registerSoundsPath('/sounds');
+ * @param {string} basePath  – URL path to the folder containing <name>.mp3 files
+ */
+export function registerSoundsPath(basePath) {
+  soundsBasePath = basePath;
 }
