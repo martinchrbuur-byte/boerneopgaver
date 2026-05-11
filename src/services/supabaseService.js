@@ -389,7 +389,17 @@ export async function saveChores(chores, userId) {
 export async function saveRecords(records, userId) {
   const client = getSupabaseClient();
 
-  const buildPayload = () => records.map(record => {
+  // Guard against FK violations: only upsert records whose chore_id still
+  // exists in Supabase.  Records for deleted chores are silently skipped here;
+  // they will be pruned from local storage by orphanedRecordService separately.
+  const { data: existingChoreRows } = await client
+    .from('chores')
+    .select('id')
+    .eq('user_id', userId);
+  const validChoreIds = new Set((existingChoreRows ?? []).map(r => r.id));
+  const validRecords = records.filter(r => validChoreIds.has(r.choreId));
+
+  const buildPayload = () => validRecords.map(record => {
     const row = {
       id: record.id,
       chore_id: record.choreId,
@@ -414,7 +424,7 @@ export async function saveRecords(records, userId) {
   const runUpsert = async () => client.from('records').upsert(buildPayload(), { onConflict: 'id' });
 
   let error = null;
-  if (records.length > 0) {
+  if (validRecords.length > 0) {
     ({ error } = await runUpsert());
   }
 

@@ -1,5 +1,28 @@
 import { nowIsoTimestamp } from '../shared/dateTime.js';
 
+/**
+ * Priority order for sync types — lower number = processed first.
+ * Ensures chores always land in Supabase before records that reference them.
+ */
+const SYNC_ORDER = Object.freeze({
+  chores:   0,
+  periods:  1,
+  records:  2,
+  feedback: 3,
+  ui:       4,
+  settings: 5,
+});
+
+function syncPriority(item) {
+  const p = SYNC_ORDER[item.type];
+  return typeof p === 'number' ? p : 99;
+}
+
+function sortByDependency(items) {
+  // Stable sort: preserve relative order within the same priority bucket
+  return items.slice().sort((a, b) => syncPriority(a) - syncPriority(b));
+}
+
 export function createSyncQueue() {
   const queueStorage = globalThis.localStorage;
   const queueStorageKey = 'kids_chore_sync_queue_v1';
@@ -81,7 +104,9 @@ export function createSyncQueue() {
   }
 
   function hydrateQueues() {
-    queue = loadStoredItems(queueStorageKey).map(fromStoredItem);
+    // Sort restored items so dependency-ordered types (chores before records)
+    // are always processed first, even across page reloads.
+    queue = sortByDependency(loadStoredItems(queueStorageKey).map(fromStoredItem));
     deadLetterQueue = loadStoredItems(deadLetterStorageKey).map(fromStoredItem);
     syncState.isPending = queue.length > 0;
     syncState.failureCount = deadLetterQueue.length;
@@ -237,7 +262,8 @@ export function createSyncQueue() {
 
     const itemsToRetry = deadLetterQueue.map(item => ({ ...item, retries: 0 }));
     deadLetterQueue = [];
-    queue.push(...itemsToRetry);
+    // Re-insert in dependency order so chores always precede records
+    queue = sortByDependency([...queue, ...itemsToRetry]);
     syncState.failureCount = 0;
     syncState.isPending = queue.length > 0;
     persistQueues();
