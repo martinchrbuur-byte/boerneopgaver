@@ -366,6 +366,23 @@ export async function saveChores(chores, userId) {
   }
 
   throwIfError(error);
+
+  // Before pruning deleted chores, remove any records that still reference them.
+  // This prevents a foreign-key violation (records_chore_id_fkey) when the DELETE fires.
+  const { data: existingChoreRows } = await client
+    .from('chores')
+    .select('id')
+    .eq('user_id', userId);
+  const choresToDelete = findMissingEntityIds(existingChoreRows ?? [], chores);
+  if (choresToDelete.length > 0) {
+    await client
+      .from('records')
+      .delete()
+      .eq('user_id', userId)
+      .in('chore_id', choresToDelete);
+    // Ignore errors here — records may already be absent
+  }
+
   await pruneMissingRows(client, 'chores', userId, chores);
 }
 
