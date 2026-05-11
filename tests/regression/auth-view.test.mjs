@@ -97,11 +97,20 @@ test('main view stacks recent completions below chores and marks period tab as p
 
     const choreGrid = env.root.querySelector('.chore-content-grid');
     const choreList = env.root.querySelector('#chore-list');
+    const kidPagination = env.root.querySelector('#kid-chore-pagination');
+    const kidPrevButton = env.root.querySelector('#kid-chore-prev-btn');
+    const kidNextButton = env.root.querySelector('#kid-chore-next-btn');
+    const kidPageLabel = env.root.querySelector('#kid-chore-page-label');
     const recentCompletions = env.root.querySelector('#recent-completions');
     const periodTab = env.root.querySelector('button[data-tab="periode"]');
 
     assert.ok(choreGrid);
     assert.ok(choreList);
+    assert.ok(kidPagination);
+    assert.ok(kidPrevButton);
+    assert.ok(kidNextButton);
+    assert.ok(kidPageLabel);
+    assert.equal(kidPagination.hidden, true);
     assert.ok(recentCompletions);
     assert.ok(periodTab);
     assert.ok(periodTab.classList.contains('tab-parent-only'));

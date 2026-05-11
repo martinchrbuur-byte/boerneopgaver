@@ -16,7 +16,7 @@ export function createMainView(rootElement) {
 
   rootElement.innerHTML = `
     <section class="app-shell" aria-label="Børnenes opgaveskema">
-      <header class="card app-header-card">
+      <header id="app-header-card" class="card app-header-card">
         <div class="app-header-row">
           <div class="app-brand">
             <img class="app-logo" src="./favicon.svg" alt="Opgavehelte logo" width="64" height="64" />
@@ -40,7 +40,7 @@ export function createMainView(rootElement) {
         </div>
       </header>
 
-      <section class="card app-mode-card app-top-card" aria-label="Hovedvisning">
+      <section id="app-mode-card" class="card app-mode-card app-top-card" aria-label="Hovedvisning">
         <h2 class="section-title">Hovedvisning</h2>
         <div id="mode-switch" class="role-switch" role="group" aria-label="Vælg hovedvisning">
           <button type="button" class="button button-secondary" data-mode="chores" aria-pressed="true">
@@ -54,7 +54,7 @@ export function createMainView(rootElement) {
 
       <div id="chores-workspace">
 
-      <section class="card app-role-card app-top-card" aria-label="Rolleskift">
+      <section id="app-role-card" class="card app-role-card app-top-card" aria-label="Rolleskift">
         <h2 class="section-title">Visningstilstand</h2>
         <div id="role-switch" class="role-switch" role="group" aria-label="Vælg brugerrolle">
           <button type="button" class="button button-secondary" data-role="parent" aria-pressed="true">
@@ -69,7 +69,7 @@ export function createMainView(rootElement) {
         </div>
       </section>
 
-      <section class="card app-status-card app-top-card" aria-label="Status">
+      <section id="app-status-card" class="card app-status-card app-top-card" aria-label="Status">
         <div id="status-row" class="status-row">
           <div class="status-container">
             <p id="status-text" class="status-text">Forældretilstand</p>
@@ -168,9 +168,14 @@ export function createMainView(rootElement) {
           <section class="card chore-list-card" aria-label="Opgaveliste">
             <h2 class="section-title">Opgaver</h2>
             <ul id="chore-list" class="list"></ul>
+            <div id="kid-chore-pagination" class="kid-pagination" hidden>
+              <button id="kid-chore-prev-btn" class="button button-secondary" type="button">Forrige</button>
+              <p id="kid-chore-page-label" class="chore-meta" aria-live="polite"></p>
+              <button id="kid-chore-next-btn" class="button button-secondary" type="button">Næste</button>
+            </div>
           </section>
 
-          <section class="card recent-completions-card" aria-label="Seneste fuldføringer">
+          <section id="recent-completions-card" class="card recent-completions-card" aria-label="Seneste fuldføringer">
             <h2 class="section-title">Seneste fuldføringer</h2>
             <ul id="recent-completions" class="list"></ul>
           </section>
@@ -326,6 +331,11 @@ export function createMainView(rootElement) {
   `;
 
   return {
+    appShell: rootElement.querySelector('.app-shell'),
+    appHeaderCard: rootElement.querySelector('#app-header-card'),
+    appModeCard: rootElement.querySelector('#app-mode-card'),
+    appRoleCard: rootElement.querySelector('#app-role-card'),
+    appStatusCard: rootElement.querySelector('#app-status-card'),
     modeSwitch: rootElement.querySelector('#mode-switch'),
     choresWorkspace: rootElement.querySelector('#chores-workspace'),
     spotifyWorkspace: rootElement.querySelector('#spotify-workspace'),
@@ -335,6 +345,11 @@ export function createMainView(rootElement) {
     choreNameInput: rootElement.querySelector('#chore-name-input'),
     choreValueInput: rootElement.querySelector('#chore-value-input'),
     choreList: rootElement.querySelector('#chore-list'),
+    kidChorePagination: rootElement.querySelector('#kid-chore-pagination'),
+    kidChorePrevButton: rootElement.querySelector('#kid-chore-prev-btn'),
+    kidChoreNextButton: rootElement.querySelector('#kid-chore-next-btn'),
+    kidChorePageLabel: rootElement.querySelector('#kid-chore-page-label'),
+    recentCompletionsCard: rootElement.querySelector('#recent-completions-card'),
     recentCompletions: rootElement.querySelector('#recent-completions'),
     feedback: rootElement.querySelector('#feedback'),
     tabNav: rootElement.querySelector('.tab-nav'),

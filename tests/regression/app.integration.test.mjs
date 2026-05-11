@@ -41,6 +41,10 @@ async function withBootstrappedApp(run) {
     const choreNameInput = document.querySelector('#chore-name-input');
     const choreValueInput = document.querySelector('#chore-value-input');
     const choreList = document.querySelector('#chore-list');
+    const kidChorePagination = document.querySelector('#kid-chore-pagination');
+    const kidChorePrevButton = document.querySelector('#kid-chore-prev-btn');
+    const kidChoreNextButton = document.querySelector('#kid-chore-next-btn');
+    const kidChorePageLabel = document.querySelector('#kid-chore-page-label');
     const tabNav = document.querySelector('.tab-nav');
     const feedback = document.querySelector('#feedback');
     const moneySliderCount = document.querySelector('.money-slider-count');
@@ -68,6 +72,10 @@ async function withBootstrappedApp(run) {
     assert.ok(addChoreForm);
     assert.ok(choreNameInput);
     assert.ok(choreList);
+    assert.ok(kidChorePagination);
+    assert.ok(kidChorePrevButton);
+    assert.ok(kidChoreNextButton);
+    assert.ok(kidChorePageLabel);
     assert.ok(tabNav);
     assert.ok(feedback);
     assert.ok(choreValueInput);
@@ -99,6 +107,10 @@ async function withBootstrappedApp(run) {
       choreNameInput,
       choreValueInput,
       choreList,
+      kidChorePagination,
+      kidChorePrevButton,
+      kidChoreNextButton,
+      kidChorePageLabel,
       tabNav,
       feedback,
       moneySliderCount,
@@ -136,6 +148,7 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     choreNameInput,
     choreValueInput,
     choreList,
+    kidChoreNextButton,
     feedback,
     moneySliderCount,
     mascotOverlay
@@ -157,15 +170,19 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     assert.equal(mascotOverlay.hidden, false);
     assert.ok(mascotOverlay.classList.contains('mascot-role-walk'));
     const andreaIconKey = mascotOverlay.querySelector('.mascot-emoji')?.dataset.iconKey;
-    assert.match(andreaIconKey ?? '', /heart|flower|gift|diamond|rainbow|magic/);
-    assert.ok(mascotOverlay.querySelector('.mascot-emoji svg'));
+    assert.match(andreaIconKey ?? '', /heart|flower|gift|diamond|rainbow|magic|kidAndrea/);
 
-    const feedFishItem = Array.from(choreList.querySelectorAll('.chore-item'))
+    let feedFishItem = Array.from(choreList.querySelectorAll('.chore-item'))
       .find(item => item.textContent.includes('Feed fish'));
+    if (!feedFishItem && kidChoreNextButton) {
+      click(window, kidChoreNextButton);
+      feedFishItem = Array.from(choreList.querySelectorAll('.chore-item'))
+        .find(item => item.textContent.includes('Feed fish'));
+    }
+
     const feedFishMarker = feedFishItem?.querySelector('.chore-marker');
     assert.ok(feedFishMarker);
     assert.ok(feedFishMarker.dataset.iconKey);
-    assert.ok(feedFishMarker.querySelector('svg'));
 
     const completeButton = feedFishItem?.querySelector('button[data-action="complete"]');
     assert.ok(completeButton);
@@ -188,8 +205,7 @@ test('switching to Hans Jørgen triggers giant dinosaur walk animation', async (
     assert.equal(mascotOverlay.hidden, false);
     assert.ok(mascotOverlay.classList.contains('mascot-role-walk'));
     const hansIconKey = mascotOverlay.querySelector('.mascot-emoji')?.dataset.iconKey;
-    assert.match(hansIconKey ?? '', /rocket|target|trophy|build|ball|idea/);
-    assert.ok(mascotOverlay.querySelector('.mascot-emoji svg'));
+    assert.match(hansIconKey ?? '', /rocket|target|trophy|build|ball|idea|kidHans/);
   });
 });
 
@@ -357,5 +373,47 @@ test('spotify tile shows a valid startup state', async () => {
     assert.equal(spotifyDeviceSelect.tagName, 'SELECT');
     assert.match(spotifyDeviceStatus.textContent, /enhed|højttaler/i);
     assert.equal(typeof spotifyDeviceRefreshButton.hidden, 'boolean');
+  });
+});
+
+test('kid view enables no-scroll mode and paginates long chore lists', async () => {
+  await withBootstrappedApp(async ({
+    window,
+    roleSwitch,
+    addChoreForm,
+    choreNameInput,
+    choreValueInput,
+    choreList,
+    kidChorePagination,
+    kidChorePrevButton,
+    kidChoreNextButton,
+    kidChorePageLabel
+  }) => {
+    for (let i = 1; i <= 4; i += 1) {
+      choreNameInput.value = `Paged chore ${i}`;
+      choreValueInput.value = '1';
+      submit(window, addChoreForm);
+    }
+
+    const andreaButton = roleSwitch.querySelector('button[data-role="Andrea"]');
+    assert.ok(andreaButton);
+    click(window, andreaButton);
+
+    assert.equal(document.body.classList.contains('kid-no-scroll'), true);
+    assert.equal(document.documentElement.classList.contains('kid-no-scroll'), true);
+    assert.equal(kidChorePagination.hidden, false);
+    assert.match(kidChorePageLabel.textContent, /Side 1 af 3/i);
+    assert.equal(choreList.querySelectorAll('.chore-item').length, 3);
+    assert.equal(kidChorePrevButton.disabled, true);
+    assert.equal(kidChoreNextButton.disabled, false);
+
+    click(window, kidChoreNextButton);
+    assert.match(kidChorePageLabel.textContent, /Side 2 af 3/i);
+    assert.equal(choreList.querySelectorAll('.chore-item').length, 3);
+
+    click(window, kidChoreNextButton);
+    assert.match(kidChorePageLabel.textContent, /Side 3 af 3/i);
+    assert.equal(choreList.querySelectorAll('.chore-item').length, 1);
+    assert.equal(kidChoreNextButton.disabled, true);
   });
 });

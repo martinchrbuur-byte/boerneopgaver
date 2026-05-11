@@ -234,16 +234,34 @@ function renderMoneySliders(viewRefs, activeRole, periodUi) {
   }
 }
 
-function renderChoreList(chores, activeRole, pendingCollaborations = [], editState = null) {
+function renderChoreList(chores, activeRole, pendingCollaborations = [], editState = null, pagination = null) {
   const filteredChores = activeRole === 'parent'
     ? chores
     : chores.filter(chore => chore.assignedTo?.includes(activeRole));
 
   if (filteredChores.length === 0) {
-    return renderEmptyChoreItem('Ingen opgaver endnu — tilføj en for at komme i gang.');
+    return {
+      markup: renderEmptyChoreItem('Ingen opgaver endnu — tilføj en for at komme i gang.'),
+      page: 1,
+      totalPages: 1,
+      totalItems: 0
+    };
   }
 
-  return filteredChores
+  const rawPageSize = Number(pagination?.pageSize);
+  const pageSize = Number.isFinite(rawPageSize) && rawPageSize > 0
+    ? Math.floor(rawPageSize)
+    : filteredChores.length;
+  const totalPages = Math.max(1, Math.ceil(filteredChores.length / pageSize));
+  const rawPage = Number(pagination?.page ?? 1);
+  const requestedPage = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+  const page = Math.min(requestedPage, totalPages);
+  const startIndex = (page - 1) * pageSize;
+  const visibleChores = pagination
+    ? filteredChores.slice(startIndex, startIndex + pageSize)
+    : filteredChores;
+
+  const markup = visibleChores
     .map((chore) => {
       const safeChoreId = escapeAttribute(chore.id);
       const safeChoreName = escapeHtml(chore.name);
@@ -319,14 +337,25 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
       `;
     })
     .join('');
+
+  return {
+    markup,
+    page,
+    totalPages,
+    totalItems: filteredChores.length
+  };
 }
 
-function renderRecentCompletions(items) {
-  if (items.length === 0) {
+function renderRecentCompletions(items, { maxItems = null } = {}) {
+  const visibleItems = Number.isInteger(maxItems) && maxItems > 0
+    ? items.slice(0, maxItems)
+    : items;
+
+  if (visibleItems.length === 0) {
     return renderEmptyChoreItem('Ingen fuldføringer endnu.');
   }
 
-  return items
+  return visibleItems
     .map((item) => {
       const choreMarker = renderChoreMarker(item.choreName);
       const safeChoreName = escapeHtml(item.choreName);
@@ -551,10 +580,11 @@ export function showMascot(mascotOverlay, activeRole, message, { type = 'pop', d
 
 function renderTabs(viewRefs, activeTab, activeRole) {
   const isParent = activeRole === 'parent';
+  const resolvedTab = isParent ? activeTab : 'opgaver';
 
   for (const button of viewRefs.tabNav.querySelectorAll('.tab-btn')) {
     const tabName = button.getAttribute('data-tab');
-    const isActive = tabName === activeTab;
+    const isActive = tabName === resolvedTab;
     button.classList.toggle('tab-active', isActive);
     button.setAttribute('aria-selected', isActive ? 'true' : 'false');
 
@@ -562,30 +592,35 @@ function renderTabs(viewRefs, activeTab, activeRole) {
       button.hidden = !isParent;
     }
   }
+  viewRefs.tabNav.hidden = !isParent;
 
-  viewRefs.tabOpgaver.hidden = activeTab !== 'opgaver';
-  viewRefs.tabPeriode.hidden = activeTab !== 'periode' || !isParent;
-  viewRefs.tabFeedback.hidden = activeTab !== 'feedback' || !isParent;
-  viewRefs.tabHistorik.hidden = activeTab !== 'historik' || !isParent;
+  viewRefs.tabOpgaver.hidden = resolvedTab !== 'opgaver';
+  viewRefs.tabPeriode.hidden = resolvedTab !== 'periode' || !isParent;
+  viewRefs.tabFeedback.hidden = resolvedTab !== 'feedback' || !isParent;
+  viewRefs.tabHistorik.hidden = resolvedTab !== 'historik' || !isParent;
 }
 
-function renderModeSwitch(viewRefs, activeMode) {
+function renderModeSwitch(viewRefs, activeMode, activeRole) {
   if (!viewRefs.modeSwitch) {
     return;
   }
 
+  const isParent = activeRole === 'parent';
+  const resolvedMode = isParent ? activeMode : 'chores';
+
   for (const button of viewRefs.modeSwitch.querySelectorAll('button[data-mode]')) {
     const modeName = button.getAttribute('data-mode');
-    const isActive = modeName === activeMode;
+    const isActive = modeName === resolvedMode;
     button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   }
+  viewRefs.modeSwitch.closest('.app-mode-card')?.toggleAttribute('hidden', !isParent);
 
   if (viewRefs.choresWorkspace) {
-    viewRefs.choresWorkspace.hidden = activeMode !== 'chores';
+    viewRefs.choresWorkspace.hidden = resolvedMode !== 'chores';
   }
 
   if (viewRefs.spotifyWorkspace) {
-    viewRefs.spotifyWorkspace.hidden = activeMode !== 'spotify';
+    viewRefs.spotifyWorkspace.hidden = resolvedMode !== 'spotify';
   }
 }
 
@@ -666,19 +701,60 @@ function renderFeedbackHistory(viewRefs, entries) {
   `).join('');
 }
 
-export function renderState(viewRefs, state, { activeRole, activeMode = 'chores', activeTab, periodUi, feedbackUi, editState = null }) {
+export function renderState(viewRefs, state, { activeRole, activeMode = 'chores', activeTab, periodUi, feedbackUi, editState = null, kidUi = null }) {
+  const isParent = activeRole === 'parent';
+  const isKid = !isParent;
+  const kidPageSize = Number(kidUi?.pageSize) > 0 ? Number(kidUi.pageSize) : 3;
+
   renderMoneySliders(viewRefs, activeRole, periodUi);
 
-  viewRefs.addChoreSection.hidden = activeRole !== 'parent';
-  viewRefs.choreList.innerHTML = renderChoreList(state.chores, activeRole, state.pendingCollaborations ?? [], editState);
+  viewRefs.addChoreSection.hidden = !isParent;
+  if (viewRefs.appShell) {
+    viewRefs.appShell.classList.toggle('app-shell-kid', isKid);
+  }
+  if (viewRefs.appHeaderCard) {
+    viewRefs.appHeaderCard.hidden = isKid;
+  }
+
+  const choreListResult = renderChoreList(
+    state.chores,
+    activeRole,
+    state.pendingCollaborations ?? [],
+    editState,
+    isKid
+      ? {
+        page: Number(kidUi?.page ?? 1),
+        pageSize: kidPageSize
+      }
+      : null
+  );
+
+  viewRefs.choreList.innerHTML = choreListResult.markup;
   viewRefs.recentCompletions.innerHTML = renderRecentCompletions(state.recentCompletions);
-  renderModeSwitch(viewRefs, activeMode);
+  if (viewRefs.recentCompletionsCard) {
+    viewRefs.recentCompletionsCard.hidden = isKid;
+  }
+
+  if (viewRefs.kidChorePagination && viewRefs.kidChorePrevButton && viewRefs.kidChoreNextButton && viewRefs.kidChorePageLabel) {
+    const showPaging = isKid && choreListResult.totalPages > 1;
+    viewRefs.kidChorePagination.hidden = !showPaging;
+    viewRefs.kidChorePrevButton.disabled = choreListResult.page <= 1;
+    viewRefs.kidChoreNextButton.disabled = choreListResult.page >= choreListResult.totalPages;
+    viewRefs.kidChorePageLabel.textContent = `Side ${choreListResult.page} af ${choreListResult.totalPages}`;
+  }
+
+  renderModeSwitch(viewRefs, activeMode, activeRole);
   renderRoleSwitch(viewRefs, activeRole);
   renderTabs(viewRefs, activeTab, activeRole);
   renderPeriod(viewRefs, periodUi, activeRole);
   renderFeedbackHistory(viewRefs, feedbackUi?.entries || []);
   renderHistory(viewRefs, periodUi?.history || []);
   renderCollabInbox(viewRefs, state.pendingCollaborations ?? [], activeRole, state.chores);
+
+  return {
+    kidChorePage: choreListResult.page,
+    kidChoreTotalPages: choreListResult.totalPages
+  };
 }
 
 export function renderFeedback(viewRefs, message) {

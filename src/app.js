@@ -26,6 +26,7 @@ import { renderFeedback, renderState, showCoinToWallet, showMascot, showRoleSwit
 import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
+const KID_CHORE_PAGE_SIZE = 3;
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
 let disposeActiveApp = null;
 let isAuthTransitioning = false;
@@ -265,9 +266,19 @@ async function init() {
   cleanupTasks.push(() => spotifyService.dispose());
   let activeMode = 'chores';
   let activeTab = 'opgaver';
+  let kidChorePage = 1;
   const orphanedRecordService = createOrphanedRecordService();
   let lastRemoteSnapshotKey = null;
   let lastSyncStateSnapshot = null;
+
+  cleanupTasks.push(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.documentElement.classList.remove('kid-no-scroll');
+    document.body.classList.remove('kid-no-scroll');
+  });
 
   function createSyncStateSnapshot(syncState) {
     if (!syncState) {
@@ -386,6 +397,10 @@ async function init() {
       return;
     }
 
+    const isKidRole = activeRole !== 'parent';
+    document.documentElement.classList.toggle('kid-no-scroll', isKidRole);
+    document.body.classList.toggle('kid-no-scroll', isKidRole);
+
     const activePeriod = periodService.getActivePeriod();
     const activePeriodId = activePeriod?.id ?? null;
     const choreState = choreService.getState({ activePeriodId });
@@ -424,14 +439,25 @@ async function init() {
       entries: feedbackService.listEntries()
     };
 
-    renderState(viewRefs, choreState, {
+    const viewState = renderState(viewRefs, choreState, {
       activeRole,
       activeMode,
       activeTab,
       periodUi,
       feedbackUi,
-      editState: periodUi.editState
+      editState: periodUi.editState,
+      kidUi: {
+        page: kidChorePage,
+        pageSize: KID_CHORE_PAGE_SIZE
+      }
     });
+
+    if (isKidRole) {
+      kidChorePage = viewState?.kidChorePage ?? 1;
+    } else {
+      kidChorePage = 1;
+    }
+
     renderFeedback(viewRefs, message);
     spotifyViewStateController?.render();
 
@@ -660,6 +686,11 @@ async function init() {
 
     activeRole = nextRole;
     persistActiveRole();
+    if (activeRole !== 'parent') {
+      activeMode = 'chores';
+      activeTab = 'opgaver';
+      kidChorePage = 1;
+    }
     if (activeRole !== 'parent' && (activeTab === 'historik' || activeTab === 'periode' || activeTab === 'feedback')) {
       activeTab = 'opgaver';
     }
@@ -708,6 +739,28 @@ async function init() {
     activeTab = nextTab;
     refresh();
   });
+
+  if (viewRefs.kidChorePrevButton) {
+    viewRefs.kidChorePrevButton.addEventListener('click', () => {
+      if (activeRole === 'parent') {
+        return;
+      }
+
+      kidChorePage = Math.max(1, kidChorePage - 1);
+      refresh();
+    });
+  }
+
+  if (viewRefs.kidChoreNextButton) {
+    viewRefs.kidChoreNextButton.addEventListener('click', () => {
+      if (activeRole === 'parent') {
+        return;
+      }
+
+      kidChorePage += 1;
+      refresh();
+    });
+  }
 
   viewRefs.addChoreForm.addEventListener('submit', (event) => {
     event.preventDefault();

@@ -52,6 +52,66 @@ body {
   width: 100%;
 }
 
+html.kid-no-scroll,
+body.kid-no-scroll {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+body.kid-no-scroll .app-shell {
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  min-height: 100svh;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  padding: 0.5rem;
+  gap: 0.5rem;
+}
+
+body.kid-no-scroll .app-shell-kid {
+  align-content: start;
+}
+
+body.kid-no-scroll .app-role-card,
+body.kid-no-scroll .app-status-card,
+body.kid-no-scroll #tab-opgaver {
+  margin: 0;
+}
+
+body.kid-no-scroll #tab-opgaver {
+  min-height: 0;
+}
+
+body.kid-no-scroll .chore-content-grid {
+  gap: 0.5rem;
+}
+
+body.kid-no-scroll .chore-list-card {
+  min-height: 0;
+}
+
+.kid-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.kid-pagination .button {
+  flex: 1 1 0;
+}
+
+.kid-pagination .chore-meta {
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .display-mode-standalone body {
   overscroll-behavior: none;
 }
@@ -1299,6 +1359,11 @@ label[for] {
   .app-tab-nav > .tab-btn {
     flex: 0 0 auto;
     white-space: nowrap;
+  }
+
+  body.kid-no-scroll .role-switch,
+  body.kid-no-scroll .app-tab-nav {
+    overflow: hidden;
   }
 
   .form-row,
