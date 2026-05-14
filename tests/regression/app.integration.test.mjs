@@ -402,18 +402,14 @@ test('kid view enables no-scroll mode and paginates long chore lists', async () 
     assert.equal(document.body.classList.contains('kid-no-scroll'), true);
     assert.equal(document.documentElement.classList.contains('kid-no-scroll'), true);
     assert.equal(kidChorePagination.hidden, false);
-    assert.match(kidChorePageLabel.textContent, /Side 1 af 3/i);
-    assert.equal(choreList.querySelectorAll('.chore-item').length, 3);
+    assert.match(kidChorePageLabel.textContent, /Side 1 af 2/i);
+    assert.equal(choreList.querySelectorAll('.chore-item').length, 5);
     assert.equal(kidChorePrevButton.disabled, true);
     assert.equal(kidChoreNextButton.disabled, false);
 
     click(window, kidChoreNextButton);
-    assert.match(kidChorePageLabel.textContent, /Side 2 af 3/i);
-    assert.equal(choreList.querySelectorAll('.chore-item').length, 3);
-
-    click(window, kidChoreNextButton);
-    assert.match(kidChorePageLabel.textContent, /Side 3 af 3/i);
-    assert.equal(choreList.querySelectorAll('.chore-item').length, 1);
+    assert.match(kidChorePageLabel.textContent, /Side 2 af 2/i);
+    assert.equal(choreList.querySelectorAll('.chore-item').length, 2);
     assert.equal(kidChoreNextButton.disabled, true);
   });
 });

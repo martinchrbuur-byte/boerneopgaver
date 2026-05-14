@@ -28,7 +28,7 @@ import { renderIcon } from './shared/iconRegistry.js';
 import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
-const KID_CHORE_PAGE_SIZE = 3;
+const KID_CHORE_PAGE_SIZE = 5;
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
 let disposeActiveApp = null;
 let isAuthTransitioning = false;

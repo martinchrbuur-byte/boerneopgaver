@@ -31,7 +31,6 @@ It allows:
 - HTML + CSS
 - Progressive Web App shell (manifest + service worker)
 - Node built-in test runner (`node --test`)
-- No framework
 
 ## Project Structure
 - `index.html` — app entry page.
@@ -233,6 +232,96 @@ Legacy payloads without `ui` are automatically normalized at load time.
    - A kid proposes collaboration on a shared chore.
    - The other kid can accept or decline.
    - On accept, one completion record per kid is created with split value.
+
+## Raspberry Pi 1080p Redesign (Wireframe Before Implementation)
+
+### Scope and constraints
+- Target device profile: Raspberry Pi in PWA standalone, landscape `1920x1080`.
+- Scope: both parent and kid views on Raspberry Pi profile.
+- Kid mode must remain strict no-scroll (`kid-no-scroll`) with pagination.
+- Existing role/mode/tab model is preserved; redesign changes layout density and hierarchy only.
+
+### Layout budget (vertical)
+- Total screen height budget: `1080px`.
+- Reserved shell budget (tabs + top cards + outer padding): `<= 280px` in kid mode.
+- Chore content budget (kid mode): `>= 740px` usable area.
+- Chore row target height: `110-130px` so `5` chores fit with pagination controls.
+
+### Wireframe state matrix
+- Parent role × mode `Opgaver` × tabs: `Opgaver`, `Periode`, `Feedback`, `Historik`.
+- Parent role × mode `Spotify`.
+- Kid role (`Hans Jørgen`, `Andrea`) × tab `Opgaver` with pagination states:
+   - Single page (pagination hidden)
+   - First page
+   - Middle page
+   - Last page
+
+### Mid-fi wireframe A — Parent (Opgaver tab)
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│ Header (logo/title/account)                                               │
+├────────────────────────────────────────────────────────────────────────────┤
+│ [Hovedvisning] [Visningstilstand] [Status + periodemål/progress]          │
+├────────────────────────────────────────────────────────────────────────────┤
+│ Tabs: Opgaver | Periode | Feedback | Historik                              │
+├────────────────────────────────────────────────────────────────────────────┤
+│ Collab inbox (if any)                                                     │
+├──────────────────────────────────────────────┬──────────────────────────────┤
+│ Opgaver (list, compact cards, parent actions)│ Seneste fuldføringer         │
+│                                              │ (stacked compact feed)        │
+└──────────────────────────────────────────────┴──────────────────────────────┘
+```
+
+Annotations:
+- Move top cards into one compact row to reduce empty vertical space.
+- Use a two-column content split on wide landscape so blank area is used for recent activity.
+- Keep parent actions (`Rediger`, `Slet`) on each row; preserve existing behavior.
+
+### Mid-fi wireframe B — Kid (strict no-scroll, paged)
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│ [Visningstilstand] [Status + periodemål/progress]                         │
+├────────────────────────────────────────────────────────────────────────────┤
+│ Tabs: Opgaver                                                              │
+├────────────────────────────────────────────────────────────────────────────┤
+│ Opgaver                                                                    │
+│ ┌────────────────────────────────────────────────────────────────────────┐ │
+│ │ Chore row 1 (title/meta/actions)                                      │ │
+│ ├────────────────────────────────────────────────────────────────────────┤ │
+│ │ Chore row 2                                                           │ │
+│ ├────────────────────────────────────────────────────────────────────────┤ │
+│ │ Chore row 3                                                           │ │
+│ ├────────────────────────────────────────────────────────────────────────┤ │
+│ │ Chore row 4                                                           │ │
+│ ├────────────────────────────────────────────────────────────────────────┤ │
+│ │ Chore row 5                                                           │ │
+│ └────────────────────────────────────────────────────────────────────────┘ │
+│ [Forrige]                         Side X af Y                        [Næste]│
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+Annotations:
+- No body/page scroll in kid mode; all interaction must fit inside one screen.
+- Increase per-page density to 5 chores on Raspberry Pi profile.
+- Keep action affordances explicit (`Fuldfør`, `Gør det sammen`, `Fortryd`) with reduced padding.
+
+### Wireframe C — Parent alternate tabs
+- `Periode`: same compact top row + single primary card with period controls and earnings.
+- `Feedback`: top row + compact form card + compact history card.
+- `Historik`: top row + grid of history items.
+- `Spotify`: top row + spotify controls card, preserving current behavior.
+
+### Implementation mapping (traceability)
+- Structure and visibility: `src/ui/mainView.js`, `src/ui/choreView.js`.
+- Page density: `src/app.js` (`KID_CHORE_PAGE_SIZE`).
+- Spacing and responsive behavior: `src/styles.css` (`kid-no-scroll`, `@media (min-width: 1280px)`, coarse/landscape blocks).
+- Regression contract updates: `tests/regression/app.integration.test.mjs`.
+
+### Acceptance gate (before rollout)
+- Kid mode on `1920x1080` shows 5 chores on first page without scroll.
+- Parent mode uses horizontal space better (no large blank region under header/cards).
+- Existing role/mode/tab behavior remains intact.
+- Pagination controls and edge states still behave correctly.
 
 ## Running the App
 Because this uses ES modules, use a local static server (recommended) instead of opening the HTML file directly.
