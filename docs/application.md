@@ -245,7 +245,7 @@ Legacy payloads without `ui` are automatically normalized at load time.
 - Total screen height budget: `1080px`.
 - Reserved shell budget (tabs + top cards + outer padding): `<= 280px` in kid mode.
 - Chore content budget (kid mode): `>= 740px` usable area.
-- Chore row target height: `110-130px` so `5` chores fit with pagination controls.
+- Chore row target height: `85-105px` so `6` chores fit with pagination controls.
 
 ### Wireframe state matrix
 - Parent role × mode `Opgaver` × tabs: `Opgaver`, `Periode`, `Feedback`, `Historik`.
@@ -295,6 +295,8 @@ Annotations:
 │ │ Chore row 4                                                           │ │
 │ ├────────────────────────────────────────────────────────────────────────┤ │
 │ │ Chore row 5                                                           │ │
+│ ├────────────────────────────────────────────────────────────────────────┤ │
+│ │ Chore row 6                                                           │ │
 │ └────────────────────────────────────────────────────────────────────────┘ │
 │ [Forrige]                         Side X af Y                        [Næste]│
 └────────────────────────────────────────────────────────────────────────────┘
@@ -302,7 +304,7 @@ Annotations:
 
 Annotations:
 - No body/page scroll in kid mode; all interaction must fit inside one screen.
-- Increase per-page density to 5 chores on Raspberry Pi profile.
+- Increase per-page density to 6 chores on Raspberry Pi profile.
 - Keep action affordances explicit (`Fuldfør`, `Gør det sammen`, `Fortryd`) with reduced padding.
 
 ### Wireframe C — Parent alternate tabs
@@ -318,7 +320,7 @@ Annotations:
 - Regression contract updates: `tests/regression/app.integration.test.mjs`.
 
 ### Acceptance gate (before rollout)
-- Kid mode on `1920x1080` shows 5 chores on first page without scroll.
+- Kid mode on `1920x1080` shows 6 chores on first page without scroll.
 - Parent mode uses horizontal space better (no large blank region under header/cards).
 - Existing role/mode/tab behavior remains intact.
 - Pagination controls and edge states still behave correctly.

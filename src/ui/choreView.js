@@ -320,10 +320,14 @@ function renderChoreList(chores, activeRole, pendingCollaborations = [], editSta
       const editDraft = isEditing ? editState?.draft : null;
       const detailsMarkup = isEditing && editDraft
         ? renderParentEditFields(chore, editDraft)
-        : `
-          <p class="chore-meta">${meta}</p>
-          <p class="chore-meta">Værdi: ${formatMoney(chore.value ?? 0)}</p>
-        `;
+        : activeRole === 'parent'
+          ? `
+            <p class="chore-meta">${meta}</p>
+            <p class="chore-meta">Værdi: ${formatMoney(chore.value ?? 0)}</p>
+          `
+          : `
+            <p class="chore-meta">${meta} • ${formatMoney(chore.value ?? 0)}</p>
+          `;
 
       return `
         <li class="chore-item${isFullyDone ? ' chore-fully-done' : ''}">
