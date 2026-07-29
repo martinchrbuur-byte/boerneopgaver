@@ -1,7 +1,8 @@
 import { isOnOrAfter, isValidIsoTimestamp, nowIsoTimestamp } from '../shared/dateTime.js';
 import { applySectionSyncTimestamps } from '../shared/sectionDiff.js';
+import { normalizeChecklist, normalizeChecklists } from '../shared/checklistModel.js';
 import { isSupabaseConfigured } from '../config/supabaseConfig.js';
-import { saveChores, saveFeedback, savePeriods, saveRecords, saveSettings, saveUiState } from './supabaseService.js';
+import { saveChores, saveChecklists, saveFeedback, savePeriods, saveRecords, saveSettings, saveUiState } from './supabaseService.js';
 import { createSyncQueue } from './syncQueueService.js';
 
 export const STORAGE_KEY = 'kids_chore_tracker_v1';
@@ -65,6 +66,11 @@ function normalizePeriod(period) {
     paidAt: period.paidAt ?? null,
     createdAt: isValidIsoTimestamp(period.createdAt) ? period.createdAt : nowIsoTimestamp()
   };
+}
+
+function isChecklistItem(value) {
+  const checklist = normalizeChecklist(value);
+  return Boolean(checklist && checklist.items.every(item => item.id && item.title));
 }
 
 export function isChoreRecord(value) {
@@ -178,6 +184,7 @@ function createDefaultSyncMeta() {
     recordsUpdatedAt: now,
     uiUpdatedAt: now,
     feedbackUpdatedAt: now,
+    checklistsUpdatedAt: now,
     periodsUpdatedAt: now,
     settingsUpdatedAt: now,
     lastLocalWriteAt: now,
@@ -191,6 +198,7 @@ function createEmptyPayload() {
     records: [],
     ui: createDefaultUiState(),
     feedback: [],
+    checklists: [],
     periods: [],
     settings: createDefaultSettings(),
     pendingCollaborations: [],
@@ -219,6 +227,7 @@ function isPayload(value) {
       (value.syncMeta.recordsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.recordsUpdatedAt)) &&
       (value.syncMeta.uiUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.uiUpdatedAt)) &&
       (value.syncMeta.feedbackUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.feedbackUpdatedAt)) &&
+      (value.syncMeta.checklistsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.checklistsUpdatedAt)) &&
       (value.syncMeta.periodsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.periodsUpdatedAt)) &&
       (value.syncMeta.settingsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.settingsUpdatedAt)) &&
       (value.syncMeta.lastLocalWriteAt === undefined || isValidIsoTimestamp(value.syncMeta.lastLocalWriteAt)) &&
@@ -232,6 +241,8 @@ function isPayload(value) {
     Array.isArray(value.records) &&
     isUiState(value.ui) &&
     Array.isArray(value.feedback) &&
+    Array.isArray(value.checklists) &&
+    value.checklists.every(isChecklistItem) &&
     Array.isArray(value.periods) &&
     value.periods.every(isPeriodItem) &&
     value.settings &&
@@ -276,6 +287,9 @@ function normalizePayload(value) {
       feedbackUpdatedAt: isValidIsoTimestamp(syncMeta.feedbackUpdatedAt)
         ? syncMeta.feedbackUpdatedAt
         : defaultSyncMeta.feedbackUpdatedAt,
+      checklistsUpdatedAt: isValidIsoTimestamp(syncMeta.checklistsUpdatedAt)
+        ? syncMeta.checklistsUpdatedAt
+        : defaultSyncMeta.checklistsUpdatedAt,
       periodsUpdatedAt: isValidIsoTimestamp(syncMeta.periodsUpdatedAt)
         ? syncMeta.periodsUpdatedAt
         : (isValidIsoTimestamp(syncMeta.sprintsUpdatedAt)
@@ -300,6 +314,7 @@ function normalizePayload(value) {
       chores: value.chores.map(normalizeChore).filter(isChoreItem),
       records: value.records.map(normalizeRecord).filter(isChoreRecord),
       feedback: Array.isArray(value.feedback) ? value.feedback.filter(isFeedbackItem) : [],
+      checklists: normalizeChecklists(value.checklists),
       periods: value.periods.map(normalizePeriod).filter(isPeriodItem),
       settings: { periodLengthDays: value.settings.periodLengthDays },
       syncMeta: normalizeSyncMeta(value.syncMeta)
@@ -325,6 +340,7 @@ function normalizePayload(value) {
       records: migratedRecords,
       ui: isUiState(value.ui) ? value.ui : createDefaultUiState(),
       feedback: Array.isArray(value.feedback) ? value.feedback.filter(isFeedbackItem) : [],
+      checklists: normalizeChecklists(value.checklists),
       periods: rawPeriods.map(normalizePeriod).filter(isPeriodItem),
       settings: {
         periodLengthDays: Number.isInteger(rawSettings.periodLengthDays)
@@ -389,6 +405,7 @@ export function createStorageService({ storage = globalThis.localStorage, storag
   syncQueue.registerHandler('records', data => saveRecords(data, userId));
   syncQueue.registerHandler('ui', data => saveUiState(data, userId));
   syncQueue.registerHandler('feedback', data => saveFeedback(data, userId));
+  syncQueue.registerHandler('checklists', data => saveChecklists(data, userId));
   syncQueue.registerHandler('periods', data => savePeriods(data, userId));
   syncQueue.registerHandler('settings', data => saveSettings(data, userId));
 
@@ -500,6 +517,7 @@ export function createStorageService({ storage = globalThis.localStorage, storag
       syncQueue.enqueue('records', normalizedNextData.records);
       syncQueue.enqueue('ui', normalizedNextData.ui.activeRole);
       syncQueue.enqueue('feedback', normalizedNextData.feedback);
+      syncQueue.enqueue('checklists', normalizedNextData.checklists);
       syncQueue.enqueue('periods', normalizedNextData.periods);
       syncQueue.enqueue('settings', normalizedNextData.settings);
     }

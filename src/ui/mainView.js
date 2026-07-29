@@ -96,6 +96,7 @@ export function createMainView(rootElement) {
       </nav>
 
       <div id="tab-opgaver" class="tab-panel tab-panel-chores" role="tabpanel">
+        <section id="checklist-panel" class="card checklist-panel" aria-label="Daglig checklist"></section>
         <section id="add-chore-section" class="card chore-composer-card" aria-label="Tilføj opgave">
           <h2 class="section-title">Tilføj en opgave</h2>
           <form id="add-chore-form">
@@ -345,6 +346,7 @@ export function createMainView(rootElement) {
     roleSwitch: rootElement.querySelector('#role-switch'),
     addChoreForm: rootElement.querySelector('#add-chore-form'),
     addChoreSection: rootElement.querySelector('#add-chore-section'),
+    checklistPanel: rootElement.querySelector('#checklist-panel'),
     choreNameInput: rootElement.querySelector('#chore-name-input'),
     choreValueInput: rootElement.querySelector('#chore-value-input'),
     choreList: rootElement.querySelector('#chore-list'),

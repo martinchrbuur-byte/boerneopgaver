@@ -26,8 +26,9 @@ export function createCorruptionRecoveryService() {
       // Check required fields
       const hasChores = Array.isArray(parsed.chores);
       const hasRecords = Array.isArray(parsed.records);
+      const hasValidChecklists = parsed.checklists === undefined || Array.isArray(parsed.checklists);
       
-      if (!hasChores || !hasRecords) {
+      if (!hasChores || !hasRecords || !hasValidChecklists) {
         return { isValid: false, isCorrupted: true, reason: 'Missing required arrays' };
       }
       
@@ -112,7 +113,8 @@ export function createCorruptionRecoveryService() {
       ui: { activeRole: 'parent', periodHistory: [] },
       periods: [],
       settings: { periodLengthDays: 7 },
-      pendingCollaborations: []
+      pendingCollaborations: [],
+      checklists: []
     };
 
     if (corruptedData && typeof corruptedData === 'object') {
@@ -129,6 +131,9 @@ export function createCorruptionRecoveryService() {
         recovered.periods = corruptedData.periods.filter(period => period && typeof period === 'object');
       } else if (Array.isArray(corruptedData.sprints)) {
         recovered.periods = corruptedData.sprints.filter(period => period && typeof period === 'object');
+      }
+      if (Array.isArray(corruptedData.checklists)) {
+        recovered.checklists = corruptedData.checklists.filter(checklist => checklist && typeof checklist === 'object' && typeof checklist.dateIso === 'string');
       }
     }
 

@@ -13,6 +13,7 @@ const schemaCapabilities = {
   feedbackTable: true,
   appSettingsTable: true,
   periodsTable: true,
+  checklistsTable: true,
   sprintsTable: true
 };
 
@@ -179,6 +180,16 @@ function toAppFeedback(entry) {
   };
 }
 
+function toAppChecklist(row) {
+  return {
+    dateIso: row.date_iso,
+    items: Array.isArray(row.items) ? row.items : [],
+    meta: row.meta && typeof row.meta === 'object' ? row.meta : {},
+    updatedAt: row.updated_at,
+    conflicts: Array.isArray(row.conflicts) ? row.conflicts : []
+  };
+}
+
 export function getSupabaseClient() {
   if (!isSupabaseConfigured()) {
     throw new Error('Supabase is not configured. Please set a publishable key.');
@@ -299,6 +310,20 @@ export async function initializeSupabaseData() {
     }
   }
 
+  let checklists = [];
+  if (schemaCapabilities.checklistsTable) {
+    const { data: checklistData, error: checklistError } = await client
+      .from('checklists')
+      .select('*')
+      .eq('user_id', userId);
+    if (checklistError) {
+      if (isMissingTableError(checklistError, 'checklists')) schemaCapabilities.checklistsTable = false;
+      else throw checklistError;
+    } else {
+      checklists = (checklistData || []).map(toAppChecklist);
+    }
+  }
+
   return {
     chores: (chores || []).map(toAppChore),
     records: (records || []).map(toAppRecord),
@@ -313,8 +338,30 @@ export async function initializeSupabaseData() {
         updatedAt: settingsData.updated_at || null
       }
       : { periodLengthDays: 7, updatedAt: null },
+    checklists,
     userId
   };
+}
+
+export async function saveChecklists(checklists, userId) {
+  if (!schemaCapabilities.checklistsTable) return;
+  const client = getSupabaseClient();
+  const payload = (checklists || []).map(checklist => ({
+    id: `${userId}:${checklist.dateIso}`,
+    user_id: userId,
+    date_iso: checklist.dateIso,
+    items: checklist.items,
+    meta: checklist.meta || {},
+    conflicts: checklist.conflicts || [],
+    updated_at: checklist.updatedAt || nowIsoTimestamp()
+  }));
+  let error = null;
+  if (payload.length > 0) ({ error } = await client.from('checklists').upsert(payload, { onConflict: 'id' }));
+  if (error) {
+    if (isMissingTableError(error, 'checklists')) { schemaCapabilities.checklistsTable = false; return; }
+    throw error;
+  }
+  await pruneMissingRows(client, 'checklists', userId, payload);
 }
 
 export async function saveChores(chores, userId) {

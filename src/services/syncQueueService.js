@@ -9,6 +9,7 @@ const SYNC_ORDER = Object.freeze({
   periods:  1,
   records:  2,
   feedback: 3,
+  checklists: 4,
   ui:       4,
   settings: 5,
 });

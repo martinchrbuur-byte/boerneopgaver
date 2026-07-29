@@ -8,6 +8,7 @@ import { initializeTouchScroll } from './pwa/touchScroll.js';
 import { createChoreService } from './services/choreService.js';
 import { createPeriodService } from './services/periodService.js';
 import { createFeedbackService } from './services/feedbackService.js';
+import { createChecklistService } from './services/checklistService.js';
 import { createSpotifyService } from './services/spotifyService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
 import {
@@ -26,6 +27,7 @@ import { renderFeedback, renderState, showCoinToWallet, showMascot, showRoleSwit
 import { unlockAudio, toggleMute, isMuted, playSound } from './shared/soundManager.js';
 import { renderIcon } from './shared/iconRegistry.js';
 import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
+import { renderChecklistParentPanel, renderChecklistFamilyView } from './ui/checklistView.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
 const KID_CHORE_PAGE_SIZE = 6;
@@ -45,6 +47,12 @@ function seedStarterChores(choreService) {
   for (const choreName of DEFAULT_CHORES) {
     choreService.addChore(choreName, { actorRole: 'parent' });
   }
+}
+
+function seedStarterChecklists(checklistService, dateIso = new Date().toISOString().slice(0, 10)) {
+  if (checklistService.getChecklist(dateIso).state.checklist) return;
+  // Keep the starter checklist opt-in for parents: an empty checklist is not
+  // created automatically, so kids never see a misleading empty task list.
 }
 
 function isRole(value) {
@@ -279,6 +287,7 @@ async function init() {
   const storageService = createStorageService();
   const periodService = createPeriodService({ storageService });
   const feedbackService = createFeedbackService({ storageService });
+  const checklistService = createChecklistService({ storageService });
   const spotifyService = createSpotifyService({
     spotifyConfig: appConfig.spotify,
     getAccessToken: () => currentSession?.access_token || ''
@@ -427,6 +436,8 @@ async function init() {
     const activePeriod = periodService.getActivePeriod();
     const activePeriodId = activePeriod?.id ?? null;
     const choreState = choreService.getState({ activePeriodId });
+    const checklistDate = new Date().toISOString().slice(0, 10);
+    const checklistState = checklistService.getChecklist(checklistDate).state;
 
     if (activeRole !== 'parent') {
       clearEditState();
@@ -474,6 +485,25 @@ async function init() {
         pageSize: KID_CHORE_PAGE_SIZE
       }
     });
+
+    if (activeRole === 'parent') {
+      renderChecklistParentPanel(viewRefs.checklistPanel, checklistState.checklist, {
+        onCreate: () => {
+          checklistService.createChecklist(checklistDate, [], {}, { actorRole: activeRole });
+          refresh('Dagens checklist er oprettet.');
+        }
+      });
+    } else {
+      renderChecklistFamilyView(viewRefs.checklistPanel, checklistState.checklist, activeRole, {
+        onToggle: itemId => {
+          const result = checklistService.toggleComplete(checklistDate, itemId, activeRole, activeRole);
+          if (result.ok && result.state.checklist?.items.every(item => item.completedAt)) {
+            showCinematicCelebration(viewRefs.mascotOverlay, activeRole);
+          }
+          refresh(result.message);
+        }
+      });
+    }
 
     if (isKidRole) {
       kidChorePage = viewState?.kidChorePage ?? 1;
@@ -537,6 +567,7 @@ async function init() {
   });
 
   seedStarterChores(choreService);
+  seedStarterChecklists(checklistService);
   persistActiveRole();
   refresh();
   void spotifyViewStateController.refreshRecommendations();

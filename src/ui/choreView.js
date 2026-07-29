@@ -88,7 +88,7 @@ function renderCollabDecisionButtons(collabId, acceptText = 'Acceptér samarbejd
   `;
 }
 
-function renderEditAssigneeCheckboxes(choreId, selectedKids = []) {
+export function renderEditAssigneeCheckboxes(choreId, selectedKids = []) {
   const safeChoreId = escapeAttribute(choreId);
   const selected = new Set(Array.isArray(selectedKids) ? selectedKids : []);
 

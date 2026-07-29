@@ -1,10 +1,12 @@
 import { hasSectionChanges } from '../shared/sectionDiff.js';
+import { mergeChecklists } from '../shared/checklistModel.js';
 
 const REMOTE_SECTION_KEYS = Object.freeze([
   'chores',
   'records',
   'ui',
   'feedback',
+  'checklists',
   'periods',
   'settings'
 ]);
@@ -39,6 +41,7 @@ export function hasMeaningfulLocalData(data) {
     (data?.chores || []).length > 0 ||
     (data?.records || []).length > 0 ||
     (data?.feedback || []).length > 0 ||
+    (data?.checklists || []).length > 0 ||
     (data?.periods || []).length > 0 ||
     (data?.settings?.periodLengthDays || 7) !== 7
   );
@@ -50,6 +53,7 @@ export function toRemoteStorageShape(supabaseData) {
     records: supabaseData.records,
     ui: { activeRole: supabaseData.ui.activeRole },
     feedback: supabaseData.feedback,
+    checklists: supabaseData.checklists || [],
     periods: supabaseData.periods,
     settings: { periodLengthDays: supabaseData.settings.periodLengthDays }
   };
@@ -71,6 +75,10 @@ export function reconcileCloudSnapshot({
   const hasUnsyncedLocalChanges = blockedSections.size > 0;
 
   const remoteShape = toRemoteStorageShape(supabaseData);
+  remoteShape.checklists = (remoteShape.checklists || []).map(remoteChecklist => {
+    const localChecklist = (localData.checklists || []).find(item => item.dateIso === remoteChecklist.dateIso);
+    return mergeChecklists(localChecklist, remoteChecklist);
+  });
   const hasRemoteData = hasMeaningfulLocalData(remoteShape);
 
   if (!hasRemoteData) {
