@@ -76,7 +76,7 @@ body {
 .roulette-drag { cursor: grab; font-size: 1.25rem; }
 @media (prefers-reduced-motion: reduce) { .roulette-wheel { transition: none !important; } }
 
-body.kid-no-scroll .app-shell {
+.app-shell-kid {
   width: 100%;
   max-width: none;
   min-height: 100vh;
@@ -88,11 +88,11 @@ body.kid-no-scroll .app-shell {
   gap: 0.35rem;
 }
 
-body.kid-no-scroll .app-shell-kid {
+.app-shell-kid {
   align-content: start;
 }
 
-body.kid-no-scroll {
+body:has(.app-shell-kid) {
   background: #fff7e8;
 }
 
@@ -189,117 +189,117 @@ body.kid-no-scroll {
   background: #fff;
 }
 
-body.kid-no-scroll .app-role-card,
-body.kid-no-scroll .app-status-card,
-body.kid-no-scroll #tab-opgaver {
+.app-shell-kid .app-role-card,
+.app-shell-kid .app-status-card,
+.app-shell-kid #tab-opgaver {
   margin: 0;
 }
 
-body.kid-no-scroll .card {
+.app-shell-kid .card {
   padding: 0.45rem 0.55rem;
 }
 
-body.kid-no-scroll .section-title {
+.app-shell-kid .section-title {
   margin-bottom: 0.2rem;
   font-size: 0.98rem;
 }
 
-body.kid-no-scroll .app-role-card .section-title,
-body.kid-no-scroll .app-status-card .section-title {
+.app-shell-kid .app-role-card .section-title,
+.app-shell-kid .app-status-card .section-title {
   margin: 0;
   font-size: 0.86rem;
 }
 
-body.kid-no-scroll .status-row {
+.app-shell-kid .status-row {
   gap: 0.3rem;
 }
 
-body.kid-no-scroll .status-container {
+.app-shell-kid .status-container {
   gap: 0.25rem;
 }
 
-body.kid-no-scroll .status-text {
+.app-shell-kid .status-text {
   font-size: 0.78rem;
 }
 
-body.kid-no-scroll .feedback {
+.app-shell-kid .feedback {
   min-height: 0.8rem;
   margin-top: 0.2rem;
   font-size: 0.74rem;
 }
 
-body.kid-no-scroll .role-switch,
-body.kid-no-scroll .tab-nav,
-body.kid-no-scroll .actions {
+.app-shell-kid .role-switch,
+.app-shell-kid .tab-nav,
+.app-shell-kid .actions {
   gap: 0.3rem;
 }
 
-body.kid-no-scroll .role-switch,
-body.kid-no-scroll .actions {
+.app-shell-kid .role-switch,
+.app-shell-kid .actions {
   flex-wrap: nowrap;
   overflow-x: auto;
   overflow-y: hidden;
 }
 
-body.kid-no-scroll .button,
-body.kid-no-scroll .tab-btn {
+.app-shell-kid .button,
+.app-shell-kid .tab-btn {
   min-height: 34px;
   padding: 0.3rem 0.55rem;
   font-size: 0.82rem;
 }
 
-body.kid-no-scroll #tab-opgaver {
+.app-shell-kid #tab-opgaver {
   min-height: 0;
 }
 
-body.kid-no-scroll .chore-content-grid {
+.app-shell-kid .chore-content-grid {
   gap: 0.35rem;
 }
 
-body.kid-no-scroll .chore-list-card {
+.app-shell-kid .chore-list-card {
   min-height: 0;
 }
 
-body.kid-no-scroll .list {
+.app-shell-kid .list {
   gap: 0.25rem;
 }
 
-body.kid-no-scroll .chore-item {
+.app-shell-kid .chore-item {
   padding: 0.38rem;
   gap: 0.22rem;
 }
 
-body.kid-no-scroll .chore-main,
-body.kid-no-scroll .chore-title-row {
+.app-shell-kid .chore-main,
+.app-shell-kid .chore-title-row {
   gap: 0.3rem;
 }
 
-body.kid-no-scroll .actions > .button,
-body.kid-no-scroll .actions > button {
+.app-shell-kid .actions > .button,
+.app-shell-kid .actions > button {
   flex: 0 0 auto;
   white-space: nowrap;
 }
 
-body.kid-no-scroll .chore-title {
+.app-shell-kid .chore-title {
   font-size: 0.86rem;
 }
 
-body.kid-no-scroll .chore-marker {
+.app-shell-kid .chore-marker {
   width: 1.25rem;
   height: 1.25rem;
 }
 
-body.kid-no-scroll .chore-meta {
+.app-shell-kid .chore-meta {
   font-size: 0.74rem;
   line-height: 1.2;
 }
 
-body.kid-no-scroll .repeat-badge {
+.app-shell-kid .repeat-badge {
   font-size: 0.62rem;
   padding: 0.08rem 0.35rem;
 }
 
-body.kid-no-scroll .chore-list-card .section-title {
+.app-shell-kid .chore-list-card .section-title {
   margin-bottom: 0.15rem;
 }
 
@@ -1597,8 +1597,8 @@ label[for] {
     white-space: nowrap;
   }
 
-  body.kid-no-scroll .role-switch,
-  body.kid-no-scroll .app-tab-nav {
+  .app-shell-kid .role-switch,
+  .app-shell-kid .app-tab-nav {
     overflow: hidden;
   }
 
@@ -1753,11 +1753,11 @@ label[for] {
     grid-column: 2;
   }
 
-  body.kid-no-scroll .chore-content-grid {
+  .app-shell-kid .chore-content-grid {
     grid-template-columns: 1fr;
   }
 
-  body.kid-no-scroll .chore-list-card {
+  .app-shell-kid .chore-list-card {
     grid-column: 1;
   }
 
@@ -1978,7 +1978,7 @@ label[for] {
 }
 
 /* Child mode uses spacious, easy-to-tap controls instead of the legacy compact layout. */
-body.kid-no-scroll .app-shell-kid {
+.app-shell-kid {
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
   align-content: start;
@@ -1986,45 +1986,45 @@ body.kid-no-scroll .app-shell-kid {
   padding: 0.65rem;
 }
 
-body.kid-no-scroll .app-shell-kid .app-top-card,
-body.kid-no-scroll .app-shell-kid .tab-panel,
-body.kid-no-scroll .app-shell-kid .kid-dashboard {
+.app-shell-kid .app-top-card,
+.app-shell-kid .tab-panel,
+.app-shell-kid .kid-dashboard {
   height: auto;
   min-height: 0;
   grid-column: 1 / -1;
 }
 
-body.kid-no-scroll .app-shell-kid .tab-panel-chores {
+.app-shell-kid .tab-panel-chores {
   gap: 0.65rem;
 }
 
-body.kid-no-scroll .checklist-panel {
+.app-shell-kid .checklist-panel {
   padding: 0.75rem;
 }
 
-body.kid-no-scroll .checklist-family-toggle {
+.app-shell-kid .checklist-family-toggle {
   min-height: 3.1rem;
   padding: 0.4rem 0.15rem;
 }
 
-body.kid-no-scroll .button,
-body.kid-no-scroll .tab-btn {
+.app-shell-kid .button,
+.app-shell-kid .tab-btn {
   min-height: 56px;
   padding: 0.65rem 0.9rem;
   font-size: 1rem;
 }
 
-body.kid-no-scroll .chore-item {
+.app-shell-kid .chore-item {
   min-height: 76px;
   padding: 0.8rem;
   border-radius: 1rem;
 }
 
-body.kid-no-scroll .chore-title {
+.app-shell-kid .chore-title {
   font-size: 1.1rem;
 }
 
-body.kid-no-scroll .chore-marker {
+.app-shell-kid .chore-marker {
   width: 2rem;
   height: 2rem;
 }
