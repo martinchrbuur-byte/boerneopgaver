@@ -1,5 +1,6 @@
 import { hasSectionChanges } from '../shared/sectionDiff.js';
 import { mergeChecklists } from '../shared/checklistModel.js';
+import { mergeRouletteSnapshots } from '../shared/rouletteModel.js';
 
 const REMOTE_SECTION_KEYS = Object.freeze([
   'chores',
@@ -8,7 +9,8 @@ const REMOTE_SECTION_KEYS = Object.freeze([
   'feedback',
   'checklists',
   'periods',
-  'settings'
+  'settings',
+  'roulette'
 ]);
 
 function normalizeSyncItemType(type) {
@@ -43,6 +45,8 @@ export function hasMeaningfulLocalData(data) {
     (data?.feedback || []).length > 0 ||
     (data?.checklists || []).length > 0 ||
     (data?.periods || []).length > 0 ||
+    (data?.roulette?.wheel?.segments || []).length > 0 ||
+    (data?.roulette?.history || []).length > 0 ||
     (data?.settings?.periodLengthDays || 7) !== 7
   );
 }
@@ -55,7 +59,8 @@ export function toRemoteStorageShape(supabaseData) {
     feedback: supabaseData.feedback,
     checklists: supabaseData.checklists || [],
     periods: supabaseData.periods,
-    settings: { periodLengthDays: supabaseData.settings.periodLengthDays }
+    settings: { periodLengthDays: supabaseData.settings.periodLengthDays },
+    roulette: supabaseData.roulette || { wheel: null, history: [] }
   };
 }
 
@@ -75,6 +80,7 @@ export function reconcileCloudSnapshot({
   const hasUnsyncedLocalChanges = blockedSections.size > 0;
 
   const remoteShape = toRemoteStorageShape(supabaseData);
+  remoteShape.roulette = mergeRouletteSnapshots(localData.roulette, remoteShape.roulette);
   remoteShape.checklists = (remoteShape.checklists || []).map(remoteChecklist => {
     const localChecklist = (localData.checklists || []).find(item => item.dateIso === remoteChecklist.dateIso);
     return mergeChecklists(localChecklist, remoteChecklist);

@@ -113,8 +113,9 @@ export function createCorruptionRecoveryService() {
       ui: { activeRole: 'parent', periodHistory: [] },
       periods: [],
       settings: { periodLengthDays: 7 },
-      pendingCollaborations: [],
-      checklists: []
+       pendingCollaborations: [],
+       checklists: [],
+       roulette: { wheel: null, history: [] }
     };
 
     if (corruptedData && typeof corruptedData === 'object') {
@@ -132,9 +133,12 @@ export function createCorruptionRecoveryService() {
       } else if (Array.isArray(corruptedData.sprints)) {
         recovered.periods = corruptedData.sprints.filter(period => period && typeof period === 'object');
       }
-      if (Array.isArray(corruptedData.checklists)) {
+       if (Array.isArray(corruptedData.checklists)) {
         recovered.checklists = corruptedData.checklists.filter(checklist => checklist && typeof checklist === 'object' && typeof checklist.dateIso === 'string');
-      }
+       }
+       if (corruptedData.roulette && typeof corruptedData.roulette === 'object') {
+         recovered.roulette = corruptedData.roulette;
+       }
     }
 
     return recovered;

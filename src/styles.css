@@ -60,6 +60,25 @@ body.kid-no-scroll {
   touch-action: none;
 }
 
+.roulette-card { margin: 1rem 0; text-align: center; }
+.roulette-heading { display: flex; justify-content: space-between; gap: 1rem; text-align: left; align-items: start; }
+.roulette-heading p { margin: .25rem 0; color: #475569; }
+.roulette-targets { display: flex; justify-content: center; gap: .5rem; margin: .75rem 0; }
+.roulette-target.is-selected { background: #7c3aed; color: #fff; }
+.roulette-stage { position: relative; width: min(76vw, 310px); aspect-ratio: 1; margin: 1rem auto; touch-action: none; outline-offset: 5px; }
+.roulette-pointer { position: absolute; z-index: 2; left: 50%; top: -18px; transform: translateX(-50%); color: #e11d48; font-size: 2rem; filter: drop-shadow(0 2px 1px #fff); }
+.roulette-wheel { width: 100%; height: 100%; border-radius: 50%; position: relative; overflow: hidden; border: 8px solid #fff; box-shadow: 0 8px 24px #33415555; background: conic-gradient(#fda4af, #fde68a, #86efac, #93c5fd, #c4b5fd, #fda4af); will-change: transform; }
+.roulette-segment-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding-top: 15%; transform: rotate(var(--roulette-angle)); font-size: .7rem; font-weight: 700; pointer-events: none; }
+.roulette-segment-label > span:last-child { max-width: 88px; text-wrap: balance; }
+.roulette-spin { min-width: 190px; min-height: 52px; }
+.roulette-live { min-height: 1.5rem; }
+.roulette-result { margin-top: 1rem; padding: .75rem; border-radius: .75rem; background: #fef3c7; }
+.roulette-editor { list-style: none; padding: 0; text-align: left; display: grid; gap: .5rem; }
+.roulette-editor li { display: flex; align-items: center; gap: .5rem; padding: .5rem; border: 1px solid #e2e8f0; border-radius: .5rem; flex-wrap: wrap; }
+.roulette-editor label { margin-left: auto; display: flex; gap: .35rem; align-items: center; }
+.roulette-drag { cursor: grab; font-size: 1.25rem; }
+@media (prefers-reduced-motion: reduce) { .roulette-wheel { transition: none !important; } }
+
 body.kid-no-scroll .app-shell {
   width: 100%;
   max-width: none;

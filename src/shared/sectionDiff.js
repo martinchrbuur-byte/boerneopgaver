@@ -5,7 +5,8 @@ export const STORAGE_SECTION_KEYS = Object.freeze([
   'feedback',
   'checklists',
   'periods',
-  'settings'
+  'settings',
+  'roulette'
 ]);
 
 export function hasSectionChanges(currentData, nextData, sectionKeys = STORAGE_SECTION_KEYS) {

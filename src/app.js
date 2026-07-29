@@ -6,6 +6,7 @@ import { applyDisplayMode, bindInstallPromptUi, createInstallPromptManager } fro
 import { registerServiceWorker } from './pwa/registerServiceWorker.js';
 import { initializeTouchScroll } from './pwa/touchScroll.js';
 import { createChoreService } from './services/choreService.js';
+import { createRouletteService } from './services/rouletteService.js';
 import { createPeriodService } from './services/periodService.js';
 import { createFeedbackService } from './services/feedbackService.js';
 import { createChecklistService } from './services/checklistService.js';
@@ -28,6 +29,7 @@ import { unlockAudio, toggleMute, isMuted, playSound } from './shared/soundManag
 import { renderIcon } from './shared/iconRegistry.js';
 import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
 import { renderChecklistParentPanel, renderChecklistFamilyView } from './ui/checklistView.js';
+import { renderRouletteView } from './ui/rouletteView.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
 const KID_CHORE_PAGE_SIZE = 6;
@@ -53,6 +55,14 @@ function seedStarterChecklists(checklistService, dateIso = new Date().toISOStrin
   if (checklistService.getChecklist(dateIso).state.checklist) return;
   // Keep the starter checklist opt-in for parents: an empty checklist is not
   // created automatically, so kids never see a misleading empty task list.
+}
+
+function seedStarterRoulette(rouletteService) {
+  const wheel = rouletteService.getWheel({ actorRole: 'parent' }).state.wheel;
+  if (wheel.segments.length === 0) {
+    return;
+  }
+  rouletteService.createWheel({ actorRole: 'parent', meta: { source: 'active-chores' } });
 }
 
 function isRole(value) {
@@ -387,6 +397,7 @@ async function init() {
   }
 
   const choreService = createChoreService({ storageService });
+  const rouletteService = createRouletteService({ storageService, choreService });
   periodService.ensureActivePeriod();
   const storedRole = storageService.loadData().ui.activeRole;
   let activeRole = resolveInitialRole(storedRole, appConfig.defaultRole);
@@ -488,6 +499,20 @@ async function init() {
         pageSize: KID_CHORE_PAGE_SIZE
       }
     });
+    const rouletteState = rouletteService.getWheel({
+      actorRole: activeRole,
+      targetKid: activeRole === 'parent' ? null : activeRole
+    }).state;
+    renderRouletteView(viewRefs.roulettePanel, {
+      state: rouletteState,
+      activeRole,
+      rouletteService,
+      onRefresh: refresh,
+      onComplete: choreId => {
+        const result = choreService.completeChore(choreId, { actorRole: activeRole, periodId: ensureActivePeriodId() });
+        refresh(result.message);
+      }
+    });
 
     if (activeRole === 'parent') {
       renderChecklistParentPanel(viewRefs.checklistPanel, checklistState.checklist, {
@@ -578,6 +603,7 @@ async function init() {
   });
 
   seedStarterChores(choreService);
+  seedStarterRoulette(rouletteService);
   seedStarterChecklists(checklistService);
   persistActiveRole();
   refresh();

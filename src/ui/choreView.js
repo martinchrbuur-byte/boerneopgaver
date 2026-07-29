@@ -154,7 +154,7 @@ function renderParentEditFields(chore, draft) {
   `;
 }
 
-function renderChoreMarker(choreName, choreId) {
+export function renderChoreMarker(choreName, choreId) {
   const visual = getChoreVisual(choreName, choreId);
   return `<span class="chore-marker" role="img" aria-label="${escapeAttribute(visual.label)} opgave" data-icon-key="${escapeAttribute(visual.iconKey)}">${getIconSvgMarkup(visual.iconKey)}</span>`;
 }
@@ -480,7 +480,7 @@ function prefersReducedMotion() {
 }
 
 /** Fire canvas-confetti if the library is available on the page. */
-function fireConfetti({ particleCount = 120, spread = 80, origin = { y: 0.65 }, big = false } = {}) {
+export function fireConfetti({ particleCount = 120, spread = 80, origin = { y: 0.65 }, big = false } = {}) {
   if (typeof window.confetti !== 'function') return;
   if (prefersReducedMotion()) return;
 
@@ -504,7 +504,7 @@ function fireConfetti({ particleCount = 120, spread = 80, origin = { y: 0.65 }, 
  * Rain emoji icons down the screen (Act 3 of the cinematic celebration).
  * Creates lightweight <span> elements, animates them with CSS, then removes them.
  */
-function fireEmojiRain(iconKeys = ['star', 'sparkle', 'trophy', 'rocket', 'party', 'magic'], count = 35) {
+export function fireEmojiRain(iconKeys = ['star', 'sparkle', 'trophy', 'rocket', 'party', 'magic'], count = 35) {
   if (prefersReducedMotion()) return;
 
   for (let i = 0; i < count; i++) {

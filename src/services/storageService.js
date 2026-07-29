@@ -1,6 +1,7 @@
 import { isOnOrAfter, isValidIsoTimestamp, nowIsoTimestamp } from '../shared/dateTime.js';
 import { applySectionSyncTimestamps } from '../shared/sectionDiff.js';
 import { normalizeChecklist, normalizeChecklists } from '../shared/checklistModel.js';
+import { normalizeRouletteWheel, normalizeSpinHistory } from '../shared/rouletteModel.js';
 import { isSupabaseConfigured } from '../config/supabaseConfig.js';
 import { saveChores, saveChecklists, saveFeedback, savePeriods, saveRecords, saveSettings, saveUiState } from './supabaseService.js';
 import { createSyncQueue } from './syncQueueService.js';
@@ -187,6 +188,7 @@ function createDefaultSyncMeta() {
     checklistsUpdatedAt: now,
     periodsUpdatedAt: now,
     settingsUpdatedAt: now,
+    rouletteUpdatedAt: now,
     lastLocalWriteAt: now,
     lastRemoteMergeAt: null
   };
@@ -202,6 +204,7 @@ function createEmptyPayload() {
     periods: [],
     settings: createDefaultSettings(),
     pendingCollaborations: [],
+    roulette: { wheel: normalizeRouletteWheel(null), history: [] },
     syncMeta: createDefaultSyncMeta()
   };
 }
@@ -229,7 +232,8 @@ function isPayload(value) {
       (value.syncMeta.feedbackUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.feedbackUpdatedAt)) &&
       (value.syncMeta.checklistsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.checklistsUpdatedAt)) &&
       (value.syncMeta.periodsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.periodsUpdatedAt)) &&
-      (value.syncMeta.settingsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.settingsUpdatedAt)) &&
+       (value.syncMeta.settingsUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.settingsUpdatedAt)) &&
+       (value.syncMeta.rouletteUpdatedAt === undefined || isValidIsoTimestamp(value.syncMeta.rouletteUpdatedAt)) &&
       (value.syncMeta.lastLocalWriteAt === undefined || isValidIsoTimestamp(value.syncMeta.lastLocalWriteAt)) &&
       (value.syncMeta.lastRemoteMergeAt === undefined || value.syncMeta.lastRemoteMergeAt === null || isValidIsoTimestamp(value.syncMeta.lastRemoteMergeAt))
     );
@@ -250,6 +254,13 @@ function isPayload(value) {
     Number.isInteger(value.settings.periodLengthDays) &&
     Array.isArray(value.pendingCollaborations) &&
     value.pendingCollaborations.every(isCollabItem) &&
+    (value.roulette === undefined || (
+      value.roulette &&
+      typeof value.roulette === 'object' &&
+      Array.isArray(value.roulette.history) &&
+      value.roulette.wheel &&
+      typeof value.roulette.wheel === 'object'
+    )) &&
     value.chores.every(isChoreItem) &&
     value.records.every(isChoreRecord) &&
     value.feedback.every(isFeedbackItem) &&
@@ -298,6 +309,9 @@ function normalizePayload(value) {
       settingsUpdatedAt: isValidIsoTimestamp(syncMeta.settingsUpdatedAt)
         ? syncMeta.settingsUpdatedAt
         : defaultSyncMeta.settingsUpdatedAt,
+      rouletteUpdatedAt: isValidIsoTimestamp(syncMeta.rouletteUpdatedAt)
+        ? syncMeta.rouletteUpdatedAt
+        : defaultSyncMeta.rouletteUpdatedAt,
       lastLocalWriteAt: isValidIsoTimestamp(syncMeta.lastLocalWriteAt)
         ? syncMeta.lastLocalWriteAt
         : defaultSyncMeta.lastLocalWriteAt,
@@ -316,7 +330,11 @@ function normalizePayload(value) {
       feedback: Array.isArray(value.feedback) ? value.feedback.filter(isFeedbackItem) : [],
       checklists: normalizeChecklists(value.checklists),
       periods: value.periods.map(normalizePeriod).filter(isPeriodItem),
-      settings: { periodLengthDays: value.settings.periodLengthDays },
+       settings: { periodLengthDays: value.settings.periodLengthDays },
+       roulette: {
+         wheel: normalizeRouletteWheel(value.roulette?.wheel),
+         history: normalizeSpinHistory(value.roulette?.history)
+       },
       syncMeta: normalizeSyncMeta(value.syncMeta)
     };
   }
@@ -347,9 +365,13 @@ function normalizePayload(value) {
           ? rawSettings.periodLengthDays
           : (Number.isInteger(rawSettings.sprintLengthDays) ? rawSettings.sprintLengthDays : 7)
       },
-      pendingCollaborations: Array.isArray(value.pendingCollaborations)
+       pendingCollaborations: Array.isArray(value.pendingCollaborations)
         ? value.pendingCollaborations.filter(isCollabItem)
-        : [],
+         : [],
+       roulette: {
+         wheel: normalizeRouletteWheel(value.roulette?.wheel),
+         history: normalizeSpinHistory(value.roulette?.history)
+       },
       syncMeta: normalizeSyncMeta(value.syncMeta)
     };
   }
