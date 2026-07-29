@@ -40,6 +40,7 @@ async function withBootstrappedApp(run) {
     const choreNameInput = document.querySelector('#chore-name-input');
     const choreValueInput = document.querySelector('#chore-value-input');
     const choreList = document.querySelector('#chore-list');
+    const roulettePanel = document.querySelector('#roulette-panel');
     const kidChorePagination = document.querySelector('#kid-chore-pagination');
     const kidChorePrevButton = document.querySelector('#kid-chore-prev-btn');
     const kidChoreNextButton = document.querySelector('#kid-chore-next-btn');
@@ -63,6 +64,7 @@ async function withBootstrappedApp(run) {
     assert.ok(addChoreForm);
     assert.ok(choreNameInput);
     assert.ok(choreList);
+    assert.ok(roulettePanel);
     assert.ok(kidChorePagination);
     assert.ok(kidChorePrevButton);
     assert.ok(kidChoreNextButton);
@@ -90,6 +92,7 @@ async function withBootstrappedApp(run) {
       choreNameInput,
       choreValueInput,
       choreList,
+      roulettePanel,
       kidChorePagination,
       kidChorePrevButton,
       kidChoreNextButton,
@@ -366,5 +369,18 @@ test('kid view keeps scrolling enabled and paginates long chore lists', async ()
     assert.match(kidChorePageLabel.textContent, /Side 2 af 2/i);
     assert.equal(choreList.querySelectorAll('.chore-item').length, 1);
     assert.equal(kidChoreNextButton.disabled, true);
+  });
+});
+
+test('roulette modal stays open when the child view refreshes', async () => {
+  await withBootstrappedApp(async ({ window, roleSwitch, roulettePanel, kidChoreNextButton }) => {
+    click(window, roleSwitch.querySelector('button[data-role="Andrea"]'));
+
+    const openButton = roulettePanel.querySelector('[data-roulette-open]');
+    click(window, openButton);
+    assert.equal(roulettePanel.querySelector('[data-roulette-modal]').hidden, false);
+
+    click(window, kidChoreNextButton);
+    assert.equal(roulettePanel.querySelector('[data-roulette-modal]').hidden, false);
   });
 });

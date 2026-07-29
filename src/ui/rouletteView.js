@@ -42,11 +42,14 @@ export function renderRouletteView(container, { state, activeRole, activePeriodI
   if (!container) return;
   const isKid = activeRole !== 'parent';
   const segments = state?.wheel?.segments || [];
+  const modalWasOpen = container.dataset.rouletteModalOpen === 'true'
+    || container.querySelector('[data-roulette-modal]')?.hidden === false;
+  const modalVisibility = modalWasOpen ? '' : ' hidden';
   container.innerHTML = isKid ? `
     <section class="card roulette-card roulette-kid" aria-label="Opgaveroulette">
       <div class="roulette-heading"><div><h2 class="section-title">${renderIcon('target')} Opgaveroulette</h2><p>Vælg en ny heltemission.</p></div></div>
       <button class="button button-primary roulette-open" data-roulette-open ${segments.length ? '' : 'disabled'}>${renderIcon('target')} Åbn roulette</button>
-      <div class="roulette-modal" data-roulette-modal hidden role="dialog" aria-modal="true" aria-labelledby="roulette-modal-title">
+      <div class="roulette-modal" data-roulette-modal${modalVisibility} role="dialog" aria-modal="true" aria-labelledby="roulette-modal-title">
         <div class="roulette-modal-backdrop" data-roulette-close></div>
         <div class="roulette-modal-content">
           <button class="button button-secondary roulette-close" data-roulette-close aria-label="Luk roulette">Luk</button>
@@ -94,9 +97,13 @@ export function renderRouletteView(container, { state, activeRole, activePeriodI
   const live = container.querySelector('[data-roulette-live]');
   const openModal = () => {
     modal.hidden = false;
+    container.dataset.rouletteModalOpen = 'true';
     modal.querySelector('[data-roulette-stage]')?.focus();
   };
-  const closeModal = () => { modal.hidden = true; };
+  const closeModal = () => {
+    modal.hidden = true;
+    delete container.dataset.rouletteModalOpen;
+  };
   container.querySelector('[data-roulette-open]')?.addEventListener('click', openModal);
   container.querySelectorAll('[data-roulette-close]').forEach(button => button.addEventListener('click', closeModal));
   const spin = () => {
