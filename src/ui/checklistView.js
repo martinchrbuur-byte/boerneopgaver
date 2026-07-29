@@ -66,10 +66,14 @@ function bindChecklistReordering(element, onReorder) {
 export function renderChecklistFamilyView(element, checklist, actorRole, { onToggle } = {}) {
   if (!element) return;
   if (!checklist) { element.innerHTML = '<h2 class="section-title">Dagens checklist</h2><p class="chore-meta">Der er ingen checklist i dag.</p>'; return; }
-  element.innerHTML = `<h2 class="section-title">Dagens checklist</h2><ul class="checklist-list checklist-family-list">${checklist.items.map(item => {
+  const totalItems = checklist.items.length;
+  const completedItems = checklist.items.filter(item => item.completedAt).length;
+  const completionPercent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+  element.innerHTML = `<div class="checklist-family-header"><div><h2 class="section-title">Dagens checklist</h2><p class="chore-meta">Gør tingene i din egen rækkefølge</p></div><span class="checklist-family-count">${completedItems}/${totalItems}</span></div><ul class="checklist-list checklist-family-list">${checklist.items.map(item => {
     const allowed = canKidToggleItem(item, actorRole, actorRole);
-    return `<li class="checklist-item${item.completedAt ? ' checklist-item-complete' : ''}"><button type="button" class="checklist-toggle button ${item.completedAt ? 'button-success' : 'button-secondary'}" data-checklist-item-id="${escape(item.id)}" ${allowed ? '' : 'disabled'} aria-pressed="${Boolean(item.completedAt)}">${item.completedAt ? '✓' : '○'} ${marker(item.title, item.id)} ${escape(item.title)}</button>${item.description ? `<p class="chore-meta">${escape(item.description)}</p>` : ''}${item.completedAt ? `<p class="chore-meta">Fuldført ${toDateTimeLabel(item.completedAt)}${item.completedBy ? ` af ${escape(item.completedBy)}` : ''}</p>` : ''}</li>`;
+    return `<li class="checklist-item checklist-family-item${item.completedAt ? ' checklist-item-complete' : ''}"><button type="button" class="checklist-toggle checklist-family-toggle" data-checklist-item-id="${escape(item.id)}" ${allowed ? '' : 'disabled'} aria-pressed="${Boolean(item.completedAt)}"><span class="checklist-family-item-label">${marker(item.title, item.id)}<span>${escape(item.title)}</span></span><span class="checklist-check-circle${item.completedAt ? ' checklist-check-circle-complete' : ''}" aria-hidden="true">${item.completedAt ? '✓' : ''}</span></button>${item.description ? `<p class="chore-meta checklist-family-description">${escape(item.description)}</p>` : ''}</li>`;
   }).join('')}</ul>`;
+  element.insertAdjacentHTML('beforeend', `<div class="checklist-progress" role="progressbar" aria-label="Checklist-fremskridt" aria-valuemin="0" aria-valuemax="${totalItems}" aria-valuenow="${completedItems}"><span style="width: ${completionPercent}%"></span></div><p class="checklist-progress-label">${completedItems} af ${totalItems} færdige</p>`);
   element.querySelectorAll('[data-checklist-item-id]').forEach(button => button.addEventListener('click', () => onToggle?.(button.dataset.checklistItemId)));
 }
 
