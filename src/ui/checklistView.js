@@ -7,15 +7,19 @@ import { renderEditAssigneeCheckboxes } from './choreView.js';
 function escape(value) { return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])); }
 function marker(title, id) { const visual = getChoreVisual(title, id); return `<span class="chore-marker" aria-hidden="true">${getIconSvgMarkup(visual.iconKey)}</span>`; }
 
-export function renderChecklistParentPanel(element, checklist, { onCreate, onToggleTemplate = () => {} } = {}) {
+export function renderChecklistParentPanel(element, checklist, { onCreate, onAddItem } = {}) {
   if (!element) return;
   if (!checklist) {
     element.innerHTML = `<h2 class="section-title">Daglig checklist</h2><p class="chore-meta">Ingen checklist for i dag endnu.</p><button class="button button-primary" data-checklist-action="create">Opret dagens checklist</button>`;
   } else {
-    element.innerHTML = `<div class="checklist-header"><div><h2 class="section-title">Daglig checklist</h2><p class="chore-meta">${escape(checklist.dateIso)}</p></div><button class="button button-secondary" data-checklist-action="template">Gem som skabelon</button></div><ol class="checklist-list">${checklist.items.map(item => `<li class="checklist-item"><span>${marker(item.title, item.id)} <strong>${escape(item.title)}</strong></span><div class="assign-checkboxes">${renderEditAssigneeCheckboxes(item.id, item.assignedTo)}</div><span class="chore-meta">${item.completedAt ? `Fuldført ${toDateTimeLabel(item.completedAt)}` : 'Ikke fuldført'}</span></li>`).join('')}</ol><button class="button button-secondary" data-checklist-action="apply-template">Anvend skabelon på fremtidig dato</button>`;
+    element.innerHTML = `<div class="checklist-header"><div><h2 class="section-title">Daglig checklist</h2><p class="chore-meta">${escape(checklist.dateIso)}</p></div></div><ol class="checklist-list">${checklist.items.map(item => `<li class="checklist-item"><span>${marker(item.title, item.id)} <strong>${escape(item.title)}</strong></span><div class="assign-checkboxes">${renderEditAssigneeCheckboxes(item.id, item.assignedTo)}</div><span class="chore-meta">${item.completedAt ? `Fuldført ${toDateTimeLabel(item.completedAt)}` : 'Ikke fuldført'}</span></li>`).join('')}</ol><form class="checklist-add-form" data-checklist-action="add-item"><label class="assign-label" for="checklist-item-title">Tilføj et punkt</label><div class="form-row"><input id="checklist-item-title" class="input" name="title" type="text" maxlength="120" placeholder="f.eks. Pak skoletasken" required /><button class="button button-primary" type="submit">Tilføj</button></div></form>`;
   }
   element.querySelector('[data-checklist-action="create"]')?.addEventListener('click', onCreate);
-  element.querySelector('[data-checklist-action="template"]')?.addEventListener('click', onToggleTemplate);
+  element.querySelector('[data-checklist-action="add-item"]')?.addEventListener('submit', event => {
+    event.preventDefault();
+    const title = new FormData(event.currentTarget).get('title');
+    onAddItem?.(title);
+  });
 }
 
 export function renderChecklistFamilyView(element, checklist, actorRole, { onToggle } = {}) {

@@ -489,8 +489,12 @@ async function init() {
     if (activeRole === 'parent') {
       renderChecklistParentPanel(viewRefs.checklistPanel, checklistState.checklist, {
         onCreate: () => {
-          checklistService.createChecklist(checklistDate, [], {}, { actorRole: activeRole });
-          refresh('Dagens checklist er oprettet.');
+          const result = checklistService.createChecklist(checklistDate, [], {}, { actorRole: activeRole });
+          refresh(result.message);
+        },
+        onAddItem: title => {
+          const result = checklistService.addItem(checklistDate, { title }, { actorRole: activeRole });
+          refresh(result.message);
         }
       });
     } else {
