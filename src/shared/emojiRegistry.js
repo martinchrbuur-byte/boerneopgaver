@@ -17,10 +17,12 @@ export const EMOJI_DEFINITIONS = Object.freeze({
   trophy: Object.freeze({ key: 'trophy', label: 'Trofæ', category: 'achievement' }),
   sleep: Object.freeze({ key: 'sleep', label: 'Søvn', category: 'sleep' }),
   dental: Object.freeze({ key: 'dental', label: 'Tandpleje', category: 'dental' }),
+  hair: Object.freeze({ key: 'hair', label: 'Hårpleje', category: 'grooming' }),
   pet: Object.freeze({ key: 'pet', label: 'Kæledyr', category: 'pets' }),
   clothes: Object.freeze({ key: 'clothes', label: 'Tøj', category: 'clothing' }),
   school: Object.freeze({ key: 'school', label: 'Skole', category: 'school' }),
   bath: Object.freeze({ key: 'bath', label: 'Bad', category: 'bath' }),
+  task: Object.freeze({ key: 'task', label: 'Opgave', category: 'task' }),
   check: Object.freeze({ key: 'check', label: 'Færdig', category: 'action' }),
   warning: Object.freeze({ key: 'warning', label: 'Advarsel', category: 'status' }),
 });

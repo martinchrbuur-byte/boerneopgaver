@@ -29,6 +29,7 @@ const ICON_CODEPOINTS = Object.freeze({
   tabFeedback:     '1f4ac',    // 💬  speech balloon
   tabHistory:      '1f4d6',    // 📖  open book
   feedbackArchive: '1f4e5',    // 📥  inbox tray
+  task:            '1f4cb',    // 📋  clipboard
 
   // ── Actions ───────────────────────────────────────────────────────────────
   check:           '2705',     // ✅  check mark button
@@ -74,6 +75,7 @@ const ICON_CODEPOINTS = Object.freeze({
   // ── Chore categories ──────────────────────────────────────────────────────
   sleep:           '1f634',    // 😴  sleeping face
   dental:          '1f9b7',    // 🦷  tooth
+  hair:            '1f9b3',    // 🦳  hair
   pet:             '1f43e',    // 🐾  paw prints
   clean:           '1f9fc',    // 🧼  soap
   clothes:         '1f455',    // 👕  t-shirt

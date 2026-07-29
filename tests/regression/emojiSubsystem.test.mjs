@@ -9,10 +9,18 @@ import {
 import { renderTwemoji } from '../../src/shared/twemojiRenderer.js';
 import { getChoreVisual } from '../../src/shared/choreMarker.js';
 import { HELPER_CAST, pickPhrase } from '../../src/shared/helperCast.js';
+import {
+  EMOJI_MAPPING_STORAGE_KEY,
+  clearStoredEmojiMappings,
+  getStoredEmojiMapping,
+  rememberEmojiMapping,
+} from '../../src/shared/emojiMappingService.js';
 
 test('semantic registry contains contextual primary keys', () => {
   assert.equal(getEmojiDefinition('food').category, 'food');
   assert.equal(getEmojiDefinition('broom').category, 'cleaning');
+  assert.equal(getEmojiDefinition('hair').category, 'grooming');
+  assert.equal(getEmojiDefinition('task').category, 'task');
   assert.equal(getEmojiDefinition('coin').category, 'money');
   assert.equal(getEmojiDefinition('confetti').category, 'celebration');
   assert.ok(Object.keys(EMOJI_DEFINITIONS).length > 0);
@@ -47,3 +55,31 @@ test('helper phrases carry emoji keys instead of native emoji text', () => {
     assert.doesNotMatch(phrase.text, /[\u{1F300}-\u{1FAFF}]/u);
   }
 });
+
+test('local emoji mappings reject unknown icon keys and recover from invalid data', () => {
+  const storage = new MapStorage();
+  storage.setItem(EMOJI_MAPPING_STORAGE_KEY, '{not valid json');
+
+  assert.equal(getStoredEmojiMapping('Pak tasken', storage), null);
+  assert.equal(rememberEmojiMapping('Pak tasken', 'school', storage), true);
+  assert.equal(getStoredEmojiMapping('pak tasken', storage), 'school');
+  assert.equal(rememberEmojiMapping('Andet', 'not-an-icon', storage), false);
+  assert.equal(clearStoredEmojiMappings(storage), true);
+  assert.equal(getStoredEmojiMapping('Pak tasken', storage), null);
+});
+
+class MapStorage {
+  #values = new Map();
+
+  getItem(key) {
+    return this.#values.get(key) ?? null;
+  }
+
+  setItem(key, value) {
+    this.#values.set(key, value);
+  }
+
+  removeItem(key) {
+    this.#values.delete(key);
+  }
+}
