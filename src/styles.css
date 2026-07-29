@@ -779,6 +779,54 @@ label[for] {
   touch-action: pan-y;
 }
 
+.checklist-list {
+  margin: 0;
+  padding: 0 0 0 1.5rem;
+  display: grid;
+  gap: 0.65rem;
+  touch-action: pan-y;
+}
+
+.checklist-item {
+  position: relative;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.65rem 0.7rem 0.65rem 2.2rem;
+  display: grid;
+  gap: 0.45rem;
+  background: #ffffff;
+  cursor: grab;
+  transition: border-color 120ms ease, background-color 120ms ease, opacity 120ms ease;
+}
+
+.checklist-item:active {
+  cursor: grabbing;
+}
+
+.checklist-item-dragging {
+  opacity: 0.45;
+}
+
+.checklist-item-drop-target {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.checklist-drag-handle {
+  position: absolute;
+  left: 0.55rem;
+  top: 0.65rem;
+  color: #64748b;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+}
+
+.checklist-reorder-help {
+  margin-bottom: 0.55rem;
+}
+
 .chore-item {
   border: 1px solid #cbd5e1;
   border-radius: 12px;

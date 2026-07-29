@@ -60,6 +60,18 @@ test('reorder helper rejects incomplete orders and assigns unique indexes', () =
   assert.deepEqual(reorderChecklistItems(items, ['b', 'a']).map(item => item.orderIndex), [0, 1]);
 });
 
+test('parent can reorder checklist items and the order is persisted', () => {
+  const { service, storageService } = build();
+  service.createChecklist(date, [{ id: 'a', title: 'First' }, { id: 'b', title: 'Second' }], {}, { actorRole: 'parent' });
+
+  const reordered = service.reorderItems(date, ['b', 'a'], { actorRole: 'parent' });
+  assert.equal(reordered.ok, true);
+  assert.deepEqual(reordered.state.checklist.items.map(item => item.id), ['b', 'a']);
+  assert.deepEqual(reordered.state.checklist.items.map(item => item.orderIndex), [0, 1]);
+  assert.deepEqual(storageService.loadData().checklists[0].items.map(item => item.id), ['b', 'a']);
+  assert.equal(service.reorderItems(date, ['a', 'b'], { actorRole: 'Andrea' }).ok, false);
+});
+
 test('merge keeps latest completion and surfaces conflicting timestamps', () => {
   const local = { dateIso: date, updatedAt: '2026-01-01T10:00:00.000Z', items: [{ id: 'a', title: 'Task', completedAt: '2026-01-01T09:00:00.000Z', completedBy: 'Andrea', orderIndex: 0 }] };
   const remote = { dateIso: date, updatedAt: '2026-01-01T11:00:00.000Z', items: [{ id: 'a', title: 'Task edited', completedAt: '2026-01-01T10:30:00.000Z', completedBy: 'Hans Jørgen', orderIndex: 0 }] };

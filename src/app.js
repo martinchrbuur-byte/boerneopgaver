@@ -498,6 +498,10 @@ async function init() {
         onAddItem: title => {
           const result = checklistService.addItem(checklistDate, { title }, { actorRole: activeRole });
           refresh(result.message);
+        },
+        onReorder: orderedItemIds => {
+          const result = checklistService.reorderItems(checklistDate, orderedItemIds, { actorRole: activeRole });
+          refresh(result.message);
         }
       });
     } else {
