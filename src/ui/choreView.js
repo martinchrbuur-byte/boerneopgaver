@@ -250,6 +250,13 @@ function renderKidDashboard(viewRefs, state, activeRole, periodUi) {
   if (viewRefs.kidDashboardTitle) {
     viewRefs.kidDashboardTitle.textContent = `${activeRole}, er du klar?`;
   }
+  if (viewRefs.kidRoleSwitch) {
+    for (const button of viewRefs.kidRoleSwitch.querySelectorAll('button[data-kid-role]')) {
+      const isSelected = button.getAttribute('data-kid-role') === activeRole;
+      button.setAttribute('aria-pressed', String(isSelected));
+      button.classList.toggle('role-selected', isSelected);
+    }
+  }
   if (viewRefs.kidProgressLabel) {
     viewRefs.kidProgressLabel.textContent = total > 0
       ? `${completed} af ${total} opgaver færdige`

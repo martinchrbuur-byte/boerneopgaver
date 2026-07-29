@@ -778,6 +778,25 @@ async function init() {
     });
   }
 
+  if (viewRefs.kidRoleSwitch) {
+    viewRefs.kidRoleSwitch.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-kid-role]');
+      const nextRole = button?.getAttribute('data-kid-role');
+      if (!button || !isRole(nextRole) || nextRole === activeRole) {
+        return;
+      }
+
+      activeRole = nextRole;
+      activeMode = 'chores';
+      activeTab = 'opgaver';
+      kidChorePage = 1;
+      clearEditState();
+      persistActiveRole();
+      showRoleSwitchWalk(viewRefs.mascotOverlay, activeRole);
+      refresh(`Skiftet til ${activeRole}s visning.`);
+    });
+  }
+
   if (viewRefs.modeSwitch) {
     viewRefs.modeSwitch.addEventListener('click', (event) => {
       const button = event.target.closest('button[data-mode]');

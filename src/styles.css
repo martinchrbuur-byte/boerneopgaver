@@ -91,11 +91,27 @@ body.kid-no-scroll {
 }
 
 .kid-dashboard-header,
+.kid-role-switch,
 .kid-dashboard-stats {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+}
+
+.kid-role-switch {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.kid-role-switch-label {
+  color: #855b00;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.kid-role-switch .button {
+  min-height: 48px;
 }
 
 .kid-dashboard-stats {

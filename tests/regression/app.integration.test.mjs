@@ -48,6 +48,7 @@ async function withBootstrappedApp(run) {
     const kidDashboard = document.querySelector('#kid-dashboard');
     const kidProgressLabel = document.querySelector('#kid-progress-label');
     const kidTreasureLabel = document.querySelector('#kid-treasure-label');
+    const kidRoleSwitch = document.querySelector('.kid-role-switch');
     const tabNav = document.querySelector('.tab-nav');
     const feedback = document.querySelector('#feedback');
     const moneySliderCount = document.querySelector('.money-slider-count');
@@ -82,6 +83,7 @@ async function withBootstrappedApp(run) {
     assert.ok(kidDashboard);
     assert.ok(kidProgressLabel);
     assert.ok(kidTreasureLabel);
+    assert.ok(kidRoleSwitch);
     assert.ok(tabNav);
     assert.ok(feedback);
     assert.ok(choreValueInput);
@@ -120,6 +122,7 @@ async function withBootstrappedApp(run) {
       kidDashboard,
       kidProgressLabel,
       kidTreasureLabel,
+      kidRoleSwitch,
       tabNav,
       feedback,
       moneySliderCount,
@@ -161,6 +164,7 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     kidDashboard,
     kidProgressLabel,
     kidTreasureLabel,
+    kidRoleSwitch,
     feedback,
     moneySliderCount,
     mascotOverlay
@@ -182,6 +186,18 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     assert.equal(kidDashboard.hidden, false);
     assert.match(kidProgressLabel.textContent, /0 af 4 opgaver færdige/i);
     assert.match(kidTreasureLabel.textContent, /0\.00 kr i perioden/i);
+
+    const hansButton = kidRoleSwitch.querySelector('button[data-kid-role="Hans Jørgen"]');
+    assert.ok(hansButton);
+    click(window, hansButton);
+    assert.match(kidDashboard.textContent, /Hans Jørgen, er du klar/i);
+    assert.equal(hansButton.getAttribute('aria-pressed'), 'true');
+
+    const andreaFromHansButton = kidRoleSwitch.querySelector('button[data-kid-role="Andrea"]');
+    assert.ok(andreaFromHansButton);
+    click(window, andreaFromHansButton);
+    assert.match(kidDashboard.textContent, /Andrea, er du klar/i);
+    assert.equal(andreaFromHansButton.getAttribute('aria-pressed'), 'true');
     assert.equal(mascotOverlay.hidden, false);
     assert.ok(mascotOverlay.classList.contains('mascot-role-walk'));
     const andreaIconKey = mascotOverlay.querySelector('.mascot-emoji')?.dataset.iconKey;

@@ -62,6 +62,11 @@ export function createMainView(rootElement) {
           </div>
           <button id="kid-parent-exit" type="button" class="button button-secondary kid-parent-exit">Forældre</button>
         </div>
+        <div class="kid-role-switch" role="group" aria-label="Skift barn">
+          <span class="kid-role-switch-label">Skift helt:</span>
+          <button type="button" class="button button-secondary" data-kid-role="Hans Jørgen">${renderIconText('kidHans', 'Hans Jørgen')}</button>
+          <button type="button" class="button button-secondary" data-kid-role="Andrea">${renderIconText('kidAndrea', 'Andrea')}</button>
+        </div>
         <div class="kid-dashboard-stats">
           <div class="kid-progress-card">
             <div class="kid-stat-heading"><span aria-hidden="true">⭐</span> Dagens mål</div>
@@ -374,6 +379,7 @@ export function createMainView(rootElement) {
     kidTreasureLabel: rootElement.querySelector('#kid-treasure-label'),
     kidLevelLabel: rootElement.querySelector('#kid-level-label'),
     kidParentExit: rootElement.querySelector('#kid-parent-exit'),
+    kidRoleSwitch: rootElement.querySelector('.kid-role-switch'),
     spotifyWorkspace: rootElement.querySelector('#spotify-workspace'),
     roleSwitch: rootElement.querySelector('#role-switch'),
     addChoreForm: rootElement.querySelector('#add-chore-form'),
