@@ -8,12 +8,12 @@ import { escapeHtml } from '../shared/htmlSanitizer.js';
 const escape = escapeHtml;
 function marker(title, id) { const visual = getChoreVisual(title, id); return `<span class="chore-marker" aria-hidden="true">${getIconSvgMarkup(visual.iconKey)}</span>`; }
 
-export function renderChecklistParentPanel(element, checklist, { onCreate, onAddItem, onReorder } = {}) {
+export function renderChecklistParentPanel(element, checklist, { onCreate, onAddItem, onDeleteItem, onReorder } = {}) {
   if (!element) return;
   if (!checklist) {
     element.innerHTML = `<h2 class="section-title">Daglig checklist</h2><p class="chore-meta">Ingen checklist for i dag endnu.</p><button class="button button-primary" data-checklist-action="create">Opret dagens checklist</button>`;
   } else {
-    element.innerHTML = `<div class="checklist-header"><div><h2 class="section-title">Daglig checklist</h2><p class="chore-meta">${escape(checklist.dateIso)}</p></div></div><p class="chore-meta checklist-reorder-help">Træk punkterne for at ændre rækkefølgen.</p><ol class="checklist-list">${checklist.items.map(item => `<li class="checklist-item" data-checklist-item-id="${escape(item.id)}" draggable="true"><span class="checklist-drag-handle" aria-hidden="true"><span class="drag-bar"></span><span class="drag-bar"></span><span class="drag-bar"></span></span><span>${marker(item.title, item.id)} <strong>${escape(item.title)}</strong></span><div class="assign-checkboxes">${renderEditAssigneeCheckboxes(item.id, item.assignedTo)}</div><span class="chore-meta">${item.completedAt ? `Fuldført ${toDateTimeLabel(item.completedAt)}` : 'Ikke fuldført'}</span></li>`).join('')}</ol><form class="checklist-add-form" data-checklist-action="add-item"><label class="assign-label" for="checklist-item-title">Tilføj et punkt</label><div class="form-row"><input id="checklist-item-title" class="input" name="title" type="text" maxlength="120" placeholder="f.eks. Pak skoletasken" required /><button class="button button-primary" type="submit">Tilføj</button></div></form>`;
+    element.innerHTML = `<div class="checklist-header"><div><h2 class="section-title">Daglig checklist</h2><p class="chore-meta">${escape(checklist.dateIso)}</p></div></div><p class="chore-meta checklist-reorder-help">Træk punkterne for at ændre rækkefølgen.</p><ol class="checklist-list">${checklist.items.map(item => `<li class="checklist-item" data-checklist-item-id="${escape(item.id)}" draggable="true"><span class="checklist-drag-handle" aria-hidden="true"><span class="drag-bar"></span><span class="drag-bar"></span><span class="drag-bar"></span></span><span>${marker(item.title, item.id)} <strong>${escape(item.title)}</strong></span><div class="assign-checkboxes">${renderEditAssigneeCheckboxes(item.id, item.assignedTo)}</div><span class="chore-meta">${item.completedAt ? `Fuldført ${toDateTimeLabel(item.completedAt)}` : 'Ikke fuldført'}</span><button type="button" class="button button-danger checklist-delete" data-checklist-action="delete-item" data-checklist-item-id="${escape(item.id)}" aria-label="Slet ${escape(item.title)}">Slet</button></li>`).join('')}</ol><form class="checklist-add-form" data-checklist-action="add-item"><label class="assign-label" for="checklist-item-title">Tilføj et punkt</label><div class="form-row"><input id="checklist-item-title" class="input" name="title" type="text" maxlength="120" placeholder="f.eks. Pak skoletasken" required /><button class="button button-primary" type="submit">Tilføj</button></div></form>`;
     bindChecklistReordering(element, onReorder);
   }
   element.querySelector('[data-checklist-action="create"]')?.addEventListener('click', onCreate);
@@ -21,6 +21,9 @@ export function renderChecklistParentPanel(element, checklist, { onCreate, onAdd
     event.preventDefault();
     const title = new FormData(event.currentTarget).get('title');
     onAddItem?.(title);
+  });
+  element.querySelectorAll('[data-checklist-action="delete-item"]').forEach(button => {
+    button.addEventListener('click', () => onDeleteItem?.(button.dataset.checklistItemId));
   });
 }
 

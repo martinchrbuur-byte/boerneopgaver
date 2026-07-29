@@ -59,9 +59,9 @@ body {
 .roulette-open { min-width: 220px; }
 .roulette-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1rem; }
 .roulette-modal-backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, .72); }
-.roulette-modal-content { position: relative; width: min(100%, 760px); max-height: 100%; overflow-y: auto; padding: clamp(1rem, 4vw, 2rem); border-radius: 1.25rem; background: #fff; box-shadow: 0 1rem 4rem rgba(15, 23, 42, .35); }
+.roulette-modal-content { position: relative; width: min(96vw, 1100px); max-height: calc(100svh - 1rem); overflow-y: auto; padding: clamp(1rem, 4vw, 2.5rem); border-radius: 1.25rem; background: #fff; box-shadow: 0 1rem 4rem rgba(15, 23, 42, .35); }
 .roulette-close { position: absolute; top: 1rem; right: 1rem; }
-.roulette-stage { position: relative; width: min(82vw, 620px); aspect-ratio: 1; margin: 1.5rem auto; touch-action: none; outline-offset: 5px; }
+.roulette-stage { position: relative; width: min(82vw, 760px); aspect-ratio: 1; margin: 1.5rem auto; touch-action: none; outline-offset: 5px; }
 .roulette-pointer { position: absolute; z-index: 2; left: 50%; top: -18px; transform: translateX(-50%); color: #e11d48; font-size: 2rem; filter: drop-shadow(0 2px 1px #fff); }
 .roulette-wheel { width: 100%; height: 100%; border-radius: 50%; position: relative; overflow: hidden; border: 8px solid #fff; box-shadow: 0 8px 24px #33415555; background: conic-gradient(#fda4af, #fde68a, #86efac, #93c5fd, #c4b5fd, #fda4af); will-change: transform; }
 .roulette-segment-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding-top: 15%; transform: rotate(var(--roulette-angle)); font-size: .7rem; font-weight: 700; pointer-events: none; }
@@ -81,9 +81,8 @@ body {
   max-width: none;
   min-height: 100vh;
   min-height: 100svh;
-  height: 100vh;
-  height: 100svh;
-  overflow: hidden;
+  height: auto;
+  overflow: visible;
   padding: 0.35rem;
   gap: 0.35rem;
 }
@@ -2002,6 +2001,14 @@ label[for] {
 
 .app-shell-kid .checklist-panel {
   padding: 0.75rem;
+}
+
+.app-shell-kid .chore-list-card .list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.app-shell-kid .chore-list-card .list > .chore-item {
+  min-width: 0;
 }
 
 .app-shell-kid .checklist-family-toggle {

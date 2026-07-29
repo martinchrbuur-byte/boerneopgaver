@@ -32,7 +32,7 @@ import { createAppState } from './state/appState.js';
 import { renderRefreshStatus } from './ui/refreshView.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
-const KID_CHORE_PAGE_SIZE = 6;
+const KID_CHORE_PAGE_SIZE = 12;
 const ALLOWED_ROLES = new Set(['parent', ...KIDS]);
 let disposeActiveApp = null;
 let isAuthTransitioning = false;
@@ -429,6 +429,10 @@ async function init() {
         },
         onAddItem: title => {
           const result = checklistService.addItem(checklistDate, { title }, { actorRole: activeRole });
+          refresh(result.message);
+        },
+        onDeleteItem: itemId => {
+          const result = checklistService.removeItem(checklistDate, itemId, { actorRole: activeRole });
           refresh(result.message);
         },
         onReorder: orderedItemIds => {

@@ -347,7 +347,7 @@ test('kid view keeps scrolling enabled and paginates long chore lists', async ()
     kidChoreNextButton,
     kidChorePageLabel
   }) => {
-    for (let i = 1; i <= 4; i += 1) {
+    for (let i = 1; i <= 10; i += 1) {
       choreNameInput.value = `Paged chore ${i}`;
       choreValueInput.value = '1';
       submit(window, addChoreForm);
@@ -361,7 +361,7 @@ test('kid view keeps scrolling enabled and paginates long chore lists', async ()
     assert.equal(document.documentElement.classList.contains('kid-no-scroll'), false);
     assert.equal(kidChorePagination.hidden, false);
     assert.match(kidChorePageLabel.textContent, /Side 1 af 2/i);
-    assert.equal(choreList.querySelectorAll('.chore-item').length, 6);
+    assert.equal(choreList.querySelectorAll('.chore-item').length, 12);
     assert.equal(kidChorePrevButton.disabled, true);
     assert.equal(kidChoreNextButton.disabled, false);
 
