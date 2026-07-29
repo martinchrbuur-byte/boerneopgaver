@@ -20,6 +20,7 @@ export const CHECKLIST_MESSAGES = Object.freeze({
   invalidItems: 'Checklist-items er ugyldige.',
   missing: 'Der findes ingen checklist for denne dato.',
   missingItem: 'Checklist-item kunne ikke findes.',
+  carriedForward: 'Checklist videreført til den nye dag.',
   notAllowed: 'Du kan kun markere dine egne checklist-items.',
   saved: 'Checklist gemt.',
   completed: 'Checklist-item opdateret.'
@@ -65,6 +66,25 @@ export function createChecklistService({ storageService, nowProvider = nowIsoTim
     const checklist = normalizeChecklist({ dateIso, items: prepared, meta, updatedAt: nowProvider() });
     saveChecklists(existing ? data.checklists.map(item => item.dateIso === dateIso ? checklist : item) : [...data.checklists, checklist], existing ? 'update' : 'create', dateIso);
     return asResult(true, CHECKLIST_MESSAGES.saved, state(dateIso));
+  }
+
+  function carryForwardChecklist(dateIso, { actorRole = 'parent' } = {}) {
+    const invalid = validDateOrResult(dateIso);
+    if (invalid) return invalid;
+    if (!isRoleAllowed(actorRole, ['parent'])) return asResult(false, CHECKLIST_MESSAGES.parentOnly, state(dateIso));
+    const data = storageService.loadData();
+    if (data.checklists.some(item => item.dateIso === dateIso)) return asResult(true, '', state(dateIso));
+    const previous = data.checklists
+      .filter(item => item.dateIso < dateIso)
+      .sort((left, right) => right.dateIso.localeCompare(left.dateIso))[0];
+    if (!previous) return asResult(false, '', state(dateIso));
+    const items = previous.items.map(item => ({
+      ...item,
+      id: createEntityId('checklist-item'),
+      completedAt: null,
+      completedBy: null
+    }));
+    return createChecklist(dateIso, items, previous.meta, { actorRole });
   }
 
   function updateChecklist(dateIso, patch = {}, options = {}) {
@@ -143,7 +163,7 @@ export function createChecklistService({ storageService, nowProvider = nowIsoTim
 
   function getRecentCompletions(limit = 10) { return getRecentCompletionsFromData(storageService.loadData(), limit); }
 
-  return { getChecklist, createChecklist, updateChecklist, addItem, updateItem, removeItem, deleteChecklist, reorderItems, toggleComplete, getRecentCompletions, mergeChecklists };
+  return { getChecklist, createChecklist, carryForwardChecklist, updateChecklist, addItem, updateItem, removeItem, deleteChecklist, reorderItems, toggleComplete, getRecentCompletions, mergeChecklists };
 }
 
 export { isRoleAllowed, isKidRole, canKidToggleItem, reorderChecklistItems, mergeChecklists };

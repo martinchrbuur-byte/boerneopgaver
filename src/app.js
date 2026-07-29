@@ -437,6 +437,9 @@ async function init() {
     const activePeriodId = activePeriod?.id ?? null;
     const choreState = choreService.getState({ activePeriodId });
     const checklistDate = new Date().toISOString().slice(0, 10);
+    if (activeRole === 'parent' && !checklistService.getChecklist(checklistDate).state.checklist) {
+      checklistService.carryForwardChecklist(checklistDate, { actorRole: activeRole });
+    }
     const checklistState = checklistService.getChecklist(checklistDate).state;
 
     if (activeRole !== 'parent') {

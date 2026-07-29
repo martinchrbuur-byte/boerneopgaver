@@ -31,6 +31,21 @@ test('parent creates and edits a date-scoped checklist; kids cannot edit', () =>
   assert.equal(service.updateItem(date, itemId, { title: 'Put all shoes away' }, { actorRole: 'parent' }).ok, true);
 });
 
+test('new day carries checklist items forward without checkmarks', () => {
+  const { service } = build();
+  service.createChecklist(date, [{ title: 'Feed cat', assignedTo: ['Andrea'] }], {}, { actorRole: 'parent' });
+  service.toggleComplete(date, service.getChecklist(date).state.checklist.items[0].id, 'Andrea', 'Andrea');
+  const nextDate = '2026-01-02';
+  const carried = service.carryForwardChecklist(nextDate, { actorRole: 'parent' });
+  const item = carried.state.checklist.items[0];
+  assert.equal(carried.ok, true);
+  assert.equal(item.title, 'Feed cat');
+  assert.equal(item.completedAt, null);
+  assert.equal(item.completedBy, null);
+  assert.deepEqual(item.assignedTo, ['Andrea']);
+  assert.notEqual(item.id, service.getChecklist(date).state.checklist.items[0].id);
+});
+
 test('kid toggles assigned item and undo is offline-persisted', () => {
   const { service, storageService } = build();
   service.createChecklist(date, [{ id: 'a', title: 'Feed cat', assignedTo: ['Andrea'] }], {}, { actorRole: 'parent' });
