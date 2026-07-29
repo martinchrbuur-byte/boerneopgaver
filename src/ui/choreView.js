@@ -42,6 +42,11 @@ function formatMoney(value) {
   return `${value.toFixed(2)} kr`;
 }
 
+function renderHelperPhrase(phrase) {
+  if (typeof phrase === 'string') return escapeHtml(phrase);
+  return `${renderIcon(phrase?.emojiKey ?? 'sparkle')}<span>${escapeHtml(phrase?.text ?? '')}</span>`;
+}
+
 function formatFeedbackCategory(category) {
   switch (category) {
     case 'bug':
@@ -674,7 +679,7 @@ export function showCinematicCelebration(mascotOverlay, activeRole) {
   const messageEl = mascotOverlay.querySelector('.mascot-message');
 
   if (emojiEl) setElementIcon(emojiEl, helper.iconKey, { decorative: true });
-  if (messageEl) messageEl.textContent = pickPhrase(helper);
+  if (messageEl) messageEl.innerHTML = renderHelperPhrase(pickPhrase(helper));
 
   clearMascotTimers();
   resetMascotAnimations(mascotOverlay);
@@ -716,7 +721,7 @@ export function showMascot(mascotOverlay, activeRole, message, { type = 'pop', d
       const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
       const messageEl = mascotOverlay.querySelector('.mascot-message');
       if (emojiEl) setElementIcon(emojiEl, helper.iconKey, { decorative: true });
-      if (messageEl) messageEl.textContent = pickPhrase(helper);
+      if (messageEl) messageEl.innerHTML = renderHelperPhrase(pickPhrase(helper));
 
       clearMascotTimers();
       resetMascotAnimations(mascotOverlay);
@@ -802,7 +807,7 @@ export function showHelperByTrigger(mascotOverlay, trigger) {
   const emojiEl = mascotOverlay.querySelector('.mascot-emoji');
   const messageEl = mascotOverlay.querySelector('.mascot-message');
   if (emojiEl) setElementIcon(emojiEl, helper.iconKey, { decorative: true });
-  if (messageEl) messageEl.textContent = pickPhrase(helper);
+  if (messageEl) messageEl.innerHTML = renderHelperPhrase(pickPhrase(helper));
 
   clearMascotTimers();
   resetMascotAnimations(mascotOverlay);

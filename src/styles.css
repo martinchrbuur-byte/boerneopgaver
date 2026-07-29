@@ -1,9 +1,8 @@
 :root {
   --app-font-family: "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif;
-  --emoji-font-family: "Noto Color Emoji", "Segoe UI Emoji", "Apple Color Emoji", "Twemoji Mozilla", "EmojiOne Color";
   --touch-target-min: 48px;
   --touch-gap: 0.75rem;
-  font-family: var(--app-font-family), var(--emoji-font-family);
+  font-family: var(--app-font-family);
   color: #0f172a;
   background: #f8fafc;
 }
@@ -73,7 +72,8 @@ body {
 .roulette-editor { list-style: none; padding: 0; text-align: left; display: grid; gap: .5rem; }
 .roulette-editor li { display: flex; align-items: center; gap: .5rem; padding: .5rem; border: 1px solid #e2e8f0; border-radius: .5rem; flex-wrap: wrap; }
 .roulette-editor label { margin-left: auto; display: flex; gap: .35rem; align-items: center; }
-.roulette-drag { cursor: grab; font-size: 1.25rem; }
+.roulette-drag { cursor: grab; display: inline-flex; flex-direction: column; gap: 2px; padding: 0.35rem; }
+.drag-bar { display: block; width: 1rem; height: 2px; border-radius: 2px; background: currentColor; }
 @media (prefers-reduced-motion: reduce) { .roulette-wheel { transition: none !important; } }
 
 .app-shell-kid {
@@ -929,8 +929,10 @@ label[for] {
   left: 0.55rem;
   top: 0.65rem;
   color: #64748b;
-  font-size: 1.25rem;
-  line-height: 1;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.35rem;
   cursor: grab;
   user-select: none;
 }

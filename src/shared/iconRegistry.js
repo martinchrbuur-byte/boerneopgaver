@@ -39,6 +39,7 @@ const ICON_CODEPOINTS = Object.freeze({
   pending:         '23f3',     // ⏳  hourglass not done
   edit:            '270f',     // ✏️  pencil
   delete:          '1f5d1',    // 🗑️  wastebasket
+  broom:           '1f9f9',    // 🧹  broom
   cleanup:         '1f9f9',    // 🧹  broom
 
   // ── Status indicators ─────────────────────────────────────────────────────
@@ -48,6 +49,8 @@ const ICON_CODEPOINTS = Object.freeze({
   offline:         '1f6ab',    // 🚫  prohibited
 
   // ── Mascot / celebration ──────────────────────────────────────────────────
+  confetti:        '1f38a',    // 🎊  confetti ball
+  partyPopper:     '1f389',    // 🎉  party popper
   party:           '1f389',    // 🎉  party popper
   star:            '2b50',     // ⭐  star
   trophy:          '1f3c6',    // 🏆  trophy
@@ -98,9 +101,10 @@ const ICON_CODEPOINTS = Object.freeze({
   mute:            '1f507',    // 🔇  muted speaker
 });
 
-function emojiImgMarkup(codepoint) {
+function emojiImgMarkup(codepoint, key = '') {
   const src = `${TWEMOJI_BASE}${codepoint}.svg`;
-  return `<img src="${src}" alt="" aria-hidden="true" draggable="false" class="emoji-img">`;
+  const dataKey = key ? ` data-emoji-key="${escapeHtml(key)}"` : '';
+  return `<img src="${src}" alt="" aria-hidden="true" draggable="false" class="emoji-img"${dataKey}>`;
 }
 
 function escapeHtml(value) {
@@ -112,7 +116,7 @@ function escapeHtml(value) {
 
 export function getIconSvgMarkup(key) {
   const codepoint = ICON_CODEPOINTS[key] ?? ICON_CODEPOINTS.star;
-  return emojiImgMarkup(codepoint);
+  return emojiImgMarkup(codepoint, key);
 }
 
 export function renderIcon(key, { label = '', decorative = true, className = '' } = {}) {
@@ -121,7 +125,8 @@ export function renderIcon(key, { label = '', decorative = true, className = '' 
     ? 'aria-hidden="true"'
     : `role="img" aria-label="${escapeHtml(label || key)}"`;
 
-  return `<span class="${classes}" data-icon-key="${escapeHtml(key)}" ${aria}>${getIconSvgMarkup(key)}</span>`;
+  const canonicalKey = escapeHtml(key);
+  return `<span class="${classes}" data-icon-key="${canonicalKey}" data-emoji-key="${canonicalKey}" ${aria}>${getIconSvgMarkup(key)}</span>`;
 }
 
 export function renderIconText(key, text, { className = 'icon-label', textClassName = '' } = {}) {
@@ -140,6 +145,7 @@ export function setElementIcon(element, key, { label = '', decorative = true, ti
   }
 
   element.dataset.iconKey = key;
+  element.dataset.emojiKey = key;
   if (title) {
     element.title = title;
   }

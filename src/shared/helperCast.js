@@ -18,13 +18,14 @@ export const HELPER_CAST = Object.freeze([
     iconKey: 'wizard',
     name: 'Stjernetroldmanden',
     trigger: 'streak',
+    phraseEmojiKey: 'sparkle',
     entrance: 'fallFromTop',
     soundCue: 'chime',
     phrases: [
-      '✨ Stribetrold aktiveret! Du er uovervindelig!',
-      '⭐ Dag efter dag — du er ren magi!',
-      '🌟 Hvilken stribe! Troldmanden er imponeret!',
-      '✨ Triple-stribe! Wizardhat til dig!',
+      'Stribetrold aktiveret! Du er uovervindelig!',
+      'Dag efter dag — du er ren magi!',
+      'Hvilken stribe! Troldmanden er imponeret!',
+      'Triple-stribe! Wizardhat til dig!',
     ],
   },
   {
@@ -32,13 +33,14 @@ export const HELPER_CAST = Object.freeze([
     iconKey: 'astronaut',
     name: 'Raketpiloten',
     trigger: 'fastCompletion',
+    phraseEmojiKey: 'rocket',
     entrance: 'zoomFromRight',
     soundCue: 'whoosh',
     phrases: [
-      '🚀 WARP-FART! Du er hurtigere end en raket!',
-      '🚀 Houston, vi har en HELT!',
-      '💨 Blink og det var gjort! Raketpiloten er jaloux!',
-      '🚀 5… 4… 3… opgave udført! KABOOM!',
+      'WARP-FART! Du er hurtigere end en raket!',
+      'Houston, vi har en HELT!',
+      'Blink og det var gjort! Raketpiloten er jaloux!',
+      '5… 4… 3… opgave udført! KABOOM!',
     ],
   },
   {
@@ -46,13 +48,14 @@ export const HELPER_CAST = Object.freeze([
     iconKey: 'fairy',
     name: 'Festfeen',
     trigger: 'allChoresDone',
+    phraseEmojiKey: 'confetti',
     entrance: 'spiralCenter',
     soundCue: 'firework',
     phrases: [
-      '🎉 ALLE OPGAVER FÆRDIGE! Du er en HELT!',
-      '🧚 Festfeen er stolt — alle stjerner er samlet!',
-      '🎊 100 % fuldført! Feen danser af glæde!',
-      '✨ Ingenting kan stoppe dig nu! FEJRING!',
+      'ALLE OPGAVER FÆRDIGE! Du er en HELT!',
+      'Festfeen er stolt — alle stjerner er samlet!',
+      '100 % fuldført! Feen danser af glæde!',
+      'Ingenting kan stoppe dig nu! FEJRING!',
     ],
   },
   {
@@ -60,13 +63,14 @@ export const HELPER_CAST = Object.freeze([
     iconKey: 'dragon',
     name: 'Møntdragen',
     trigger: 'periodPaid',
+    phraseEmojiKey: 'coin',
     entrance: 'crawlUp',
     soundCue: 'coin',
     phrases: [
-      '🐉 MØNTREGN! Dragen vågner og det BRAGER!',
-      '💰 Perioden klaret — dragen er tilfreds!',
-      '🐉 Guld i kassen! Møntdragen nikker anerkendende.',
-      '🪙 Lommepenge udbetalt! Dragen vogter din skat!',
+      'MØNTREGN! Dragen vågner og det BRAGER!',
+      'Perioden klaret — dragen er tilfreds!',
+      'Guld i kassen! Møntdragen nikker anerkendende.',
+      'Lommepenge udbetalt! Dragen vogter din skat!',
     ],
   },
   {
@@ -74,13 +78,14 @@ export const HELPER_CAST = Object.freeze([
     iconKey: 'ghost',
     name: 'Den Søvnige Spøgelse',
     trigger: 'overdueReminder',
+    phraseEmojiKey: 'sleep',
     entrance: 'floatFromLeft',
     soundCue: 'pop',
     phrases: [
-      '👻 Pssst… opgaverne venter stadig…',
-      '😴 Zzzzz... åh, opgaverne! Du kan stadig nå det!',
-      '👻 Spøgelset minder dig venligt om dine opgaver!',
-      '💤 Det er ikke for sent — kom så, helt!',
+      'Pssst… opgaverne venter stadig…',
+      'Zzzzz... åh, opgaverne! Du kan stadig nå det!',
+      'Spøgelset minder dig venligt om dine opgaver!',
+      'Det er ikke for sent — kom så, helt!',
     ],
   },
   {
@@ -88,13 +93,14 @@ export const HELPER_CAST = Object.freeze([
     iconKey: 'knight',
     name: 'Trofæridderne',
     trigger: 'newRecord',
+    phraseEmojiKey: 'trophy',
     entrance: 'dropFromStar',
     soundCue: 'levelup',
     phrases: [
-      '🏆 NY REKORD! Ridderen bukker sig dybt!',
-      '🥇 Aldrig gjort det bedre! Ridderscenen er din!',
-      '⚔️ Rekordslående præstation — ridderen saluterer!',
-      '🏆 Trofæsamlingen vokser! Uovertruffet!',
+      'NY REKORD! Ridderen bukker sig dybt!',
+      'Aldrig gjort det bedre! Ridderscenen er din!',
+      'Rekordslående præstation — ridderen saluterer!',
+      'Trofæsamlingen vokser! Uovertruffet!',
     ],
   },
 ]);
@@ -115,6 +121,9 @@ export function getHelperByTrigger(trigger) {
  */
 export function pickPhrase(helper) {
   const phrases = helper.phrases ?? [];
-  if (phrases.length === 0) return '';
-  return phrases[Math.floor(Math.random() * phrases.length)];
+  if (phrases.length === 0) return { emojiKey: helper.phraseEmojiKey ?? helper.iconKey, text: '' };
+  return {
+    emojiKey: helper.phraseEmojiKey ?? helper.iconKey,
+    text: phrases[Math.floor(Math.random() * phrases.length)],
+  };
 }

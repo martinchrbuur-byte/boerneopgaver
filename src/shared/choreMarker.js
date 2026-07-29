@@ -1,44 +1,42 @@
-import { getDailyMoodIconForChore } from './emojiMoodRegistry.js';
-
 const CATEGORY_RULES = Object.freeze([
   {
     label: 'Søvn',
-    visuals: ['sleep', 'star'],
+    iconKey: 'sleep',
     keywords: ['make the bed', 'bed', 'seng', 'red seng', 'rede seng']
   },
   {
     label: 'Tandpleje',
-    visuals: ['dental', 'magic'],
+    iconKey: 'dental',
     keywords: ['brush teeth', 'teeth', 'tooth', 'taender', 'tand', 'borst taender', 'børst tænder']
   },
   {
     label: 'Kæledyr',
-    visuals: ['pet', 'star'],
+    iconKey: 'pet',
     keywords: ['feed dog', 'feed the dog', 'dog', 'hund', 'fodr hund', 'fodre hund', 'pet', 'cat', 'kat', 'fish', 'fisk']
   },
   {
     label: 'Rengøring',
-    visuals: ['clean', 'magic'],
+    iconKey: 'cleanup',
     keywords: ['clean', 'tidy', 'opryd', 'ryd op', 'stovsug', 'støvsug', 'sweep', 'vacuum', 'wash dishes', 'opvask']
   },
   {
     label: 'Tøj',
-    visuals: ['clothes', 'star'],
+    iconKey: 'clothes',
     keywords: ['laundry', 'vasketoj', 'vasketøj', 'toj', 'tøj', 'clothes']
   },
   {
     label: 'Skole',
-    visuals: ['school', 'idea'],
+    iconKey: 'school',
     keywords: ['homework', 'lektier', 'read', 'laes', 'læs', 'book']
   },
   {
     label: 'Bad',
-    visuals: ['bath', 'magic'],
+    iconKey: 'bath',
     keywords: ['bath', 'shower', 'bad', 'vaske sig', 'wash up']
   },
   {
     label: 'Mad',
-    visuals: ['food', 'star'],
+    iconKey: 'food',
     keywords: ['table', 'dinner', 'meal', 'mad', 'bord', 'kokken', 'køkken']
   }
 ]);
@@ -67,22 +65,15 @@ export function getChoreVisual(choreName, choreId) {
   const keywordRule = findRule(normalizedName);
 
   if (keywordRule) {
-    // Use the first visuals entry as the category key for the mood registry,
-    // falling back to the original hash-based pick if no mood icon is found.
-    const categoryKey = keywordRule.visuals[0] ?? 'star';
-    const iconKey = getDailyMoodIconForChore(categoryKey, normalizedName, choreId);
-
     return {
-      iconKey,
+      iconKey: keywordRule.iconKey,
       label: keywordRule.label,
       source: 'keyword',
     };
   }
 
-  // No keyword match — daily-varying fallback
-  const iconKey = getDailyMoodIconForChore('fallback', normalizedName, choreId);
   return {
-    iconKey,
+    iconKey: 'star',
     label: 'Opgave',
     source: 'fallback',
   };

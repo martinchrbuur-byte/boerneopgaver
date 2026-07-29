@@ -65,7 +65,7 @@ export function createMainView(rootElement) {
             </div>
           </div>
           <div class="kid-treasure-card">
-            <div class="kid-stat-heading"><span aria-hidden="true">🪙</span> Skattekiste</div>
+            <div class="kid-stat-heading">${renderIcon('coin')} <span>Skattekiste</span></div>
             <strong id="kid-treasure-label" class="kid-treasure-label" aria-live="polite"></strong>
             <span id="kid-level-label" class="kid-level-label"></span>
           </div>
