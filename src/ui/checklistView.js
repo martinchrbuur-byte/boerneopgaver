@@ -7,7 +7,7 @@ import { renderEditAssigneeCheckboxes } from './choreView.js';
 function escape(value) { return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])); }
 function marker(title, id) { const visual = getChoreVisual(title, id); return `<span class="chore-marker" aria-hidden="true">${getIconSvgMarkup(visual.iconKey)}</span>`; }
 
-export function renderChecklistParentPanel(element, checklist, { onCreate, onAddItem } = {}) {
+export function renderChecklistParentPanel(element, checklist, { onCreate, onAddItem, onReorder } = {}) {
   if (!element) return;
   if (!checklist) {
     element.innerHTML = `<h2 class="section-title">Daglig checklist</h2><p class="chore-meta">Ingen checklist for i dag endnu.</p><button class="button button-primary" data-checklist-action="create">Opret dagens checklist</button>`;
