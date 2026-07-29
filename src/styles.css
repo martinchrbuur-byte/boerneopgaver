@@ -2011,6 +2011,22 @@ label[for] {
   min-width: 0;
 }
 
+.app-shell-kid .checklist-family-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem 0.5rem;
+}
+
+.app-shell-kid .checklist-family-item {
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.app-shell-kid .checklist-family-toggle {
+  padding-inline: 0.45rem;
+}
+
 .app-shell-kid .checklist-family-toggle {
   min-height: 3.1rem;
   padding: 0.4rem 0.15rem;
