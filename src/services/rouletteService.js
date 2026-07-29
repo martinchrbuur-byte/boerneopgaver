@@ -39,8 +39,10 @@ function normalizeRouletteSnapshot(snapshot, nowIso = nowIsoTimestamp()) {
   return { wheel, history };
 }
 
-function buildChoreSegments(data, choreService, nowIso) {
-  const choreState = typeof choreService?.getState === 'function' ? choreService.getState() : null;
+function buildChoreSegments(data, choreService, nowIso, activePeriodId = null) {
+  const choreState = typeof choreService?.getState === 'function'
+    ? choreService.getState({ activePeriodId })
+    : null;
   const chores = Array.isArray(choreState?.chores)
     ? choreState.chores.filter(chore => chore && chore.id && chore.name && chore.isFullyDone !== true)
     : (Array.isArray(data?.chores) ? data.chores.filter(chore => chore && chore.id && chore.name) : []);
@@ -62,9 +64,9 @@ function buildChoreSegments(data, choreService, nowIso) {
   }, index, { nowIso })).filter(Boolean);
 }
 
-function materializeWheel(data, choreService, nowIso) {
+function materializeWheel(data, choreService, nowIso, activePeriodId = null) {
   const snapshot = normalizeRouletteSnapshot(data?.roulette, nowIso);
-  const generatedSegments = buildChoreSegments(data, choreService, nowIso);
+  const generatedSegments = buildChoreSegments(data, choreService, nowIso, activePeriodId);
   const segments = mergeRouletteSegments(snapshot.wheel.segments, generatedSegments, { nowIso });
   return {
     wheel: {
@@ -80,10 +82,11 @@ function getStateFromData(data, choreService, {
   actorRole = 'parent',
   targetKid = null,
   limit = 50,
+  activePeriodId = null,
   nowIso = nowIsoTimestamp()
 } = {}) {
   const resolvedTargetKid = resolveRouletteTarget(actorRole, targetKid);
-  const materialized = materializeWheel(data, choreService, nowIso);
+  const materialized = materializeWheel(data, choreService, nowIso, activePeriodId);
     const eligibility = actorRole !== 'parent'
       ? filterEligibleSegments(materialized.wheel.segments, actorRole, resolvedTargetKid === 'both' ? 'both' : 'self')
       : { segments: filterSegmentsByTarget(materialized.wheel.segments, resolvedTargetKid), sharedSuggestion: false };
@@ -120,11 +123,12 @@ export function createRouletteService({ storageService, choreService = null, now
     throw new Error('createRouletteService requires storageService.');
   }
 
-  function getWheel({ actorRole = 'parent', targetKid = null, limit = 50 } = {}) {
+  function getWheel({ actorRole = 'parent', targetKid = null, limit = 50, activePeriodId = null } = {}) {
     return asResult(true, '', getStateFromData(storageService.loadData(), choreService, {
       actorRole,
       targetKid,
       limit,
+      activePeriodId,
       nowIso: nowProvider()
     }));
   }
@@ -307,22 +311,23 @@ export function createRouletteService({ storageService, choreService = null, now
     randomValue = 0,
     householdId = null,
     nowIso = nowProvider(),
-    fullRotations = 6,
+    fullRotations = 8,
     pointerAngle = 0,
     landingOffsetRatio = 0.5,
     deltaMs = 1000,
     frictionPerSecond = 0.12,
     initialVelocity = 1440,
     seed = null,
-    actorId = actorRole
+    actorId = actorRole,
+    activePeriodId = null
   } = {}) {
     const resolvedTargetKid = resolveRouletteTarget(actorRole, targetKid);
     if (!canSpinRoulette(actorRole, resolvedTargetKid)) {
-      return asResult(false, ROULETTE_MESSAGES.kidOnly, getStateFromData(storageService.loadData(), choreService, { actorRole: actorRole || 'parent', targetKid, nowIso }));
+      return asResult(false, ROULETTE_MESSAGES.kidOnly, getStateFromData(storageService.loadData(), choreService, { actorRole: actorRole || 'parent', targetKid, activePeriodId, nowIso }));
     }
 
     const data = storageService.loadData();
-    const state = getStateFromData(data, choreService, { actorRole, targetKid: resolvedTargetKid, nowIso });
+    const state = getStateFromData(data, choreService, { actorRole, targetKid: resolvedTargetKid, activePeriodId, nowIso });
     const seededValue = Number.isFinite(seed)
       ? ((Math.sin(seed) * 10000) % 1 + 1) % 1
       : randomValue;
@@ -370,7 +375,7 @@ export function createRouletteService({ storageService, choreService = null, now
       history: [...snapshot.history, entry].slice(-100)
     }));
 
-    const nextState = getStateFromData(storageService.loadData(), choreService, { actorRole, targetKid: resolvedTargetKid, nowIso });
+    const nextState = getStateFromData(storageService.loadData(), choreService, { actorRole, targetKid: resolvedTargetKid, activePeriodId, nowIso });
     const spinEntry = nextState.history[0];
     return asResult(true, ROULETTE_MESSAGES.spun, {
       ...nextState,
@@ -381,7 +386,7 @@ export function createRouletteService({ storageService, choreService = null, now
         spinTimestamp: nowIso,
         animationParams: {
           targetAngle: spinEntry?.angle ?? 0,
-          duration: 4200,
+          duration: 7200,
           friction: frictionPerSecond,
           easing: 'settle'
         },

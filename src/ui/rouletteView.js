@@ -3,9 +3,10 @@ import { renderIcon } from '../shared/iconRegistry.js';
 import { renderChoreMarker, renderEditAssigneeCheckboxes, fireConfetti, fireEmojiRain } from './choreView.js';
 import { escapeHtml } from '../shared/htmlSanitizer.js';
 
-export function animateWheel(wheel, targetAngle, { duration = 4200, reducedMotion = false, onDone } = {}) {
+export function animateWheel(wheel, targetAngle, { duration = 7200, reducedMotion = false, onDone } = {}) {
   if (reducedMotion) {
     wheel.style.transform = `rotateZ(${targetAngle}deg)`;
+    wheel.dataset.angle = String(targetAngle);
     onDone?.();
     return;
   }
@@ -13,9 +14,8 @@ export function animateWheel(wheel, targetAngle, { duration = 4200, reducedMotio
   const initialAngle = Number(wheel.dataset.angle || 0);
   const step = now => {
     const progress = Math.min(1, (now - start) / duration);
-    const eased = 1 - Math.pow(1 - progress, 4);
-    const bounce = progress > 0.82 ? Math.sin((progress - 0.82) * 28) * (1 - progress) * 10 : 0;
-    const angle = initialAngle + ((targetAngle - initialAngle) * eased) + bounce;
+    const eased = 1 - Math.pow(1 - progress, 5);
+    const angle = initialAngle + ((targetAngle - initialAngle) * eased);
     wheel.style.transform = `rotateZ(${angle}deg)`;
     if (progress < 1) requestAnimationFrame(step);
     else {
@@ -38,24 +38,32 @@ function renderSegments(segments) {
   }).join('');
 }
 
-export function renderRouletteView(container, { state, activeRole, rouletteService, onRefresh, onComplete }) {
+export function renderRouletteView(container, { state, activeRole, activePeriodId = null, rouletteService, onRefresh, onComplete }) {
   if (!container) return;
   const isKid = activeRole !== 'parent';
   const segments = state?.wheel?.segments || [];
   container.innerHTML = isKid ? `
     <section class="card roulette-card roulette-kid" aria-label="Opgaveroulette">
-      <div class="roulette-heading"><div><h2 class="section-title">${renderIcon('target')} Opgaveroulette</h2><p>Vælg hvem der skal have missionen, og spin!</p></div></div>
-      <div class="roulette-targets" role="group" aria-label="Vælg opgavetildeling">
-        <button class="button button-secondary roulette-target is-selected" data-roulette-target="self" aria-pressed="true">Kun mig</button>
-        <button class="button button-secondary roulette-target" data-roulette-target="both" aria-pressed="false">Begge helte</button>
+      <div class="roulette-heading"><div><h2 class="section-title">${renderIcon('target')} Opgaveroulette</h2><p>Vælg en ny heltemission.</p></div></div>
+      <button class="button button-primary roulette-open" data-roulette-open ${segments.length ? '' : 'disabled'}>${renderIcon('target')} Åbn roulette</button>
+      <div class="roulette-modal" data-roulette-modal hidden role="dialog" aria-modal="true" aria-labelledby="roulette-modal-title">
+        <div class="roulette-modal-backdrop" data-roulette-close></div>
+        <div class="roulette-modal-content">
+          <button class="button button-secondary roulette-close" data-roulette-close aria-label="Luk roulette">Luk</button>
+          <h2 id="roulette-modal-title" class="section-title">${renderIcon('target')} Opgaveroulette</h2>
+          <div class="roulette-targets" role="group" aria-label="Vælg opgavetildeling">
+            <button class="button button-secondary roulette-target is-selected" data-roulette-target="self" aria-pressed="true">Kun mig</button>
+            <button class="button button-secondary roulette-target" data-roulette-target="both" aria-pressed="false">Begge helte</button>
+          </div>
+          <div class="roulette-stage" data-roulette-stage tabindex="0" role="application" aria-label="Roulettehjul. Tryk på mellemrum eller Enter for at spinne.">
+            <span class="roulette-pointer" aria-hidden="true">▼</span>
+            <div class="roulette-wheel" data-roulette-wheel>${renderSegments(segments)}</div>
+          </div>
+          <p class="roulette-live" data-roulette-live role="status" aria-live="polite">${segments.length ? 'Klar til at spinne.' : 'Ingen opgaver passer til dette valg.'}</p>
+          <button class="button button-primary roulette-spin" data-roulette-spin ${segments.length ? '' : 'disabled'}>${renderIcon('target')} Spin hjulet</button>
+          <div class="roulette-result" data-roulette-result hidden></div>
+        </div>
       </div>
-      <div class="roulette-stage" data-roulette-stage tabindex="0" role="application" aria-label="Roulettehjul. Tryk på mellemrum eller Enter for at spinne.">
-        <span class="roulette-pointer" aria-hidden="true">▼</span>
-        <div class="roulette-wheel" data-roulette-wheel>${renderSegments(segments)}</div>
-      </div>
-      <p class="roulette-live" data-roulette-live role="status" aria-live="polite">${segments.length ? 'Klar til at spinne.' : 'Ingen opgaver passer til dette valg.'}</p>
-      <button class="button button-primary roulette-spin" data-roulette-spin ${segments.length ? '' : 'disabled'}>${renderIcon('target')} Spin hjulet</button>
-      <div class="roulette-result" data-roulette-result hidden></div>
     </section>` : `
     <section class="card roulette-card" aria-label="Rediger opgaveroulette">
       <div class="roulette-heading"><div><h2 class="section-title">${renderIcon('target')} Opgaveroulette</h2><p>Hjulet bruger aktive opgaver automatisk. Tilpas vægt og farve her.</p></div><button class="button button-secondary" data-roulette-preview>Prøvespin</button></div>
@@ -81,18 +89,27 @@ export function renderRouletteView(container, { state, activeRole, rouletteServi
   }
 
   let target = 'self';
+  const modal = container.querySelector('[data-roulette-modal]');
   const wheel = container.querySelector('[data-roulette-wheel]');
   const live = container.querySelector('[data-roulette-live]');
+  const openModal = () => {
+    modal.hidden = false;
+    modal.querySelector('[data-roulette-stage]')?.focus();
+  };
+  const closeModal = () => { modal.hidden = true; };
+  container.querySelector('[data-roulette-open]')?.addEventListener('click', openModal);
+  container.querySelectorAll('[data-roulette-close]').forEach(button => button.addEventListener('click', closeModal));
   const spin = () => {
     const result = rouletteService.spinWheel({
       actorRole: activeRole,
       actorId: activeRole,
       targetKid: target === 'both' ? 'both' : activeRole,
+      activePeriodId,
       seed: Date.now()
     });
     if (!result.ok) return onRefresh(result.message);
     live.textContent = 'Hjulet spinner…';
-    animateWheel(wheel, result.state.result.animationParams.targetAngle, {
+    animateWheel(wheel, Number(wheel.dataset.angle || 0) + result.state.result.animationParams.targetAngle, {
       duration: result.state.result.animationParams.duration,
       reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
       onDone: () => {
@@ -116,6 +133,9 @@ export function renderRouletteView(container, { state, activeRole, rouletteServi
     });
   }));
   container.querySelector('[data-roulette-spin]')?.addEventListener('click', spin);
+  modal?.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeModal();
+  });
   const stage = container.querySelector('[data-roulette-stage]');
   let pointerStartX = 0;
   stage?.addEventListener('pointerdown', event => { pointerStartX = event.clientX; });

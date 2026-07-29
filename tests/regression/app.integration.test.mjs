@@ -331,7 +331,7 @@ test('kid cannot delete chores even if invalid action is triggered', async () =>
   });
 });
 
-test('kid view enables no-scroll mode and paginates long chore lists', async () => {
+test('kid view keeps scrolling enabled and paginates long chore lists', async () => {
   await withBootstrappedApp(async ({
     window,
     roleSwitch,
@@ -354,8 +354,8 @@ test('kid view enables no-scroll mode and paginates long chore lists', async () 
     assert.ok(andreaButton);
     click(window, andreaButton);
 
-    assert.equal(document.body.classList.contains('kid-no-scroll'), true);
-    assert.equal(document.documentElement.classList.contains('kid-no-scroll'), true);
+    assert.equal(document.body.classList.contains('kid-no-scroll'), false);
+    assert.equal(document.documentElement.classList.contains('kid-no-scroll'), false);
     assert.equal(kidChorePagination.hidden, false);
     assert.match(kidChorePageLabel.textContent, /Side 1 af 2/i);
     assert.equal(choreList.querySelectorAll('.chore-item').length, 6);

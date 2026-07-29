@@ -346,8 +346,8 @@ async function init() {
     }
 
     const isKidRole = activeRole !== 'parent';
-    document.documentElement.classList.toggle('kid-no-scroll', isKidRole);
-    document.body.classList.toggle('kid-no-scroll', isKidRole);
+    document.documentElement.classList.remove('kid-no-scroll');
+    document.body.classList.remove('kid-no-scroll');
 
     const activePeriod = periodService.getActivePeriod();
     const activePeriodId = activePeriod?.id ?? null;
@@ -406,11 +406,13 @@ async function init() {
     });
     const rouletteState = rouletteService.getWheel({
       actorRole: activeRole,
-      targetKid: activeRole === 'parent' ? null : activeRole
+      targetKid: activeRole === 'parent' ? null : activeRole,
+      activePeriodId
     }).state;
     renderRouletteView(viewRefs.roulettePanel, {
       state: rouletteState,
       activeRole,
+      activePeriodId,
       rouletteService,
       onRefresh: refresh,
       onComplete: choreId => {

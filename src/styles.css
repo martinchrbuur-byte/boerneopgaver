@@ -52,20 +52,17 @@ body {
   width: 100%;
 }
 
-html.kid-no-scroll,
-body.kid-no-scroll {
-  height: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
-  touch-action: none;
-}
-
 .roulette-card { margin: 1rem 0; text-align: center; }
 .roulette-heading { display: flex; justify-content: space-between; gap: 1rem; text-align: left; align-items: start; }
 .roulette-heading p { margin: .25rem 0; color: #475569; }
 .roulette-targets { display: flex; justify-content: center; gap: .5rem; margin: .75rem 0; }
 .roulette-target.is-selected { background: #7c3aed; color: #fff; }
-.roulette-stage { position: relative; width: min(76vw, 310px); aspect-ratio: 1; margin: 1rem auto; touch-action: none; outline-offset: 5px; }
+.roulette-open { min-width: 220px; }
+.roulette-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1rem; }
+.roulette-modal-backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, .72); }
+.roulette-modal-content { position: relative; width: min(100%, 760px); max-height: 100%; overflow-y: auto; padding: clamp(1rem, 4vw, 2rem); border-radius: 1.25rem; background: #fff; box-shadow: 0 1rem 4rem rgba(15, 23, 42, .35); }
+.roulette-close { position: absolute; top: 1rem; right: 1rem; }
+.roulette-stage { position: relative; width: min(82vw, 620px); aspect-ratio: 1; margin: 1.5rem auto; touch-action: none; outline-offset: 5px; }
 .roulette-pointer { position: absolute; z-index: 2; left: 50%; top: -18px; transform: translateX(-50%); color: #e11d48; font-size: 2rem; filter: drop-shadow(0 2px 1px #fff); }
 .roulette-wheel { width: 100%; height: 100%; border-radius: 50%; position: relative; overflow: hidden; border: 8px solid #fff; box-shadow: 0 8px 24px #33415555; background: conic-gradient(#fda4af, #fde68a, #86efac, #93c5fd, #c4b5fd, #fda4af); will-change: transform; }
 .roulette-segment-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding-top: 15%; transform: rotate(var(--roulette-angle)); font-size: .7rem; font-weight: 700; pointer-events: none; }
