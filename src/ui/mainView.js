@@ -1,13 +1,5 @@
 import { renderIcon, renderIconText } from '../shared/iconRegistry.js';
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+import { escapeHtml } from '../shared/htmlSanitizer.js';
 
 export function createMainView(rootElement) {
   if (!rootElement) {
@@ -45,9 +37,6 @@ export function createMainView(rootElement) {
         <div id="mode-switch" class="role-switch" role="group" aria-label="Vælg hovedvisning">
           <button type="button" class="button button-secondary" data-mode="chores" aria-pressed="true">
             Opgaver
-          </button>
-          <button type="button" class="button button-secondary" data-mode="spotify" aria-pressed="false">
-            ${renderIconText('music', 'Spotify')}
           </button>
         </div>
       </section>
@@ -296,71 +285,6 @@ export function createMainView(rootElement) {
 
       </div>
 
-      <div id="spotify-workspace" hidden>
-        <section class="card app-spotify-card" aria-label="Spotify">
-          <h2 class="section-title">${renderIconText('music', 'Spotify')}</h2>
-          <p id="spotify-status" class="chore-meta">Forbinder ikke endnu.</p>
-          <div id="spotify-offline" class="spotify-offline" hidden>
-            ${renderIconText('offline', 'Offline – Spotify er midlertidigt utilgængelig.')}
-          </div>
-          <div id="spotify-actions" class="actions spotify-actions">
-            <button id="spotify-connect-link" type="button" class="button button-primary" hidden>Forbind Spotify</button>
-            <button id="spotify-refresh-btn" type="button" class="button button-secondary" hidden>Opdater anbefalinger</button>
-            <button id="spotify-disconnect-btn" type="button" class="button button-danger-outline" hidden>Afbryd Spotify</button>
-          </div>
-          <div id="spotify-playback-preference-panel" class="spotify-device-panel" hidden>
-            <div class="spotify-device-header">
-              <h3 class="section-title spotify-device-title">Foretrukken afspilning</h3>
-              <strong id="spotify-playback-preference-label" class="chore-meta">Spotify Connect først</strong>
-            </div>
-            <p id="spotify-playback-preference-status" class="chore-meta">Denne enhed bruger Spotify Connect som primær afspilning.</p>
-            <p id="spotify-playback-preference-hint" class="chore-meta">Hvis du vil styre afspilningen fra appen, skal du vælge en Spotify Connect-enhed nedenfor.</p>
-          </div>
-          <ul id="spotify-list" class="list spotify-list"></ul>
-          <div id="spotify-device-panel" class="spotify-device-panel" hidden>
-            <div class="spotify-device-header">
-              <h3 id="spotify-device-title" class="section-title spotify-device-title">Afspil på</h3>
-              <button id="spotify-device-refresh-btn" type="button" class="button button-secondary" hidden>Opdater enheder</button>
-            </div>
-            <select id="spotify-device-select" class="input spotify-device-select" aria-label="Vælg Spotify Connect-enhed">
-              <option value="">Ingen enheder fundet endnu</option>
-            </select>
-            <p id="spotify-device-status" class="chore-meta">Vælg en højttaler eller anden Spotify Connect-enhed.</p>
-          </div>
-          <div id="spotify-player" class="spotify-player" hidden>
-            <div class="spotify-now-playing">
-              <img id="spotify-track-image" class="spotify-track-image" src="" alt="" hidden>
-              <div class="spotify-track-info">
-                <strong id="spotify-track-name" class="spotify-track-name"></strong>
-                <span id="spotify-track-artist" class="spotify-track-artist"></span>
-              </div>
-            </div>
-            <div class="spotify-controls">
-              <button id="spotify-prev-btn" type="button" class="spotify-ctrl-btn" title="Forrige">⏮</button>
-              <button id="spotify-play-pause-btn" type="button" class="spotify-ctrl-btn" title="Afspil/Pause">▶</button>
-              <button id="spotify-next-btn" type="button" class="spotify-ctrl-btn" title="Næste">⏭</button>
-            </div>
-          </div>
-
-          <hr class="divider" />
-          <h3 class="section-title">Søg i Spotify</h3>
-          <form id="spotify-search-form" class="form-row" aria-label="Søg i Spotify">
-            <input
-              id="spotify-search-input"
-              class="input"
-              type="search"
-              name="spotifySearch"
-              maxlength="120"
-              placeholder="Søg efter tracks, playlister, albums og artister"
-              autocomplete="off"
-            />
-            <button type="submit" class="button button-primary">Søg</button>
-          </form>
-          <p id="spotify-search-status" class="chore-meta">Søg for at finde musik og playlister.</p>
-          <ul id="spotify-search-results" class="list spotify-list"></ul>
-        </section>
-      </div>
-
     </section>
   `;
 
@@ -381,7 +305,6 @@ export function createMainView(rootElement) {
     kidLevelLabel: rootElement.querySelector('#kid-level-label'),
     kidParentExit: rootElement.querySelector('#kid-parent-exit'),
     kidRoleSwitch: rootElement.querySelector('.kid-role-switch'),
-    spotifyWorkspace: rootElement.querySelector('#spotify-workspace'),
     roleSwitch: rootElement.querySelector('#role-switch'),
     addChoreForm: rootElement.querySelector('#add-chore-form'),
     addChoreSection: rootElement.querySelector('#add-chore-section'),
@@ -427,33 +350,6 @@ export function createMainView(rootElement) {
     statusRow: rootElement.querySelector('#status-row'),
     walletIcon: rootElement.querySelector('#wallet-icon'),
     coinIcon: rootElement.querySelector('#coin-icon'),
-    spotifyStatus: rootElement.querySelector('#spotify-status'),
-    spotifyOffline: rootElement.querySelector('#spotify-offline'),
-    spotifyActions: rootElement.querySelector('#spotify-actions'),
-    spotifyConnectLink: rootElement.querySelector('#spotify-connect-link'),
-    spotifyRefreshButton: rootElement.querySelector('#spotify-refresh-btn'),
-    spotifyDisconnectButton: rootElement.querySelector('#spotify-disconnect-btn'),
-    spotifyPlaybackPreferencePanel: rootElement.querySelector('#spotify-playback-preference-panel'),
-    spotifyPlaybackPreferenceLabel: rootElement.querySelector('#spotify-playback-preference-label'),
-    spotifyPlaybackPreferenceStatus: rootElement.querySelector('#spotify-playback-preference-status'),
-    spotifyPlaybackPreferenceHint: rootElement.querySelector('#spotify-playback-preference-hint'),
-    spotifyList: rootElement.querySelector('#spotify-list'),
-    spotifyDevicePanel: rootElement.querySelector('#spotify-device-panel'),
-    spotifyDeviceTitle: rootElement.querySelector('#spotify-device-title'),
-    spotifyDeviceSelect: rootElement.querySelector('#spotify-device-select'),
-    spotifyDeviceStatus: rootElement.querySelector('#spotify-device-status'),
-    spotifyDeviceRefreshButton: rootElement.querySelector('#spotify-device-refresh-btn'),
-    spotifyPlayer: rootElement.querySelector('#spotify-player'),
-    spotifyTrackImage: rootElement.querySelector('#spotify-track-image'),
-    spotifyTrackName: rootElement.querySelector('#spotify-track-name'),
-    spotifyTrackArtist: rootElement.querySelector('#spotify-track-artist'),
-    spotifyPlayPauseBtn: rootElement.querySelector('#spotify-play-pause-btn'),
-    spotifyPrevBtn: rootElement.querySelector('#spotify-prev-btn'),
-    spotifyNextBtn: rootElement.querySelector('#spotify-next-btn'),
-    spotifySearchForm: rootElement.querySelector('#spotify-search-form'),
-    spotifySearchInput: rootElement.querySelector('#spotify-search-input'),
-    spotifySearchStatus: rootElement.querySelector('#spotify-search-status'),
-    spotifySearchResults: rootElement.querySelector('#spotify-search-results'),
     accountSection: rootElement.querySelector('#account-section'),
     accountEmail: rootElement.querySelector('#account-email'),
     switchAccountButton: rootElement.querySelector('#switch-account-btn'),

@@ -10,7 +10,6 @@ import { createRouletteService } from './services/rouletteService.js';
 import { createPeriodService } from './services/periodService.js';
 import { createFeedbackService } from './services/feedbackService.js';
 import { createChecklistService } from './services/checklistService.js';
-import { createSpotifyService } from './services/spotifyService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
 import {
   getCurrentSession,
@@ -22,14 +21,15 @@ import {
   signUpWithEmail,
   updateCurrentUserPassword
 } from './services/supabaseService.js';
-import { createAuthView, createMainView } from './ui/mainView.js';
-import { createSpotifyViewStateController } from './ui/spotifyViewState.js';
+import { createMainView } from './ui/mainView.js';
 import { renderFeedback, renderState, showCoinToWallet, showMascot, showRoleSwitchWalk, showCinematicCelebration, showHelperByTrigger, initChoreTrails } from './ui/choreView.js';
 import { unlockAudio, toggleMute, isMuted, playSound } from './shared/soundManager.js';
 import { renderIcon } from './shared/iconRegistry.js';
-import { renderLocalOnlyIndicator, renderSyncStatusIndicator } from './ui/syncStatusUI.js';
 import { renderChecklistParentPanel, renderChecklistFamilyView } from './ui/checklistView.js';
 import { renderRouletteView } from './ui/rouletteView.js';
+import { authErrorMessage, resolveInitialAuthPage, startAuthFlow } from './modules/authFlow.js';
+import { createAppState } from './state/appState.js';
+import { renderRefreshStatus } from './ui/refreshView.js';
 
 const DEFAULT_CHORES = ['Red seng', 'Børst tænder', 'Ryd legetøj op'];
 const KID_CHORE_PAGE_SIZE = 6;
@@ -88,22 +88,6 @@ function calculateDaysLeft(endDate) {
   return Math.max(0, Math.ceil(diffMs / (24 * 60 * 60 * 1000)));
 }
 
-function authErrorMessage(error, fallback = 'Kunne ikke gennemføre login.') {
-  if (!error || typeof error !== 'object') {
-    return fallback;
-  }
-
-  if (typeof error.message === 'string' && error.message.trim().length > 0) {
-    return error.message;
-  }
-
-  return fallback;
-}
-
-function resolveInitialAuthPage() {
-  return window.location.hash === '#reset-password' ? 'reset-password' : 'welcome';
-}
-
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -120,103 +104,17 @@ async function moveToAuthScreen(root, message = 'Session udløbet. Log ind igen.
     dispose();
   }
 
-  await startAuthFlow(root, 'login', message);
+  await startAuthFlow({
+    root,
+    initialPage: 'login',
+    message,
+    init,
+    signUpWithEmail,
+    signInWithEmail,
+    sendPasswordResetEmail,
+    updateCurrentUserPassword
+  });
   isAuthTransitioning = false;
-}
-
-async function startAuthFlow(root, initialPage = resolveInitialAuthPage(), message = '') {
-  function render(page, feedbackMessage = '') {
-    const authView = createAuthView(root, { page, message: feedbackMessage });
-    const readField = (formData, key, trim = true) => {
-      const value = String(formData.get(key) || '');
-      return trim ? value.trim() : value;
-    };
-    const bindSubmit = (form, handler) => {
-      if (!form) {
-        return;
-      }
-
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        await handler(new FormData(form));
-      });
-    };
-
-    authView.navButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const nextPage = button.getAttribute('data-auth-nav') || 'welcome';
-        render(nextPage);
-      });
-    });
-
-    bindSubmit(authView.signupForm, async (formData) => {
-      const email = readField(formData, 'email');
-      const password = readField(formData, 'password', false);
-      const passwordConfirm = readField(formData, 'passwordConfirm', false);
-
-      if (password !== passwordConfirm) {
-        render('signup', 'Adgangskoderne matcher ikke.');
-        return;
-      }
-
-      try {
-        const result = await signUpWithEmail(email, password);
-        if (result?.session?.user?.id) {
-          window.location.hash = '';
-          await init();
-          return;
-        }
-
-        render('login', 'Konto oprettet. Tjek email og log derefter ind.');
-      } catch (error) {
-        render('signup', authErrorMessage(error, 'Kunne ikke oprette konto.'));
-      }
-    });
-
-    bindSubmit(authView.loginForm, async (formData) => {
-      const email = readField(formData, 'email');
-      const password = readField(formData, 'password', false);
-
-      try {
-        await signInWithEmail(email, password);
-        window.location.hash = '';
-        await init();
-      } catch (error) {
-        render('login', authErrorMessage(error, 'Login mislykkedes.'));
-      }
-    });
-
-    bindSubmit(authView.forgotForm, async (formData) => {
-      const email = readField(formData, 'email');
-
-      try {
-        await sendPasswordResetEmail(email);
-        render('login', 'Nulstillingslink sendt. Tjek din email.');
-      } catch (error) {
-        render('forgot-password', authErrorMessage(error, 'Kunne ikke sende nulstillingslink.'));
-      }
-    });
-
-    bindSubmit(authView.resetForm, async (formData) => {
-      const password = readField(formData, 'password', false);
-      const passwordConfirm = readField(formData, 'passwordConfirm', false);
-
-      if (password !== passwordConfirm) {
-        render('reset-password', 'Adgangskoderne matcher ikke.');
-        return;
-      }
-
-      try {
-        await updateCurrentUserPassword(password);
-        window.location.hash = '';
-        render('login', 'Adgangskode opdateret. Log ind igen.');
-      } catch (error) {
-        render('reset-password', authErrorMessage(error, 'Kunne ikke opdatere adgangskode.'));
-      }
-    });
-  }
-
-  render(initialPage, message);
 }
 
 async function init() {
@@ -236,11 +134,28 @@ async function init() {
       const session = await getCurrentSession();
       currentSession = session;
       if (!session?.user?.id) {
-        await startAuthFlow(root, resolveInitialAuthPage());
+        await startAuthFlow({
+          root,
+          initialPage: resolveInitialAuthPage(),
+          init,
+          signUpWithEmail,
+          signInWithEmail,
+          sendPasswordResetEmail,
+          updateCurrentUserPassword
+        });
         return;
       }
     } catch (error) {
-      await startAuthFlow(root, 'welcome', authErrorMessage(error, 'Kunne ikke hente login-status.'));
+      await startAuthFlow({
+        root,
+        initialPage: 'welcome',
+        message: authErrorMessage(error, 'Kunne ikke hente login-status.'),
+        init,
+        signUpWithEmail,
+        signInWithEmail,
+        sendPasswordResetEmail,
+        updateCurrentUserPassword
+      });
       return;
     }
   }
@@ -298,17 +213,7 @@ async function init() {
   const periodService = createPeriodService({ storageService });
   const feedbackService = createFeedbackService({ storageService });
   const checklistService = createChecklistService({ storageService });
-  const spotifyService = createSpotifyService({
-    spotifyConfig: appConfig.spotify,
-    getAccessToken: () => currentSession?.access_token || ''
-  });
-
-  let spotifyViewStateController = null;
-  cleanupTasks.push(() => spotifyViewStateController?.dispose());
-  cleanupTasks.push(() => spotifyService.dispose());
-  let activeMode = 'chores';
-  let activeTab = 'opgaver';
-  let kidChorePage = 1;
+  const appState = createAppState();
   const orphanedRecordService = createOrphanedRecordService();
   let lastRemoteSnapshotKey = null;
   let lastSyncStateSnapshot = null;
@@ -489,13 +394,13 @@ async function init() {
 
     const viewState = renderState(viewRefs, choreState, {
       activeRole,
-      activeMode,
-      activeTab,
+      activeMode: appState.activeMode,
+      activeTab: appState.activeTab,
       periodUi,
       feedbackUi,
       editState: periodUi.editState,
       kidUi: {
-        page: kidChorePage,
+        page: appState.kidChorePage,
         pageSize: KID_CHORE_PAGE_SIZE
       }
     });
@@ -542,72 +447,27 @@ async function init() {
     }
 
     if (isKidRole) {
-      kidChorePage = viewState?.kidChorePage ?? 1;
+      appState.kidChorePage = viewState?.kidChorePage ?? 1;
     } else {
-      kidChorePage = 1;
+      appState.kidChorePage = 1;
     }
 
     renderFeedback(viewRefs, message);
-    spotifyViewStateController?.render();
 
-    const feedbackEl = viewRefs.feedback;
-    const existingSyncStatus = document.getElementById('sync-status');
-    if (existingSyncStatus) {
-      existingSyncStatus.remove();
-    }
-
-    const existingLocalOnlyStatus = document.getElementById('local-only-status');
-    if (existingLocalOnlyStatus) {
-      existingLocalOnlyStatus.remove();
-    }
-
-    if (feedbackEl) {
-      if (!isSupabaseConfigured()) {
-        feedbackEl.insertAdjacentHTML('afterend', renderLocalOnlyIndicator({ reason: 'missing-config' }));
-      } else if (!navigator.onLine) {
-        feedbackEl.insertAdjacentHTML('afterend', renderLocalOnlyIndicator({ reason: 'offline' }));
-      }
-    }
-
-    if (isSupabaseConfigured()) {
-      const syncState = storageService.getSyncState();
-      if (syncState) {
-        const syncStatusHtml = renderSyncStatusIndicator(syncState);
-        if (syncStatusHtml && feedbackEl) {
-          feedbackEl.insertAdjacentHTML('afterend', syncStatusHtml);
-
-          const orphanSummary = orphanedRecordService.getOrphanedSummary(choreState.chores, choreState.records);
-          if (orphanSummary && orphanSummary.count > 0) {
-            const warningHtml = orphanedRecordService.createCleanupWarningUI(orphanSummary);
-            if (warningHtml && feedbackEl) {
-              const existing = document.getElementById('orphaned-warning');
-              if (!existing) {
-                feedbackEl.insertAdjacentHTML('afterend', warningHtml);
-              }
-            }
-          } else {
-            const existing = document.getElementById('orphaned-warning');
-            if (existing) existing.remove();
-          }
-        }
-      }
-    }
+    renderRefreshStatus({
+      feedbackElement: viewRefs.feedback,
+      configured: isSupabaseConfigured(),
+      online: navigator.onLine,
+      syncState: storageService.getSyncState(),
+      orphanSummary: orphanedRecordService.getOrphanedSummary(choreState.chores, choreState.records)
+    });
   }
-
-  spotifyViewStateController = createSpotifyViewStateController({
-    root,
-    viewRefs,
-    spotifyService,
-    refreshApp: refresh,
-    isAppDisposed: () => isAppDisposed || !root?.isConnected || typeof document === 'undefined'
-  });
 
   seedStarterChores(choreService);
   seedStarterRoulette(rouletteService);
   seedStarterChecklists(checklistService);
   persistActiveRole();
   refresh();
-  void spotifyViewStateController.refreshRecommendations();
 
   if (isSupabaseConfigured()) {
     lastSyncStateSnapshot = createSyncStateSnapshot(storageService.getSyncState());
@@ -692,7 +552,6 @@ async function init() {
 
     const onOnline = async () => {
       try {
-        await spotifyViewStateController.refreshRecommendations();
         await storageService.syncNow();
         const supabaseData = await initializeSupabaseData();
         if (!supabaseData) {
@@ -778,12 +637,12 @@ async function init() {
     activeRole = nextRole;
     persistActiveRole();
     if (activeRole !== 'parent') {
-      activeMode = 'chores';
-      activeTab = 'opgaver';
-      kidChorePage = 1;
+      appState.activeMode = 'chores';
+      appState.activeTab = 'opgaver';
+      appState.kidChorePage = 1;
     }
-    if (activeRole !== 'parent' && (activeTab === 'historik' || activeTab === 'periode' || activeTab === 'feedback')) {
-      activeTab = 'opgaver';
+    if (activeRole !== 'parent' && (appState.activeTab === 'historik' || appState.activeTab === 'periode' || appState.activeTab === 'feedback')) {
+      appState.activeTab = 'opgaver';
     }
     if (activeRole !== 'parent') {
       clearEditState();
@@ -796,9 +655,9 @@ async function init() {
   if (viewRefs.kidParentExit) {
     viewRefs.kidParentExit.addEventListener('click', () => {
       activeRole = 'parent';
-      activeMode = 'chores';
-      activeTab = 'opgaver';
-      kidChorePage = 1;
+      appState.activeMode = 'chores';
+      appState.activeTab = 'opgaver';
+      appState.kidChorePage = 1;
       persistActiveRole();
       refresh('Skiftet til forældrevisning.');
     });
@@ -813,9 +672,9 @@ async function init() {
       }
 
       activeRole = nextRole;
-      activeMode = 'chores';
-      activeTab = 'opgaver';
-      kidChorePage = 1;
+      appState.activeMode = 'chores';
+      appState.activeTab = 'opgaver';
+      appState.kidChorePage = 1;
       clearEditState();
       persistActiveRole();
       showRoleSwitchWalk(viewRefs.mascotOverlay, activeRole);
@@ -831,17 +690,11 @@ async function init() {
       }
 
       const nextMode = button.getAttribute('data-mode');
-      if ((nextMode !== 'chores' && nextMode !== 'spotify') || nextMode === activeMode) {
+      if (nextMode !== 'chores' || nextMode === appState.activeMode) {
         return;
       }
 
-      activeMode = nextMode;
-      if (activeMode === 'spotify') {
-        refresh('Spotify-visning åbnet.');
-        void spotifyViewStateController?.refreshDevices({ completionMessage: 'Spotify-enheder opdateret.' });
-        return;
-      }
-
+      appState.activeMode = nextMode;
       refresh('Opgavevisning åbnet.');
     });
   }
@@ -857,7 +710,7 @@ async function init() {
       return;
     }
 
-    activeTab = nextTab;
+    appState.activeTab = nextTab;
     // Small emoji confetti burst on tab switch
     if (typeof window.confetti === 'function' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       window.confetti({
@@ -878,7 +731,7 @@ async function init() {
         return;
       }
 
-      kidChorePage = Math.max(1, kidChorePage - 1);
+      appState.kidChorePage = Math.max(1, appState.kidChorePage - 1);
       refresh();
     });
   }
@@ -889,7 +742,7 @@ async function init() {
         return;
       }
 
-      kidChorePage += 1;
+      appState.kidChorePage += 1;
       refresh();
     });
   }

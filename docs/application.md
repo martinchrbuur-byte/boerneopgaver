@@ -249,7 +249,6 @@ Legacy payloads without `ui` are automatically normalized at load time.
 
 ### Wireframe state matrix
 - Parent role × mode `Opgaver` × tabs: `Opgaver`, `Periode`, `Feedback`, `Historik`.
-- Parent role × mode `Spotify`.
 - Kid role (`Hans Jørgen`, `Andrea`) × tab `Opgaver` with pagination states:
    - Single page (pagination hidden)
    - First page
@@ -311,7 +310,6 @@ Annotations:
 - `Periode`: same compact top row + single primary card with period controls and earnings.
 - `Feedback`: top row + compact form card + compact history card.
 - `Historik`: top row + grid of history items.
-- `Spotify`: top row + spotify controls card, preserving current behavior.
 
 ### Implementation mapping (traceability)
 - Structure and visibility: `src/ui/mainView.js`, `src/ui/choreView.js`.

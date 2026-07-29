@@ -65,7 +65,7 @@ This document lists functions discovered in the repository with short inferred d
 - **`orphanedRecordService.js`**: [src/services/orphanedRecordService.js](src/services/orphanedRecordService.js#L10)
   - `createOrphanedRecordService()`: Factory to find and recover orphaned records.
 
-Other services (briefly discovered) may include: `periodService`, `remoteSyncService`, `spotifyService`, `sprintService`, `storageService`, `supabaseService`, `syncQueueService` in `src/services/` — each file typically exports a `createXService()` factory; see their files for method lists.
+Other services (briefly discovered) may include: `periodService`, `remoteSyncService`, `storageService`, `supabaseService`, `syncQueueService` in `src/services/` — each file typically exports a `createXService()` factory; see their files for method lists.
 
 ## Shared utilities
 

@@ -1,10 +1,7 @@
 import { getDailyMoodIcon } from '../shared/emojiMoodRegistry.js';
 import { renderIcon } from '../shared/iconRegistry.js';
 import { renderChoreMarker, renderEditAssigneeCheckboxes, fireConfetti, fireEmojiRain } from './choreView.js';
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+import { escapeHtml } from '../shared/htmlSanitizer.js';
 
 export function animateWheel(wheel, targetAngle, { duration = 4200, reducedMotion = false, onDone } = {}) {
   if (reducedMotion) {

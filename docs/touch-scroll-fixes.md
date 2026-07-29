@@ -15,7 +15,7 @@ PWA was not responding to finger dragging/scrolling on Raspberry Pi touchscreen.
 - ✅ Ensured `touch-action: pan-y` is explicitly set on:
   - `body` - main scrolling element
   - `.app-shell` - main content container
-  - `#chores-workspace` / `#spotify-workspace` - workspace containers
+   - `#chores-workspace` - workspace container
   - `.card` - all card containers
   - `.list` - list containers
 - ✅ Added `scroll-behavior: auto` to html element

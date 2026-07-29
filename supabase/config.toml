@@ -1,2 +1,1 @@
-[functions.spotify-callback]
 verify_jwt = false

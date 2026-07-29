@@ -3,6 +3,7 @@ import { getChoreVisual } from '../shared/choreMarker.js';
 import { getIconSvgMarkup, renderIcon, renderIconText, setElementIcon } from '../shared/iconRegistry.js';
 import { getHelperByTrigger, pickPhrase } from '../shared/helperCast.js';
 import { playSound, unlockAudio, toggleMute, isMuted } from '../shared/soundManager.js';
+import { escapeHtml, escapeAttribute } from '../shared/htmlSanitizer.js';
 
 const MASCOT_MAP = Object.freeze({
   'Hans Jørgen': 'trophy',
@@ -58,21 +59,6 @@ function formatFeedbackCategory(category) {
 
 function asMoneyValue(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
-}
-
-function escapeAttribute(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }
 
 function renderEmptyChoreItem(text) {
@@ -875,9 +861,6 @@ function renderModeSwitch(viewRefs, activeMode, activeRole) {
     viewRefs.choresWorkspace.hidden = resolvedMode !== 'chores';
   }
 
-  if (viewRefs.spotifyWorkspace) {
-    viewRefs.spotifyWorkspace.hidden = resolvedMode !== 'spotify';
-  }
 }
 
 function renderPeriod(viewRefs, periodUi, activeRole) {

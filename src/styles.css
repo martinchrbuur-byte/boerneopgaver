@@ -339,8 +339,7 @@ body.kid-no-scroll .chore-list-card .section-title {
   touch-action: pan-y;
 }
 
-#chores-workspace,
-#spotify-workspace {
+#chores-workspace {
   display: contents;
   touch-action: pan-y;
 }
@@ -1195,144 +1194,6 @@ label[for] {
   justify-content: space-between;
 }
 
-.app-spotify-card {
-  justify-content: flex-start;
-  gap: 0.5rem;
-}
-
-.spotify-offline {
-  color: #475569;
-  font-size: 0.9rem;
-}
-
-.spotify-actions {
-  margin-top: 0.15rem;
-}
-
-.spotify-list {
-  margin-top: 0.2rem;
-}
-
-.spotify-list .chore-item {
-  margin-bottom: 0.45rem;
-}
-
-.spotify-device-panel {
-  margin-top: 0.35rem;
-  padding: 0.9rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.spotify-device-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.spotify-device-title {
-  margin: 0;
-}
-
-.spotify-device-select {
-  width: 100%;
-}
-
-.spotify-player {
-  margin-top: 0.75rem;
-  padding: 0.9rem;
-  background: #f1f5f9;
-  border-radius: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.spotify-now-playing {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  min-height: 2.5rem;
-}
-
-.spotify-track-image {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.35rem;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.spotify-track-info {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.spotify-track-name {
-  font-size: 0.9rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #1e293b;
-}
-
-.spotify-track-artist {
-  font-size: 0.8rem;
-  color: #64748b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.spotify-controls {
-  display: flex;
-  justify-content: center;
-  gap: 0.9rem;
-  flex-wrap: wrap;
-}
-
-.spotify-ctrl-btn {
-  background: #1db954;
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 3rem;
-  height: 3rem;
-  font-size: 1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s, transform 0.1s;
-  padding: 0;
-}
-
-.spotify-ctrl-btn:hover {
-  background: #17a34a;
-  transform: scale(1.08);
-}
-
-.spotify-ctrl-btn:active {
-  transform: scale(0.95);
-}
-
-.spotify-play-item-btn {
-  background: #1db954;
-  color: #fff;
-}
-
-.spotify-play-item-btn:hover {
-  background: #17a34a;
-}
-
 .form-row-3 {
   grid-template-columns: 1fr 120px auto;
 }
@@ -1624,7 +1485,6 @@ label[for] {
   .role-switch,
   .tab-nav,
   .actions,
-  .spotify-actions,
   .period-settings-row {
     gap: var(--touch-gap);
   }
@@ -1650,12 +1510,6 @@ label[for] {
     min-width: max-content;
   }
 
-  .spotify-ctrl-btn {
-    width: 3.5rem;
-    height: 3.5rem;
-    font-size: 1.1rem;
-  }
-
   .checkbox-label input[type="checkbox"] {
     width: 28px;
     height: 28px;
@@ -1669,9 +1523,7 @@ label[for] {
   }
 
   .actions > .button,
-  .actions > button,
-  .spotify-actions > .button,
-  .spotify-actions > button {
+  .actions > button {
     flex: 1 1 10rem;
   }
 }
@@ -1700,7 +1552,6 @@ label[for] {
   .app-subtitle,
   .pwa-install-hint,
   .chore-meta,
-  .spotify-offline,
   .feedback,
   .sync-status-container {
     font-size: 0.9rem;
@@ -1714,9 +1565,7 @@ label[for] {
   .app-header-row,
   .status-row,
   .period-header,
-  .feedback-entry-header,
-  .spotify-device-header,
-  .spotify-now-playing {
+  .feedback-entry-header {
     gap: 0.5rem;
   }
 
@@ -1760,8 +1609,7 @@ label[for] {
   .form-row-3,
   .form-row-max,
   .feedback-message-row,
-  .period-settings-row,
-  #spotify-search-form {
+  .period-settings-row {
     grid-template-columns: 1fr;
   }
 
@@ -1772,22 +1620,17 @@ label[for] {
   }
 
   .assign-to-section,
-  .spotify-device-panel,
-  .spotify-player,
   .collab-inbox-card {
     padding: 0.75rem;
   }
 
   .actions,
-  .spotify-actions,
   .assign-checkboxes {
     gap: 0.55rem;
   }
 
   .actions > .button,
-  .actions > button,
-  .spotify-actions > .button,
-  .spotify-actions > button {
+  .actions > button {
     flex: 1 1 9rem;
   }
 
@@ -1832,12 +1675,6 @@ label[for] {
 
   .app-status-card {
     grid-column: 9 / -1;
-    padding: 0.9rem 1rem;
-    align-self: stretch;
-  }
-
-  .app-spotify-card {
-    grid-column: 1 / -1;
     padding: 0.9rem 1rem;
     align-self: stretch;
   }
@@ -2338,10 +2175,6 @@ body.kid-no-scroll .chore-marker {
   .button-primary,
   .button-secondary,
   .button-success {
-    transition: none;
-  }
-
-  .spotify-ctrl-btn {
     transition: none;
   }
 

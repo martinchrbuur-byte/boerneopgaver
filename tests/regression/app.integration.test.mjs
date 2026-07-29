@@ -36,7 +36,6 @@ async function withBootstrappedApp(run) {
     const roleSwitch = document.querySelector('#role-switch');
     const modeSwitch = document.querySelector('#mode-switch');
     const choresWorkspace = document.querySelector('#chores-workspace');
-    const spotifyWorkspace = document.querySelector('#spotify-workspace');
     const addChoreForm = document.querySelector('#add-chore-form');
     const choreNameInput = document.querySelector('#chore-name-input');
     const choreValueInput = document.querySelector('#chore-value-input');
@@ -57,22 +56,10 @@ async function withBootstrappedApp(run) {
     const feedbackTitleInput = document.querySelector('#feedback-title-input');
     const feedbackMessageInput = document.querySelector('#feedback-message-input');
     const feedbackHistory = document.querySelector('#feedback-history');
-    const spotifyStatus = document.querySelector('#spotify-status');
-    const spotifyConnectLink = document.querySelector('#spotify-connect-link');
-    const spotifyRefreshButton = document.querySelector('#spotify-refresh-btn');
-    const spotifyPlaybackPreferencePanel = document.querySelector('#spotify-playback-preference-panel');
-    const spotifyPlaybackPreferenceLabel = document.querySelector('#spotify-playback-preference-label');
-    const spotifyList = document.querySelector('#spotify-list');
-    const spotifyDevicePanel = document.querySelector('#spotify-device-panel');
-    const spotifyDeviceTitle = document.querySelector('#spotify-device-title');
-    const spotifyDeviceSelect = document.querySelector('#spotify-device-select');
-    const spotifyDeviceStatus = document.querySelector('#spotify-device-status');
-    const spotifyDeviceRefreshButton = document.querySelector('#spotify-device-refresh-btn');
 
     assert.ok(roleSwitch);
     assert.ok(modeSwitch);
     assert.ok(choresWorkspace);
-    assert.ok(spotifyWorkspace);
     assert.ok(addChoreForm);
     assert.ok(choreNameInput);
     assert.ok(choreList);
@@ -93,24 +80,12 @@ async function withBootstrappedApp(run) {
     assert.ok(feedbackTitleInput);
     assert.ok(feedbackMessageInput);
     assert.ok(feedbackHistory);
-    assert.ok(spotifyStatus);
-    assert.ok(spotifyConnectLink);
-    assert.ok(spotifyRefreshButton);
-    assert.ok(spotifyPlaybackPreferencePanel);
-    assert.ok(spotifyPlaybackPreferenceLabel);
-    assert.ok(spotifyList);
-    assert.ok(spotifyDevicePanel);
-    assert.ok(spotifyDeviceTitle);
-    assert.ok(spotifyDeviceSelect);
-    assert.ok(spotifyDeviceStatus);
-    assert.ok(spotifyDeviceRefreshButton);
 
     await run({
       window,
       roleSwitch,
       modeSwitch,
       choresWorkspace,
-      spotifyWorkspace,
       addChoreForm,
       choreNameInput,
       choreValueInput,
@@ -131,17 +106,6 @@ async function withBootstrappedApp(run) {
       feedbackTitleInput,
       feedbackMessageInput,
       feedbackHistory,
-      spotifyStatus,
-      spotifyConnectLink,
-      spotifyRefreshButton,
-      spotifyPlaybackPreferencePanel,
-      spotifyPlaybackPreferenceLabel,
-      spotifyList,
-      spotifyDevicePanel,
-      spotifyDeviceTitle,
-      spotifyDeviceSelect,
-      spotifyDeviceStatus,
-      spotifyDeviceRefreshButton
     });
   } finally {
     dom.window.close();
@@ -364,47 +328,6 @@ test('kid cannot delete chores even if invalid action is triggered', async () =>
 
     click(window, spoofedDeleteButton);
     assert.match(feedback.textContent, /Kun forældrevisning kan tilføje opgaver/i);
-  });
-});
-
-test('spotify tile shows a valid startup state', async () => {
-  await withBootstrappedApp(async ({
-    window,
-    modeSwitch,
-    choresWorkspace,
-    spotifyWorkspace,
-    spotifyStatus,
-    spotifyConnectLink,
-    spotifyRefreshButton,
-    spotifyPlaybackPreferencePanel,
-    spotifyPlaybackPreferenceLabel,
-    spotifyList,
-    spotifyDevicePanel,
-    spotifyDeviceTitle,
-    spotifyDeviceSelect,
-    spotifyDeviceStatus,
-    spotifyDeviceRefreshButton
-  }) => {
-    const spotifyModeButton = modeSwitch.querySelector('button[data-mode="spotify"]');
-    assert.ok(spotifyModeButton);
-    assert.equal(choresWorkspace.hidden, false);
-    assert.equal(spotifyWorkspace.hidden, true);
-
-    click(window, spotifyModeButton);
-    assert.equal(choresWorkspace.hidden, true);
-    assert.equal(spotifyWorkspace.hidden, false);
-
-    assert.match(spotifyStatus.textContent, /spotify|henter|forbind/i);
-    assert.equal(spotifyRefreshButton.hidden, true);
-    assert.equal(typeof spotifyPlaybackPreferencePanel.hidden, 'boolean');
-    assert.match(spotifyPlaybackPreferenceLabel.textContent, /spotify connect|airplay/i);
-    assert.match(spotifyList.textContent, /forbundet|henter|anbefalinger/i);
-    assert.equal(typeof spotifyConnectLink.hidden, 'boolean');
-    assert.equal(typeof spotifyDevicePanel.hidden, 'boolean');
-    assert.match(spotifyDeviceTitle.textContent, /afspil på|spotify connect/i);
-    assert.equal(spotifyDeviceSelect.tagName, 'SELECT');
-    assert.match(spotifyDeviceStatus.textContent, /enhed|højttaler/i);
-    assert.equal(typeof spotifyDeviceRefreshButton.hidden, 'boolean');
   });
 });
 

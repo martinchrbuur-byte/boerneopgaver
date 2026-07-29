@@ -3,8 +3,9 @@ import { getChoreVisual } from '../shared/choreMarker.js';
 import { getIconSvgMarkup } from '../shared/iconRegistry.js';
 import { CHECKLIST_ASSIGNEES, canKidToggleItem } from '../shared/checklistModel.js';
 import { renderEditAssigneeCheckboxes } from './choreView.js';
+import { escapeHtml } from '../shared/htmlSanitizer.js';
 
-function escape(value) { return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])); }
+const escape = escapeHtml;
 function marker(title, id) { const visual = getChoreVisual(title, id); return `<span class="chore-marker" aria-hidden="true">${getIconSvgMarkup(visual.iconKey)}</span>`; }
 
 export function renderChecklistParentPanel(element, checklist, { onCreate, onAddItem, onReorder } = {}) {
