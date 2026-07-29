@@ -23,6 +23,8 @@ This repository now has a real static-site build and deploy pipeline.
 - `npm run build`
 - GitHub Pages artifact upload from `dist/`
 
+The workflow publishes the generated artifact directly and does not commit build output back to `main`.
+
 ## Build output
 
 `npm run build` now does two things:

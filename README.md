@@ -76,5 +76,5 @@ See [docs/supabase-setup.md](docs/supabase-setup.md) for complete setup instruct
    - `npm run ci:secret-guard`
 - Deployment to GitHub Pages runs only after a PR is merged into `main`.
 - Validation now includes `npm run build` so the deployable static site stays healthy.
-- Deploy workflow auto-commits tracked file changes (if any) after all gates pass.
+- Deploy workflow publishes the generated `dist/` artifact without modifying the source branch.
 - Secret safety is blocking: tracked `.env` files or obvious hardcoded secrets fail CI.
