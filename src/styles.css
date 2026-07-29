@@ -76,6 +76,87 @@ body.kid-no-scroll .app-shell-kid {
   align-content: start;
 }
 
+body.kid-no-scroll {
+  background: #fff7e8;
+}
+
+.kid-dashboard {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 3px solid #f4c95d;
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, #fffdf5 0%, #fff1c7 100%);
+  box-shadow: 0 8px 0 #f1d995;
+}
+
+.kid-dashboard-header,
+.kid-dashboard-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.kid-dashboard-stats {
+  align-items: stretch;
+}
+
+.kid-eyebrow,
+.kid-stat-heading,
+.kid-level-label {
+  margin: 0;
+  color: #855b00;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.kid-dashboard-title {
+  margin: 0.1rem 0 0;
+  color: #4c2b05;
+  font-size: clamp(1.35rem, 4vw, 2rem);
+}
+
+.kid-progress-card,
+.kid-treasure-card {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.85rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.kid-progress-label,
+.kid-treasure-label {
+  display: block;
+  margin: 0.35rem 0;
+  color: #4c2b05;
+  font-size: 1.12rem;
+}
+
+.kid-progress-track {
+  height: 1rem;
+  overflow: hidden;
+  border: 2px solid #e2b84d;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.kid-progress-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #36b45f, #f5bd27);
+  transition: width 250ms ease;
+}
+
+.kid-parent-exit {
+  min-height: 56px;
+  border-color: #d9b45b;
+  background: #fff;
+}
+
 body.kid-no-scroll .app-role-card,
 body.kid-no-scroll .app-status-card,
 body.kid-no-scroll #tab-opgaver {
@@ -2025,6 +2106,58 @@ label[for] {
   50% {
     opacity: 0.5;
   }
+}
+
+/* Child mode uses spacious, easy-to-tap controls instead of the legacy compact layout. */
+body.kid-no-scroll .app-shell-kid {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  align-content: start;
+  gap: 0.65rem;
+  padding: 0.65rem;
+}
+
+body.kid-no-scroll .app-shell-kid .app-top-card,
+body.kid-no-scroll .app-shell-kid .tab-panel,
+body.kid-no-scroll .app-shell-kid .kid-dashboard {
+  height: auto;
+  min-height: 0;
+  grid-column: 1 / -1;
+}
+
+body.kid-no-scroll .app-shell-kid .tab-panel-chores {
+  gap: 0.65rem;
+}
+
+body.kid-no-scroll .checklist-panel {
+  padding: 0.75rem;
+}
+
+body.kid-no-scroll .checklist-family-toggle {
+  min-height: 3.1rem;
+  padding: 0.4rem 0.15rem;
+}
+
+body.kid-no-scroll .button,
+body.kid-no-scroll .tab-btn {
+  min-height: 56px;
+  padding: 0.65rem 0.9rem;
+  font-size: 1rem;
+}
+
+body.kid-no-scroll .chore-item {
+  min-height: 76px;
+  padding: 0.8rem;
+  border-radius: 1rem;
+}
+
+body.kid-no-scroll .chore-title {
+  font-size: 1.1rem;
+}
+
+body.kid-no-scroll .chore-marker {
+  width: 2rem;
+  height: 2rem;
 }
 
 /* Pop: quick bounce on single completion */

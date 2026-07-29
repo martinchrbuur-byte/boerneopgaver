@@ -71,6 +71,10 @@ test('main view renders hidden account controls for authenticated mode', () => {
   try {
     const refs = createMainView(env.root);
 
+    assert.ok(refs.kidDashboard);
+    assert.equal(refs.kidDashboard.hidden, true);
+    assert.ok(refs.kidProgressTrack);
+    assert.ok(refs.kidParentExit);
     assert.ok(refs.accountSection);
     assert.equal(refs.accountSection.hidden, true);
     assert.ok(refs.accountEmail);

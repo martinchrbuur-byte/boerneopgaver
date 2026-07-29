@@ -1,4 +1,4 @@
-import { toDateTimeLabel } from '../shared/dateTime.js';
+import { isSameLocalDay, toDateTimeLabel } from '../shared/dateTime.js';
 import { getChoreVisual } from '../shared/choreMarker.js';
 import { getIconSvgMarkup, renderIcon, renderIconText, setElementIcon } from '../shared/iconRegistry.js';
 import { getHelperByTrigger, pickPhrase } from '../shared/helperCast.js';
@@ -233,6 +233,41 @@ function renderMoneySliders(viewRefs, activeRole, periodUi) {
       coinIcon.hidden = true;
       coinIcon.classList.remove('celebrate');
     }
+  }
+}
+
+function renderKidDashboard(viewRefs, state, activeRole, periodUi) {
+  if (!viewRefs.kidDashboard) return;
+
+  const kidChores = (state.chores ?? []).filter(chore => chore.assignedTo?.includes(activeRole));
+  const completed = kidChores.filter(chore => chore.isCompleted && chore.activeCompletedAt && isSameLocalDay(chore.activeCompletedAt)).length;
+  const total = kidChores.length;
+  const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const earned = asMoneyValue(periodUi?.moneyProgress?.byKid?.[activeRole]?.earned);
+  const level = Math.max(1, Math.floor(earned / 25) + 1);
+
+  viewRefs.kidDashboard.hidden = false;
+  if (viewRefs.kidDashboardTitle) {
+    viewRefs.kidDashboardTitle.textContent = `${activeRole}, er du klar?`;
+  }
+  if (viewRefs.kidProgressLabel) {
+    viewRefs.kidProgressLabel.textContent = total > 0
+      ? `${completed} af ${total} opgaver færdige`
+      : 'Ingen opgaver endnu';
+  }
+  if (viewRefs.kidProgressTrack) {
+    viewRefs.kidProgressTrack.setAttribute('aria-valuemax', String(total));
+    viewRefs.kidProgressTrack.setAttribute('aria-valuenow', String(completed));
+    viewRefs.kidProgressTrack.setAttribute('aria-valuetext', `${completed} af ${total} opgaver færdige`);
+  }
+  if (viewRefs.kidProgressFill) {
+    viewRefs.kidProgressFill.style.width = `${progress}%`;
+  }
+  if (viewRefs.kidTreasureLabel) {
+    viewRefs.kidTreasureLabel.textContent = `${formatMoney(earned)} i perioden`;
+  }
+  if (viewRefs.kidLevelLabel) {
+    viewRefs.kidLevelLabel.textContent = `Helteniveau ${level}`;
   }
 }
 
@@ -921,6 +956,22 @@ export function renderState(viewRefs, state, { activeRole, activeMode = 'chores'
   const kidPageSize = Number(kidUi?.pageSize) > 0 ? Number(kidUi.pageSize) : 3;
 
   renderMoneySliders(viewRefs, activeRole, periodUi);
+
+  if (viewRefs.kidDashboard) {
+    viewRefs.kidDashboard.hidden = !isKid;
+  }
+  if (isKid) {
+    renderKidDashboard(viewRefs, state, activeRole, periodUi);
+  }
+  if (viewRefs.appModeCard) {
+    viewRefs.appModeCard.hidden = isKid;
+  }
+  if (viewRefs.appRoleCard) {
+    viewRefs.appRoleCard.hidden = isKid;
+  }
+  if (viewRefs.appStatusCard) {
+    viewRefs.appStatusCard.hidden = isKid;
+  }
 
   viewRefs.addChoreSection.hidden = !isParent;
   if (viewRefs.appShell) {

@@ -45,6 +45,9 @@ async function withBootstrappedApp(run) {
     const kidChorePrevButton = document.querySelector('#kid-chore-prev-btn');
     const kidChoreNextButton = document.querySelector('#kid-chore-next-btn');
     const kidChorePageLabel = document.querySelector('#kid-chore-page-label');
+    const kidDashboard = document.querySelector('#kid-dashboard');
+    const kidProgressLabel = document.querySelector('#kid-progress-label');
+    const kidTreasureLabel = document.querySelector('#kid-treasure-label');
     const tabNav = document.querySelector('.tab-nav');
     const feedback = document.querySelector('#feedback');
     const moneySliderCount = document.querySelector('.money-slider-count');
@@ -76,6 +79,9 @@ async function withBootstrappedApp(run) {
     assert.ok(kidChorePrevButton);
     assert.ok(kidChoreNextButton);
     assert.ok(kidChorePageLabel);
+    assert.ok(kidDashboard);
+    assert.ok(kidProgressLabel);
+    assert.ok(kidTreasureLabel);
     assert.ok(tabNav);
     assert.ok(feedback);
     assert.ok(choreValueInput);
@@ -111,6 +117,9 @@ async function withBootstrappedApp(run) {
       kidChorePrevButton,
       kidChoreNextButton,
       kidChorePageLabel,
+      kidDashboard,
+      kidProgressLabel,
+      kidTreasureLabel,
       tabNav,
       feedback,
       moneySliderCount,
@@ -149,6 +158,9 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     choreValueInput,
     choreList,
     kidChoreNextButton,
+    kidDashboard,
+    kidProgressLabel,
+    kidTreasureLabel,
     feedback,
     moneySliderCount,
     mascotOverlay
@@ -167,6 +179,9 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     const andreaButton = roleSwitch.querySelector('button[data-role="Andrea"]');
     assert.ok(andreaButton);
     click(window, andreaButton);
+    assert.equal(kidDashboard.hidden, false);
+    assert.match(kidProgressLabel.textContent, /0 af 4 opgaver færdige/i);
+    assert.match(kidTreasureLabel.textContent, /0\.00 kr i perioden/i);
     assert.equal(mascotOverlay.hidden, false);
     assert.ok(mascotOverlay.classList.contains('mascot-role-walk'));
     const andreaIconKey = mascotOverlay.querySelector('.mascot-emoji')?.dataset.iconKey;
@@ -189,6 +204,7 @@ test('application bootstraps and supports parent/kid end-to-end flow', async () 
     click(window, completeButton);
 
     assert.match(feedback.textContent, /fuldført/i);
+    assert.match(kidProgressLabel.textContent, /1 af 4 opgaver færdige/i);
     const refreshedMoneySliderCount = document.querySelector('.money-slider-count');
     assert.ok(refreshedMoneySliderCount);
     assert.match(refreshedMoneySliderCount.textContent, /kr/);

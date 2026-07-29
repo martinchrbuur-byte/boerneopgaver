@@ -767,6 +767,17 @@ async function init() {
     refresh(message);
   });
 
+  if (viewRefs.kidParentExit) {
+    viewRefs.kidParentExit.addEventListener('click', () => {
+      activeRole = 'parent';
+      activeMode = 'chores';
+      activeTab = 'opgaver';
+      kidChorePage = 1;
+      persistActiveRole();
+      refresh('Skiftet til forældrevisning.');
+    });
+  }
+
   if (viewRefs.modeSwitch) {
     viewRefs.modeSwitch.addEventListener('click', (event) => {
       const button = event.target.closest('button[data-mode]');

@@ -54,6 +54,30 @@ export function createMainView(rootElement) {
 
       <div id="chores-workspace">
 
+      <section id="kid-dashboard" class="kid-dashboard" aria-label="Dagens heltemission" hidden>
+        <div class="kid-dashboard-header">
+          <div>
+            <p class="kid-eyebrow">Dagens heltemission</p>
+            <h2 id="kid-dashboard-title" class="kid-dashboard-title"></h2>
+          </div>
+          <button id="kid-parent-exit" type="button" class="button button-secondary kid-parent-exit">Forældre</button>
+        </div>
+        <div class="kid-dashboard-stats">
+          <div class="kid-progress-card">
+            <div class="kid-stat-heading"><span aria-hidden="true">⭐</span> Dagens mål</div>
+            <strong id="kid-progress-label" class="kid-progress-label" aria-live="polite"></strong>
+            <div class="kid-progress-track" role="progressbar" aria-label="Dagens opgaver" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+              <span id="kid-progress-fill" class="kid-progress-fill"></span>
+            </div>
+          </div>
+          <div class="kid-treasure-card">
+            <div class="kid-stat-heading"><span aria-hidden="true">🪙</span> Skattekiste</div>
+            <strong id="kid-treasure-label" class="kid-treasure-label" aria-live="polite"></strong>
+            <span id="kid-level-label" class="kid-level-label"></span>
+          </div>
+        </div>
+      </section>
+
       <section id="app-role-card" class="card app-role-card app-top-card" aria-label="Rolleskift">
         <h2 class="section-title">Visningstilstand</h2>
         <div id="role-switch" class="role-switch" role="group" aria-label="Vælg brugerrolle">
@@ -342,6 +366,14 @@ export function createMainView(rootElement) {
     appStatusCard: rootElement.querySelector('#app-status-card'),
     modeSwitch: rootElement.querySelector('#mode-switch'),
     choresWorkspace: rootElement.querySelector('#chores-workspace'),
+    kidDashboard: rootElement.querySelector('#kid-dashboard'),
+    kidDashboardTitle: rootElement.querySelector('#kid-dashboard-title'),
+    kidProgressLabel: rootElement.querySelector('#kid-progress-label'),
+    kidProgressTrack: rootElement.querySelector('.kid-progress-track'),
+    kidProgressFill: rootElement.querySelector('#kid-progress-fill'),
+    kidTreasureLabel: rootElement.querySelector('#kid-treasure-label'),
+    kidLevelLabel: rootElement.querySelector('#kid-level-label'),
+    kidParentExit: rootElement.querySelector('#kid-parent-exit'),
     spotifyWorkspace: rootElement.querySelector('#spotify-workspace'),
     roleSwitch: rootElement.querySelector('#role-switch'),
     addChoreForm: rootElement.querySelector('#add-chore-form'),
