@@ -4,6 +4,7 @@ import { renderChoreMarker, renderEditAssigneeCheckboxes, fireConfetti, fireEmoj
 import { escapeHtml } from '../shared/htmlSanitizer.js';
 
 export function animateWheel(wheel, targetAngle, { duration = 7200, reducedMotion = false, onDone } = {}) {
+  wheel.style.transition = 'none';
   if (reducedMotion) {
     wheel.style.transform = `rotateZ(${targetAngle}deg)`;
     wheel.dataset.angle = String(targetAngle);
@@ -38,12 +39,32 @@ function renderSegments(segments) {
   }).join('');
 }
 
+function renderWheelBackground(segments) {
+  const total = segments.reduce((sum, segment) => sum + segment.weight, 0) || 1;
+  let start = 0;
+  const stops = segments.flatMap((segment, index) => {
+    const size = (segment.weight / total) * 360;
+    const color = segment.color || `hsl(${(index * 67) % 360} 78% 66%)`;
+    const separatorStart = Math.max(start, start + size - 1);
+    const result = [`${color} ${start}deg ${separatorStart}deg`, `#ffffff ${separatorStart}deg ${start + size}deg`];
+    start += size;
+    return result;
+  });
+  return `conic-gradient(${stops.join(',')})`;
+}
+
 export function renderRouletteView(container, { state, activeRole, activePeriodId = null, rouletteService, onRefresh, onComplete }) {
   if (!container) return;
   const isKid = activeRole !== 'parent';
   const segments = state?.wheel?.segments || [];
   const modalWasOpen = container.dataset.rouletteModalOpen === 'true'
     || container.querySelector('[data-roulette-modal]')?.hidden === false;
+  if (!isKid) {
+    delete container.dataset.rouletteSpinningRole;
+  }
+  if (isKid && container.dataset.rouletteSpinningRole === activeRole) {
+    return;
+  }
   const modalVisibility = modalWasOpen ? '' : ' hidden';
   container.innerHTML = isKid ? `
     <section class="card roulette-card roulette-kid" aria-label="Opgaveroulette">
@@ -60,7 +81,7 @@ export function renderRouletteView(container, { state, activeRole, activePeriodI
           </div>
           <div class="roulette-stage" data-roulette-stage tabindex="0" role="application" aria-label="Roulettehjul. Tryk på mellemrum eller Enter for at spinne.">
             <span class="roulette-pointer" aria-hidden="true">▼</span>
-            <div class="roulette-wheel" data-roulette-wheel>${renderSegments(segments)}</div>
+            <div class="roulette-wheel" data-roulette-wheel style="background: ${renderWheelBackground(segments)}">${renderSegments(segments)}</div>
           </div>
           <p class="roulette-live" data-roulette-live role="status" aria-live="polite">${segments.length ? 'Klar til at spinne.' : 'Ingen opgaver passer til dette valg.'}</p>
           <button class="button button-primary roulette-spin" data-roulette-spin ${segments.length ? '' : 'disabled'}>${renderIcon('target')} Spin hjulet</button>
@@ -107,6 +128,7 @@ export function renderRouletteView(container, { state, activeRole, activePeriodI
   container.querySelector('[data-roulette-open]')?.addEventListener('click', openModal);
   container.querySelectorAll('[data-roulette-close]').forEach(button => button.addEventListener('click', closeModal));
   const spin = () => {
+    if (container.dataset.rouletteSpinningRole) return;
     const result = rouletteService.spinWheel({
       actorRole: activeRole,
       actorId: activeRole,
@@ -115,6 +137,7 @@ export function renderRouletteView(container, { state, activeRole, activePeriodI
       seed: Date.now()
     });
     if (!result.ok) return onRefresh(result.message);
+    container.dataset.rouletteSpinningRole = activeRole;
     live.textContent = 'Hjulet spinner…';
     animateWheel(wheel, Number(wheel.dataset.angle || 0) + result.state.result.animationParams.targetAngle, {
       duration: result.state.result.animationParams.duration,
@@ -125,6 +148,7 @@ export function renderRouletteView(container, { state, activeRole, activePeriodI
         resultElement.hidden = false;
         resultElement.innerHTML = `<strong>${selected ? escapeHtml(selected.label) : 'Mission valgt!'}</strong><p>${result.state.result.sharedSuggestion ? 'Fælles forslag — spørg en forælder, før begge bliver tildelt.' : `Tildelt til: ${result.state.result.assignedTo.join(' og ')}`}</p>${selected?.meta?.choreId && !result.state.result.sharedSuggestion ? `<button class="button button-success" data-roulette-complete="${escapeHtml(selected.meta.choreId)}">Markér fuldført</button>` : ''}`;
         live.textContent = `Mission valgt: ${selected?.label || ''}`;
+        delete container.dataset.rouletteSpinningRole;
         fireConfetti({ particleCount: 80 });
         fireEmojiRain([selected?.iconKey || getDailyMoodIcon('fallback', selected?.id || 'roulette')], 20);
         resultElement.querySelector('[data-roulette-complete]')?.addEventListener('click', () => onComplete?.(selected.meta.choreId));

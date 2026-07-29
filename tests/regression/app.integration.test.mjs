@@ -384,3 +384,14 @@ test('roulette modal stays open when the child view refreshes', async () => {
     assert.equal(roulettePanel.querySelector('[data-roulette-modal]').hidden, false);
   });
 });
+
+test('roulette wheel renders visible separators between task segments', async () => {
+  await withBootstrappedApp(async ({ window, roleSwitch, roulettePanel }) => {
+    click(window, roleSwitch.querySelector('button[data-role="Andrea"]'));
+    click(window, roulettePanel.querySelector('[data-roulette-open]'));
+
+    const wheel = roulettePanel.querySelector('[data-roulette-wheel]');
+    assert.match(wheel.getAttribute('style'), /#ffffff/);
+    assert.equal(wheel.querySelectorAll('.roulette-segment-label').length >= 1, true);
+  });
+});
