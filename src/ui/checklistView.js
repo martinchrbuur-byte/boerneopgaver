@@ -8,7 +8,7 @@ import { escapeHtml } from '../shared/htmlSanitizer.js';
 const escape = escapeHtml;
 function marker(title, id) { const visual = getChoreVisual(title, id); return `<span class="chore-marker" aria-hidden="true">${getIconSvgMarkup(visual.iconKey)}</span>`; }
 
-export function renderChecklistParentPanel(element, checklist, { onCreate, onAddItem, onDeleteItem, onReorder } = {}) {
+export function renderChecklistParentPanel(element, checklist, { onCreate, onAddItem, onDeleteItem, onUpdateItem, onReorder } = {}) {
   if (!element) return;
   if (!checklist) {
     element.innerHTML = `<h2 class="section-title">Daglig checklist</h2><p class="chore-meta">Ingen checklist for i dag endnu.</p><button class="button button-primary" data-checklist-action="create">Opret dagens checklist</button>`;
@@ -24,6 +24,16 @@ export function renderChecklistParentPanel(element, checklist, { onCreate, onAdd
   });
   element.querySelectorAll('[data-checklist-action="delete-item"]').forEach(button => {
     button.addEventListener('click', () => onDeleteItem?.(button.dataset.checklistItemId));
+  });
+  element.querySelectorAll('[data-edit-field="assignedTo"]').forEach(input => {
+    input.addEventListener('change', () => {
+      const item = input.closest('[data-checklist-item-id]');
+      if (!item) return;
+      const assignedTo = [...item.querySelectorAll('[data-edit-field="assignedTo"]:checked')]
+        .map(checkbox => checkbox.dataset.kid)
+        .filter(Boolean);
+      onUpdateItem?.(item.dataset.checklistItemId, { assignedTo });
+    });
   });
 }
 

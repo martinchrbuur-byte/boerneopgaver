@@ -349,7 +349,9 @@ export function createRouletteService({ storageService, choreService = null, now
       weight: pickedSegment.weight,
       ticket: normalizedRandomValue * totalWeight,
       angle: computeTargetAngleForSegment(state.wheel.segments, pickedSegment.id, { fullRotations, pointerAngle, landingOffsetRatio }) ?? 0,
-      assignedTo: resolvedTargetKid === 'both' && !state.sharedSuggestion ? ['Hans Jørgen', 'Andrea'] : pickedSegment.assignedTo,
+      assignedTo: resolvedTargetKid === 'both'
+        ? (state.sharedSuggestion ? pickedSegment.assignedTo : ['Hans Jørgen', 'Andrea'])
+        : [actorRole],
       meta: {
         physics: spinPhysicsStep({
           angle: 0,

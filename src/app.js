@@ -435,6 +435,10 @@ async function init() {
           const result = checklistService.removeItem(checklistDate, itemId, { actorRole: activeRole });
           refresh(result.message);
         },
+        onUpdateItem: (itemId, patch) => {
+          const result = checklistService.updateItem(checklistDate, itemId, patch, { actorRole: activeRole });
+          refresh(result.message);
+        },
         onReorder: orderedItemIds => {
           const result = checklistService.reorderItems(checklistDate, orderedItemIds, { actorRole: activeRole });
           refresh(result.message);

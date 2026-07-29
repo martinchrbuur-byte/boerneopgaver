@@ -171,6 +171,7 @@ test('spinWheel uses deterministic weights, kid permissions, and filtered histor
   assert.equal(hansSpin.ok, true);
   assert.equal(andreaSpin.state.history[0].label, 'Shared task');
   assert.equal(andreaSpin.state.history[0].targetKid, 'Andrea');
+  assert.deepEqual(andreaSpin.state.history[0].assignedTo, ['Andrea']);
   assert.equal(andreaSpin.state.history[0].createdAt, '2026-01-01T12:05:00.000Z');
   assert.equal(andreaSpin.state.history[0].angle, 495);
 
