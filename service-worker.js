@@ -1,4 +1,4 @@
-const CACHE_NAME = 'opgavehelte-app-shell-v4';
+const CACHE_NAME = 'opgavehelte-app-shell-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -103,7 +103,7 @@ async function networkFirstAsset(request) {
   const cache = await caches.open(CACHE_NAME);
 
   try {
-    const response = await fetch(request);
+    const response = await fetch(new Request(request, { cache: 'reload' }));
     if (isSuccessful(response)) {
       await cache.put(request, response.clone());
     }
