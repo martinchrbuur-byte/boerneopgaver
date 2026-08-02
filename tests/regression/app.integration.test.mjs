@@ -53,6 +53,8 @@ async function withBootstrappedApp(run) {
     const feedback = document.querySelector('#feedback');
     const moneySliderCount = document.querySelector('.money-slider-count');
     const mascotOverlay = document.querySelector('#mascot-overlay');
+    const screensaverOverlay = document.querySelector('#screensaver-overlay');
+    const screensaverWake = document.querySelector('#screensaver-wake');
     const feedbackForm = document.querySelector('#feedback-form');
     const feedbackTitleInput = document.querySelector('#feedback-title-input');
     const feedbackMessageInput = document.querySelector('#feedback-message-input');
@@ -78,6 +80,9 @@ async function withBootstrappedApp(run) {
     assert.ok(choreValueInput);
     assert.ok(moneySliderCount);
     assert.ok(mascotOverlay);
+    assert.ok(screensaverOverlay);
+    assert.ok(screensaverWake);
+    assert.equal(screensaverOverlay.hidden, true);
     assert.ok(feedbackForm);
     assert.ok(feedbackTitleInput);
     assert.ok(feedbackMessageInput);
@@ -105,6 +110,8 @@ async function withBootstrappedApp(run) {
       feedback,
       moneySliderCount,
       mascotOverlay,
+      screensaverOverlay,
+      screensaverWake,
       feedbackForm,
       feedbackTitleInput,
       feedbackMessageInput,
@@ -118,6 +125,24 @@ async function withBootstrappedApp(run) {
     globalThis.FormData = previousFormData;
   }
 }
+
+test('screensaver stays hidden during normal app use and role switching', async () => {
+  await withBootstrappedApp(async ({ window, roleSwitch, screensaverOverlay }) => {
+    const andreaButton = roleSwitch.querySelector('button[data-role="Andrea"]');
+    const parentButton = roleSwitch.querySelector('button[data-role="parent"]');
+    assert.ok(andreaButton);
+    assert.ok(parentButton);
+
+    click(window, andreaButton);
+    assert.equal(screensaverOverlay.hidden, true);
+
+    screensaverOverlay.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+    assert.equal(screensaverOverlay.hidden, true);
+
+    click(window, parentButton);
+    assert.equal(screensaverOverlay.hidden, true);
+  });
+});
 
 test('application bootstraps and supports parent/kid end-to-end flow', async () => {
   await withBootstrappedApp(async ({

@@ -2421,3 +2421,1032 @@ label[for] {
   .helper-float-from-left .mascot-emoji,
   .helper-drop-from-star .mascot-emoji { animation: none; opacity: 1; transform: none; }
 }
+
+/* ─── 8-bit hero screensaver ───────────────────────────────────── */
+.screensaver-overlay {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: clamp(0.75rem, 2vh, 1.25rem);
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: #fff7e8;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.screensaver-overlay.screensaver-active {
+  animation: screensaverFadeIn 0.45s ease-out both;
+}
+
+.screensaver-scene {
+  position: relative;
+  width: min(92vw, 72rem);
+  height: min(70svh, 40rem);
+  min-height: 16rem;
+  overflow: hidden;
+  isolation: isolate;
+  border: 4px solid #26335d;
+  background: linear-gradient(#71d7ec 0%, #c4f2e4 72%, #f9d779 72%, #f9d779 100%);
+  box-shadow: 0 0.5rem 0 #26335d, 0 1.5rem 3rem rgba(38, 51, 93, 0.24);
+  image-rendering: pixelated;
+}
+
+.screensaver-scene::before,
+.screensaver-scene::after {
+  position: absolute;
+  z-index: 8;
+  pointer-events: none;
+  content: '';
+}
+
+.screensaver-scene::before {
+  inset: 0;
+  border: 0.45rem solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 0.3rem rgba(38, 51, 93, 0.08);
+}
+
+.screensaver-scene::after {
+  right: 1.2rem;
+  bottom: 0.9rem;
+  left: 1.2rem;
+  height: 0.2rem;
+  background: rgba(38, 51, 93, 0.16);
+}
+
+.screensaver-overlay[data-scene='treasure-hunt'] {
+  background: #302d68;
+}
+
+.screensaver-overlay[data-scene='treasure-hunt'] .screensaver-scene {
+  background: linear-gradient(#302d68 0%, #5d4c98 68%, #8a5f67 68%, #e19b5b 100%);
+}
+
+.screensaver-sky,
+.screensaver-hills,
+.screensaver-ground,
+.screensaver-treasure,
+.pixel-hero {
+  position: absolute;
+}
+
+.screensaver-sky {
+  z-index: 1;
+  inset: 0;
+}
+
+.pixel-star {
+  position: absolute;
+  width: 0.35rem;
+  height: 0.35rem;
+  background: #fff8c7;
+  box-shadow: 0 0 0 0.14rem rgba(255, 248, 199, 0.35);
+  animation: pixelTwinkle 2.8s steps(2, end) infinite;
+}
+
+.pixel-star-one { top: 16%; left: 18%; }
+.pixel-star-two { top: 24%; left: 73%; animation-delay: 0.8s; }
+.pixel-star-three { top: 12%; left: 54%; animation-delay: 1.5s; }
+
+.pixel-cloud {
+  position: absolute;
+  width: 5.5rem;
+  height: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 1.1rem -0.7rem 0 -0.1rem rgba(255, 255, 255, 0.8), 2.2rem -0.35rem 0 0.1rem rgba(255, 255, 255, 0.8);
+  animation: pixelCloudDrift 22s linear infinite;
+}
+
+.pixel-cloud-one { top: 21%; left: -8rem; }
+.pixel-cloud-two { top: 37%; left: 56%; transform: scale(0.7); opacity: 0.55; animation-delay: -9s; }
+
+.screensaver-overlay[data-scene='treasure-hunt'] .pixel-cloud {
+  opacity: 0;
+}
+
+.screensaver-hills {
+  z-index: 2;
+  right: -5%;
+  bottom: 24%;
+  left: -5%;
+  height: 34%;
+  background: #7dcf9b;
+  clip-path: polygon(0 65%, 12% 38%, 23% 58%, 37% 12%, 51% 56%, 65% 28%, 77% 58%, 90% 20%, 100% 58%, 100% 100%, 0 100%);
+}
+
+.screensaver-overlay[data-scene='treasure-hunt'] .screensaver-hills {
+  background: #684b70;
+}
+
+.screensaver-ground {
+  z-index: 3;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 27%;
+  background: #f9d779;
+  box-shadow: inset 0 0.35rem 0 #d49c56;
+}
+
+.screensaver-overlay[data-scene='treasure-hunt'] .screensaver-ground {
+  background: #e19b5b;
+  box-shadow: inset 0 0.35rem 0 #a96755;
+}
+
+.pixel-bush {
+  position: absolute;
+  bottom: 35%;
+  width: 2.4rem;
+  height: 1.5rem;
+  background: #3d9b68;
+  box-shadow: 0.6rem -0.6rem 0 #3d9b68, 1.35rem -0.3rem 0 #3d9b68, 0.6rem 0.5rem 0 #287151, 1.7rem 0.45rem 0 #287151;
+}
+
+.pixel-bush-one { left: 12%; }
+.pixel-bush-two { right: 13%; transform: scale(0.8); }
+
+.pixel-flower {
+  position: absolute;
+  bottom: 27%;
+  width: 0.45rem;
+  height: 1.5rem;
+  background: #3d9b68;
+  box-shadow: 0 0.6rem 0 #3d9b68;
+}
+
+.pixel-flower::before {
+  position: absolute;
+  top: -0.2rem;
+  left: -0.25rem;
+  width: 0.9rem;
+  height: 0.7rem;
+  background: #ef7093;
+  box-shadow: 0.25rem -0.25rem 0 #ef7093;
+  content: '';
+}
+
+.pixel-flower-one { left: 30%; }
+.pixel-flower-two { right: 31%; transform: scale(0.7); }
+
+.screensaver-treasure {
+  z-index: 4;
+  right: 20%;
+  bottom: 23%;
+  display: none;
+}
+
+.screensaver-overlay[data-scene='treasure-hunt'] .screensaver-treasure {
+  display: block;
+}
+
+.pixel-chest {
+  position: relative;
+  display: block;
+  width: 4.5rem;
+  height: 2.6rem;
+  border: 0.3rem solid #5e342d;
+  background: #db873e;
+  box-shadow: inset 0 0.45rem 0 #f6b84d, 0 0.35rem 0 #5e342d;
+}
+
+.pixel-chest-lid {
+  position: absolute;
+  top: -1rem;
+  left: -0.3rem;
+  width: 4.5rem;
+  height: 1rem;
+  border: 0.3rem solid #5e342d;
+  background: #f6b84d;
+}
+
+.pixel-chest-lock {
+  position: absolute;
+  top: 0.75rem;
+  left: 1.65rem;
+  width: 0.7rem;
+  height: 0.8rem;
+  background: #fff0a6;
+}
+
+.pixel-coin {
+  position: absolute;
+  width: 0.8rem;
+  height: 0.8rem;
+  background: #ffe477;
+  border: 0.2rem solid #d89a35;
+  box-shadow: 0.2rem -1.3rem 0 -0.1rem #ffe477, 0.2rem -1.3rem 0 0.1rem #d89a35;
+  animation: pixelCoinFloat 1.8s steps(3, end) infinite;
+}
+
+.pixel-coin-one { top: -0.5rem; left: 0.8rem; }
+.pixel-coin-two { top: -1.1rem; left: 2rem; animation-delay: 0.35s; }
+.pixel-coin-three { top: -0.4rem; left: 3.3rem; animation-delay: 0.7s; }
+
+.pixel-hero {
+  z-index: 5;
+  bottom: 20%;
+  left: 10%;
+  width: 3.8rem;
+  height: 6.2rem;
+  transform-origin: center bottom;
+  filter: drop-shadow(0 0.35rem 0 rgba(38, 51, 93, 0.2));
+}
+
+.pixel-hero > span:not(.pixel-hero-shadow) {
+  position: absolute;
+  display: block;
+}
+
+.pixel-hero-shadow {
+  position: absolute;
+  right: 0;
+  bottom: -0.5rem;
+  left: 0;
+  height: 0.55rem;
+  background: rgba(38, 51, 93, 0.28);
+}
+
+.pixel-hero-cape {
+  top: 1.8rem;
+  left: 0.25rem;
+  width: 1.5rem;
+  height: 3.1rem;
+  background: #ef7093;
+  box-shadow: -0.35rem 0.65rem 0 #ef7093, 0.35rem 2.5rem 0 #c34f78;
+}
+
+.pixel-hero-body {
+  top: 2.1rem;
+  left: 1.25rem;
+  width: 1.8rem;
+  height: 2.65rem;
+  background: #3d79d8;
+  box-shadow: 0.35rem 0.35rem 0 #2c58a6, -0.35rem 0.4rem 0 #f1b45e;
+}
+
+.pixel-hero-head {
+  top: 0.65rem;
+  left: 1.05rem;
+  width: 2rem;
+  height: 1.75rem;
+  background: #f1b45e;
+  box-shadow: -0.25rem 0.35rem 0 #d8884b, 0.25rem 0.35rem 0 #f1b45e;
+}
+
+.pixel-hero-hair {
+  top: 0.25rem;
+  left: 0.9rem;
+  width: 2.3rem;
+  height: 0.75rem;
+  background: #5e342d;
+  box-shadow: -0.3rem 0.35rem 0 #5e342d, 0.3rem 0.35rem 0 #5e342d, 0.8rem -0.25rem 0 #f6b84d;
+}
+
+.pixel-hero-eye {
+  top: 1.25rem;
+  width: 0.3rem;
+  height: 0.3rem;
+  background: #26335d;
+}
+
+.pixel-hero-eye-one { left: 1.55rem; }
+.pixel-hero-eye-two { left: 2.35rem; }
+
+.pixel-hero-arm {
+  top: 2.35rem;
+  left: 3rem;
+  width: 1.1rem;
+  height: 0.75rem;
+  background: #f1b45e;
+  box-shadow: 0.6rem 0.25rem 0 #f1b45e;
+  transform: rotate(-12deg);
+}
+
+.pixel-hero-leg {
+  top: 4.55rem;
+  width: 0.7rem;
+  height: 1.55rem;
+  background: #26335d;
+}
+
+.pixel-hero-leg-one { left: 1.25rem; transform: rotate(8deg); }
+.pixel-hero-leg-two { left: 2.35rem; transform: rotate(-8deg); }
+
+.screensaver-pixel-message {
+  position: absolute;
+  z-index: 6;
+  top: 0.9rem;
+  left: 50%;
+  padding: 0.55rem 0.8rem;
+  border: 3px solid #26335d;
+  background: #fff8c7;
+  color: #26335d;
+  font-size: clamp(0.75rem, 2vw, 1.1rem);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  box-shadow: 0.25rem 0.25rem 0 #26335d;
+}
+
+.screensaver-message-treasure,
+.screensaver-overlay[data-scene='treasure-hunt'] .screensaver-message-patrol {
+  display: none;
+}
+
+.screensaver-overlay[data-scene='treasure-hunt'] .screensaver-message-treasure {
+  display: inline;
+}
+
+.screensaver-overlay[data-scene='treasure-hunt'] .pixel-hero {
+  left: 27%;
+  animation: screensaverHeroTreasure 3.2s steps(6, end) infinite;
+}
+
+.screensaver-overlay[data-scene='hero-patrol'] .pixel-hero {
+  animation: screensaverHeroPatrol 12s steps(12, end) infinite;
+}
+
+.screensaver-wake {
+  z-index: 11;
+  min-width: 12rem;
+  min-height: 3.25rem;
+  padding: 0.8rem 1.1rem;
+  border: 3px solid #26335d;
+  background: #fff8c7;
+  color: #26335d;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  box-shadow: 0.3rem 0.3rem 0 #26335d;
+}
+
+.screensaver-wake:active {
+  transform: translate(0.15rem, 0.15rem);
+  box-shadow: 0.15rem 0.15rem 0 #26335d;
+}
+
+@keyframes screensaverFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes screensaverHeroPatrol {
+  0% { transform: translateX(0) translateY(0) scaleX(1); }
+  12% { transform: translateX(12vw) translateY(-0.2rem) scaleX(1); }
+  25% { transform: translateX(25vw) translateY(0) scaleX(1); }
+  38% { transform: translateX(38vw) translateY(-0.25rem) scaleX(1); }
+  50% { transform: translateX(50vw) translateY(0) scaleX(1); }
+  62% { transform: translateX(62vw) translateY(-0.2rem) scaleX(1); }
+  75% { transform: translateX(75vw) translateY(0) scaleX(-1); }
+  88% { transform: translateX(38vw) translateY(-0.25rem) scaleX(-1); }
+  100% { transform: translateX(0) translateY(0) scaleX(-1); }
+}
+
+@keyframes screensaverHeroTreasure {
+  0%, 100% { transform: translateY(0) scaleX(1); }
+  45% { transform: translateY(-0.25rem) scaleX(1); }
+  52% { transform: translateY(-0.9rem) scaleX(1); }
+  65% { transform: translateY(0) scaleX(1); }
+}
+
+@keyframes pixelTwinkle {
+  0%, 100% { opacity: 0.45; transform: scale(0.7); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
+
+@keyframes pixelCloudDrift {
+  from { transform: translateX(0); }
+  to { transform: translateX(125vw); }
+}
+
+@keyframes pixelCoinFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-0.4rem) rotate(8deg); }
+}
+
+@media (max-width: 520px) {
+  .screensaver-overlay {
+    gap: 1rem;
+  }
+
+  .screensaver-scene {
+    width: 96vw;
+    height: min(62svh, 27rem);
+    min-height: 13rem;
+    border-width: 3px;
+  }
+
+  .screensaver-message-patrol,
+  .screensaver-message-treasure {
+    white-space: nowrap;
+  }
+
+  .pixel-hero {
+    transform: scale(0.78);
+    transform-origin: center bottom;
+  }
+
+  .screensaver-overlay[data-scene='treasure-hunt'] .pixel-hero {
+    left: 19%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screensaver-overlay.screensaver-active,
+  .screensaver-overlay .pixel-star,
+  .screensaver-overlay .pixel-cloud,
+  .screensaver-overlay .pixel-coin,
+  .screensaver-overlay[data-scene='hero-patrol'] .pixel-hero,
+  .screensaver-overlay[data-scene='treasure-hunt'] .pixel-hero {
+    animation: none;
+  }
+
+  .screensaver-overlay[data-scene='hero-patrol'] .pixel-hero {
+    transform: translateX(24vw);
+  }
+
+  .screensaver-overlay[data-scene='treasure-hunt'] .pixel-hero {
+    transform: none;
+  }
+
+  .screensaver-wake {
+    transition: none;
+  }
+}
+
+/* ─── Additional hero screensaver scenes ───────────────────────── */
+.screensaver-rocket-scene,
+.screensaver-camp,
+.screensaver-rainbow,
+.screensaver-moon,
+.screensaver-dragon-scene {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+}
+
+.screensaver-overlay[data-scene='rocket-launch'] {
+  background: #11183e;
+}
+
+.screensaver-overlay[data-scene='rocket-launch'] .screensaver-scene {
+  background: linear-gradient(#11183e 0%, #29366f 72%, #6b4c76 72%, #cf805e 100%);
+}
+
+.screensaver-overlay[data-scene='rocket-launch'] .screensaver-rocket-scene,
+.screensaver-overlay[data-scene='helper-camp'] .screensaver-camp,
+.screensaver-overlay[data-scene='rainbow-bridge'] .screensaver-rainbow,
+.screensaver-overlay[data-scene='moon-dream'] .screensaver-moon,
+.screensaver-overlay[data-scene='dragon-rescue'] .screensaver-dragon-scene {
+  display: block;
+}
+
+.screensaver-overlay[data-scene='rocket-launch'] .screensaver-hills {
+  background: #3b3c76;
+}
+
+.screensaver-overlay[data-scene='rocket-launch'] .screensaver-ground {
+  background: #cf805e;
+  box-shadow: inset 0 0.35rem 0 #8d4e5d;
+}
+
+.screensaver-overlay[data-scene='rocket-launch'] .pixel-hero {
+  bottom: 17%;
+  left: 43%;
+  animation: screensaverHeroWave 2.4s steps(4, end) infinite;
+}
+
+.pixel-rocket {
+  position: absolute;
+  bottom: 14%;
+  left: 58%;
+  width: 3.5rem;
+  height: 6.8rem;
+  border: 0.3rem solid #26335d;
+  background: #fff8c7;
+  clip-path: polygon(50% 0, 88% 22%, 88% 75%, 100% 84%, 100% 100%, 0 100%, 0 84%, 12% 75%, 12% 22%);
+  animation: pixelRocketLaunch 5s steps(10, end) infinite;
+}
+
+.pixel-rocket::before {
+  position: absolute;
+  top: 0.8rem;
+  left: 0.95rem;
+  width: 1rem;
+  height: 1rem;
+  background: #71d7ec;
+  border: 0.25rem solid #26335d;
+  content: '';
+}
+
+.pixel-rocket-window {
+  position: absolute;
+  top: 0.9rem;
+  left: 1.2rem;
+  z-index: 2;
+  width: 0.55rem;
+  height: 0.55rem;
+  background: #fff8c7;
+}
+
+.pixel-rocket-fin {
+  position: absolute;
+  bottom: 1.1rem;
+  width: 1.1rem;
+  height: 1.5rem;
+  background: #ef7093;
+}
+
+.pixel-rocket-fin-one { left: -0.6rem; }
+.pixel-rocket-fin-two { right: -0.6rem; }
+
+.pixel-rocket-flame {
+  position: absolute;
+  bottom: -1.3rem;
+  left: 1rem;
+  width: 1.2rem;
+  height: 1.7rem;
+  background: #f6b84d;
+  box-shadow: 0.35rem 0.6rem 0 #ef7093, -0.3rem 0.75rem 0 #ffe477;
+  animation: pixelFlame 0.45s steps(2, end) infinite alternate;
+}
+
+.pixel-smoke {
+  position: absolute;
+  width: 1.1rem;
+  height: 1.1rem;
+  background: #fff8c7;
+  box-shadow: 0.7rem 0.35rem 0 #fff8c7;
+  opacity: 0;
+  animation: pixelSmoke 5s steps(8, end) infinite;
+}
+
+.pixel-smoke-one { bottom: 12%; left: 64%; }
+.pixel-smoke-two { bottom: 10%; left: 59%; animation-delay: 0.6s; }
+.pixel-smoke-three { bottom: 11%; left: 69%; animation-delay: 1.2s; }
+
+/* Helper camp */
+.screensaver-overlay[data-scene='helper-camp'] {
+  background: #241d50;
+}
+
+.screensaver-overlay[data-scene='helper-camp'] .screensaver-scene {
+  background: linear-gradient(#241d50 0%, #513b79 68%, #573c5f 68%, #b56b5b 100%);
+}
+
+.screensaver-overlay[data-scene='helper-camp'] .screensaver-hills {
+  background: #3b315f;
+}
+
+.screensaver-overlay[data-scene='helper-camp'] .screensaver-ground {
+  background: #b56b5b;
+  box-shadow: inset 0 0.35rem 0 #754957;
+}
+
+.screensaver-overlay[data-scene='helper-camp'] .pixel-hero {
+  bottom: 17%;
+  left: 37%;
+  transform: scale(0.8);
+  animation: screensaverCampHero 2s steps(4, end) infinite;
+}
+
+.pixel-tent {
+  position: absolute;
+  bottom: 19%;
+  left: 13%;
+  width: 9rem;
+  height: 5rem;
+  background: #ef7093;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  box-shadow: inset 0 -0.5rem 0 #c34f78;
+}
+
+.pixel-tent-door {
+  position: absolute;
+  bottom: 0;
+  left: 3.7rem;
+  width: 1.8rem;
+  height: 2.5rem;
+  background: #4a2c5e;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.pixel-campfire {
+  position: absolute;
+  right: 18%;
+  bottom: 20%;
+  width: 3rem;
+  height: 0.75rem;
+  background: #5e342d;
+  transform: rotate(8deg);
+}
+
+.pixel-campfire::before,
+.pixel-campfire::after {
+  position: absolute;
+  bottom: 0;
+  width: 3rem;
+  height: 0.75rem;
+  background: #75402f;
+  content: '';
+  transform: rotate(-16deg);
+}
+
+.pixel-campfire::after { transform: rotate(34deg); }
+
+.pixel-fire-flame {
+  position: absolute;
+  bottom: 0.55rem;
+  left: 1rem;
+  width: 1rem;
+  height: 1.8rem;
+  background: #f6b84d;
+  box-shadow: 0.25rem -0.35rem 0 #ef7093, -0.25rem 0.45rem 0 #ffe477;
+  animation: pixelFire 0.7s steps(3, end) infinite alternate;
+}
+
+.pixel-helper {
+  position: absolute;
+  bottom: 20%;
+  width: 2rem;
+  height: 2.5rem;
+  background: #7dcf9b;
+  box-shadow: 0 -1.6rem 0 -0.25rem #f1b45e, 0.3rem 0.4rem 0 #3d9b68, 1.25rem 0.45rem 0 #3d9b68;
+  animation: pixelHelperBounce 1.4s steps(3, end) infinite alternate;
+}
+
+.pixel-helper-one { left: 8%; transform: scale(0.7); }
+.pixel-helper-two { right: 8%; background: #8c74d8; animation-delay: 0.3s; }
+.pixel-helper-three { right: 30%; background: #71a8dc; transform: scale(0.65); animation-delay: 0.6s; }
+
+/* Rainbow bridge */
+.screensaver-overlay[data-scene='rainbow-bridge'] .screensaver-scene {
+  background: linear-gradient(#71d7ec 0%, #c4f2e4 72%, #f9d779 72%, #f9d779 100%);
+}
+
+.screensaver-overlay[data-scene='rainbow-bridge'] .screensaver-hills {
+  background: #8bd9a3;
+}
+
+.screensaver-overlay[data-scene='rainbow-bridge'] .pixel-hero {
+  bottom: 23%;
+  left: 13%;
+  animation: screensaverRainbowHero 9s steps(9, end) infinite;
+}
+
+.pixel-rainbow {
+  position: absolute;
+  top: 7%;
+  left: 28%;
+  width: 20rem;
+  height: 11rem;
+  border: 1.25rem solid #ef7093;
+  border-bottom: 0;
+  box-shadow: 0 1.25rem 0 -0.05rem #f6b84d, 0 2.5rem 0 -0.05rem #7dcf9b, 0 3.75rem 0 -0.05rem #71a8dc;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 84% 100%, 84% 30%, 16% 30%, 16% 100%, 0 100%);
+  animation: pixelRainbowGlow 2.6s steps(3, end) infinite alternate;
+}
+
+.pixel-bridge {
+  position: absolute;
+  right: 22%;
+  bottom: 17%;
+  left: 22%;
+  height: 0.9rem;
+  background: #a96755;
+  box-shadow: 0 0.9rem 0 #754957, 0.6rem 1.8rem 0 #a96755, 1.2rem 2.7rem 0 #754957;
+  transform: perspective(5rem) rotateX(18deg);
+}
+
+.pixel-bridge::before,
+.pixel-bridge::after {
+  position: absolute;
+  bottom: -2.5rem;
+  width: 0.45rem;
+  height: 3.5rem;
+  background: #754957;
+  content: '';
+}
+
+.pixel-bridge::before { left: 1.2rem; }
+.pixel-bridge::after { right: 1.2rem; }
+
+.pixel-rainbow-cloud {
+  position: absolute;
+  width: 5rem;
+  height: 1rem;
+  background: #fff8c7;
+  box-shadow: 1rem -0.7rem 0 -0.05rem #fff8c7, 2rem -0.25rem 0 0.15rem #fff8c7;
+}
+
+.pixel-rainbow-cloud-one { bottom: 32%; left: 3%; }
+.pixel-rainbow-cloud-two { right: 5%; bottom: 37%; transform: scale(0.7); }
+
+/* Moon dream */
+.screensaver-overlay[data-scene='moon-dream'] {
+  background: #101735;
+}
+
+.screensaver-overlay[data-scene='moon-dream'] .screensaver-scene {
+  background: linear-gradient(#101735 0%, #25295c 72%, #3c356c 72%, #695178 100%);
+}
+
+.screensaver-overlay[data-scene='moon-dream'] .screensaver-hills {
+  background: #25244e;
+}
+
+.screensaver-overlay[data-scene='moon-dream'] .screensaver-ground {
+  background: #695178;
+  box-shadow: inset 0 0.35rem 0 #49385f;
+}
+
+.screensaver-overlay[data-scene='moon-dream'] .pixel-hero {
+  bottom: 17%;
+  left: 43%;
+  transform: scale(0.8);
+  animation: screensaverMoonSleep 3.5s steps(4, end) infinite alternate;
+}
+
+.pixel-moon {
+  position: absolute;
+  top: 13%;
+  right: 18%;
+  width: 7rem;
+  height: 7rem;
+  background: #fff0a6;
+  clip-path: polygon(20% 0, 80% 0, 80% 10%, 90% 10%, 90% 20%, 100% 20%, 100% 80%, 90% 80%, 90% 90%, 80% 90%, 80% 100%, 20% 100%, 20% 90%, 10% 90%, 10% 80%, 0 80%, 0 20%, 10% 20%, 10% 10%, 20% 10%);
+  box-shadow: inset 0.8rem 0.8rem 0 rgba(246, 184, 77, 0.28);
+  animation: pixelMoonPulse 3s steps(3, end) infinite alternate;
+}
+
+.pixel-moon-eye {
+  position: absolute;
+  top: 2.7rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: #4a3b6d;
+}
+
+.pixel-moon-eye-one { left: 2rem; }
+.pixel-moon-eye-two { right: 2rem; }
+
+.pixel-moon-smile {
+  position: absolute;
+  bottom: 1.7rem;
+  left: 2.65rem;
+  width: 1.7rem;
+  height: 0.5rem;
+  border-bottom: 0.25rem solid #4a3b6d;
+}
+
+.pixel-moon-cloud {
+  position: absolute;
+  width: 6rem;
+  height: 1.1rem;
+  background: #514b86;
+  box-shadow: 1rem -0.7rem 0 -0.1rem #514b86, 2.2rem -0.35rem 0 0.1rem #514b86;
+  animation: pixelDreamCloud 18s linear infinite;
+}
+
+.pixel-moon-cloud-one { top: 35%; left: -7rem; }
+.pixel-moon-cloud-two { top: 53%; left: 60%; transform: scale(0.65); animation-delay: -8s; }
+
+/* Dragon rescue */
+.screensaver-overlay[data-scene='dragon-rescue'] .screensaver-scene {
+  background: linear-gradient(#5b3d78 0%, #a85d74 66%, #e19b5b 66%, #f6c06d 100%);
+}
+
+.screensaver-overlay[data-scene='dragon-rescue'] .screensaver-hills {
+  background: #724b72;
+}
+
+.screensaver-overlay[data-scene='dragon-rescue'] .screensaver-ground {
+  background: #f6c06d;
+  box-shadow: inset 0 0.35rem 0 #c47959;
+}
+
+.screensaver-overlay[data-scene='dragon-rescue'] .pixel-hero {
+  bottom: 19%;
+  left: 31%;
+  animation: screensaverDragonHero 2.8s steps(5, end) infinite;
+}
+
+.pixel-dragon {
+  position: absolute;
+  top: 28%;
+  right: 18%;
+  width: 6rem;
+  height: 4rem;
+  background: #7dcf9b;
+  box-shadow: 0.5rem 2.2rem 0 -0.4rem #3d9b68, 3.8rem 1.2rem 0 -0.2rem #7dcf9b;
+  animation: pixelDragonHover 2.2s steps(4, end) infinite alternate;
+}
+
+.pixel-dragon::before {
+  position: absolute;
+  top: -0.9rem;
+  right: -1.1rem;
+  width: 2.1rem;
+  height: 2rem;
+  background: #7dcf9b;
+  content: '';
+}
+
+.pixel-dragon-wing {
+  position: absolute;
+  top: -1.8rem;
+  width: 2.8rem;
+  height: 2.3rem;
+  background: #ef7093;
+  clip-path: polygon(0 100%, 25% 0, 50% 55%, 72% 10%, 100% 100%);
+  animation: pixelWingFlap 0.7s steps(2, end) infinite alternate;
+}
+
+.pixel-dragon-wing-one { left: 0.2rem; }
+.pixel-dragon-wing-two { right: 0.2rem; animation-delay: 0.15s; }
+
+.pixel-dragon-eye {
+  position: absolute;
+  top: 0.1rem;
+  right: -0.25rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  background: #26335d;
+  box-shadow: 0.1rem 0 0 #fff8c7;
+}
+
+.pixel-dragon-snout {
+  position: absolute;
+  top: 1rem;
+  right: -1.4rem;
+  width: 1.3rem;
+  height: 0.7rem;
+  background: #3d9b68;
+}
+
+.pixel-shield {
+  position: absolute;
+  bottom: 23%;
+  left: 41%;
+  width: 2.3rem;
+  height: 2.8rem;
+  border: 0.3rem solid #26335d;
+  background: #71a8dc;
+  clip-path: polygon(0 0, 100% 0, 100% 68%, 50% 100%, 0 68%);
+  animation: pixelShieldGlow 1.6s steps(3, end) infinite alternate;
+}
+
+.pixel-heart {
+  position: absolute;
+  width: 0.8rem;
+  height: 0.8rem;
+  background: #ef7093;
+  box-shadow: 0.4rem 0 0 #ef7093, 0.2rem 0.4rem 0 #ef7093;
+  transform: rotate(45deg);
+  animation: pixelHeartFloat 1.8s steps(4, end) infinite;
+}
+
+.pixel-heart-one { top: 24%; right: 34%; }
+.pixel-heart-two { top: 16%; right: 27%; animation-delay: 0.6s; }
+
+/* Scene messages */
+.screensaver-message-rocket,
+.screensaver-message-camp,
+.screensaver-message-rainbow,
+.screensaver-message-moon,
+.screensaver-message-dragon,
+.screensaver-message-treasure,
+.screensaver-overlay[data-scene='treasure-hunt'] .screensaver-message-patrol {
+  display: none;
+}
+
+.screensaver-overlay[data-scene='treasure-hunt'] .screensaver-message-treasure,
+.screensaver-overlay[data-scene='rocket-launch'] .screensaver-message-rocket,
+.screensaver-overlay[data-scene='helper-camp'] .screensaver-message-camp,
+.screensaver-overlay[data-scene='rainbow-bridge'] .screensaver-message-rainbow,
+.screensaver-overlay[data-scene='moon-dream'] .screensaver-message-moon,
+.screensaver-overlay[data-scene='dragon-rescue'] .screensaver-message-dragon {
+  display: inline;
+}
+
+/* Scene animation keyframes */
+@keyframes screensaverHeroWave {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-0.3rem) rotate(-4deg); }
+}
+
+@keyframes pixelRocketLaunch {
+  0%, 30% { transform: translateY(0); }
+  55% { transform: translateY(-5rem); }
+  70%, 100% { transform: translateY(-18rem); opacity: 0; }
+}
+
+@keyframes pixelFlame {
+  from { transform: scaleY(0.75) translateX(-0.1rem); }
+  to { transform: scaleY(1.2) translateX(0.15rem); }
+}
+
+@keyframes pixelSmoke {
+  0%, 25% { opacity: 0; transform: translateY(0) scale(0.6); }
+  40% { opacity: 0.8; }
+  100% { opacity: 0; transform: translateY(-8rem) translateX(2rem) scale(1.5); }
+}
+
+@keyframes screensaverCampHero {
+  from { transform: scale(0.8) translateY(0); }
+  to { transform: scale(0.8) translateY(-0.35rem); }
+}
+
+@keyframes pixelFire {
+  from { transform: scaleY(0.8) translateX(-0.15rem); }
+  to { transform: scaleY(1.1) translateX(0.2rem); }
+}
+
+@keyframes pixelHelperBounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-0.45rem); }
+}
+
+@keyframes screensaverRainbowHero {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  45% { transform: translateX(42vw) translateY(-0.3rem); }
+  55% { transform: translateX(42vw) translateY(0); }
+}
+
+@keyframes pixelRainbowGlow {
+  from { filter: brightness(0.9); }
+  to { filter: brightness(1.15); }
+}
+
+@keyframes screensaverMoonSleep {
+  from { transform: scale(0.8) translateY(0); }
+  to { transform: scale(0.8) translateY(0.2rem); }
+}
+
+@keyframes pixelMoonPulse {
+  from { filter: brightness(0.92); }
+  to { filter: brightness(1.1); }
+}
+
+@keyframes pixelDreamCloud {
+  from { transform: translateX(0); }
+  to { transform: translateX(125vw); }
+}
+
+@keyframes screensaverDragonHero {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-0.35rem) rotate(3deg); }
+}
+
+@keyframes pixelDragonHover {
+  from { transform: translateY(0) translateX(0); }
+  to { transform: translateY(-0.5rem) translateX(-0.5rem); }
+}
+
+@keyframes pixelWingFlap {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(0.55); }
+}
+
+@keyframes pixelShieldGlow {
+  from { filter: brightness(0.9); }
+  to { filter: brightness(1.25) drop-shadow(0 0 0.4rem #fff0a6); }
+}
+
+@keyframes pixelHeartFloat {
+  from { opacity: 0; transform: translateY(0) rotate(45deg) scale(0.7); }
+  35% { opacity: 1; }
+  to { opacity: 0; transform: translateY(-3rem) rotate(45deg) scale(1.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screensaver-overlay .pixel-rocket,
+  .screensaver-overlay .pixel-rocket-flame,
+  .screensaver-overlay .pixel-smoke,
+  .screensaver-overlay .pixel-fire-flame,
+  .screensaver-overlay .pixel-helper,
+  .screensaver-overlay .pixel-rainbow,
+  .screensaver-overlay .pixel-moon,
+  .screensaver-overlay .pixel-moon-cloud,
+  .screensaver-overlay .pixel-dragon,
+  .screensaver-overlay .pixel-dragon-wing,
+  .screensaver-overlay .pixel-shield,
+  .screensaver-overlay .pixel-heart,
+  .screensaver-overlay[data-scene='rocket-launch'] .pixel-hero,
+  .screensaver-overlay[data-scene='helper-camp'] .pixel-hero,
+  .screensaver-overlay[data-scene='rainbow-bridge'] .pixel-hero,
+  .screensaver-overlay[data-scene='moon-dream'] .pixel-hero,
+  .screensaver-overlay[data-scene='dragon-rescue'] .pixel-hero {
+    animation: none;
+  }
+
+  .screensaver-overlay .pixel-smoke,
+  .screensaver-overlay .pixel-heart {
+    opacity: 0.8;
+  }
+}

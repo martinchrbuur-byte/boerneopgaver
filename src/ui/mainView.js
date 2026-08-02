@@ -280,6 +280,107 @@ export function createMainView(rootElement) {
         <span class="mascot-message"></span>
       </div>
 
+      <div
+        id="screensaver-overlay"
+        class="screensaver-overlay"
+        role="status"
+        aria-live="polite"
+        aria-label="Helteskærm. Tryk eller tast for at vågne."
+        hidden
+      >
+        <div class="screensaver-scene" aria-hidden="true">
+          <div class="screensaver-sky">
+            <span class="pixel-star pixel-star-one"></span>
+            <span class="pixel-star pixel-star-two"></span>
+            <span class="pixel-star pixel-star-three"></span>
+            <span class="pixel-cloud pixel-cloud-one"></span>
+            <span class="pixel-cloud pixel-cloud-two"></span>
+          </div>
+          <div class="screensaver-hills"></div>
+          <div class="screensaver-ground">
+            <span class="pixel-bush pixel-bush-one"></span>
+            <span class="pixel-bush pixel-bush-two"></span>
+            <span class="pixel-flower pixel-flower-one"></span>
+            <span class="pixel-flower pixel-flower-two"></span>
+          </div>
+          <div class="screensaver-treasure" aria-hidden="true">
+            <span class="pixel-chest">
+              <span class="pixel-chest-lid"></span>
+              <span class="pixel-chest-lock"></span>
+            </span>
+            <span class="pixel-coin pixel-coin-one"></span>
+            <span class="pixel-coin pixel-coin-two"></span>
+            <span class="pixel-coin pixel-coin-three"></span>
+          </div>
+          <div class="screensaver-rocket-scene" aria-hidden="true">
+            <span class="pixel-rocket">
+              <span class="pixel-rocket-window"></span>
+              <span class="pixel-rocket-fin pixel-rocket-fin-one"></span>
+              <span class="pixel-rocket-fin pixel-rocket-fin-two"></span>
+              <span class="pixel-rocket-flame"></span>
+            </span>
+            <span class="pixel-smoke pixel-smoke-one"></span>
+            <span class="pixel-smoke pixel-smoke-two"></span>
+            <span class="pixel-smoke pixel-smoke-three"></span>
+          </div>
+          <div class="screensaver-camp" aria-hidden="true">
+            <span class="pixel-tent"><span class="pixel-tent-door"></span></span>
+            <span class="pixel-campfire"><span class="pixel-fire-flame"></span></span>
+            <span class="pixel-helper pixel-helper-one"></span>
+            <span class="pixel-helper pixel-helper-two"></span>
+            <span class="pixel-helper pixel-helper-three"></span>
+          </div>
+          <div class="screensaver-rainbow" aria-hidden="true">
+            <span class="pixel-rainbow"></span>
+            <span class="pixel-bridge"></span>
+            <span class="pixel-rainbow-cloud pixel-rainbow-cloud-one"></span>
+            <span class="pixel-rainbow-cloud pixel-rainbow-cloud-two"></span>
+          </div>
+          <div class="screensaver-moon" aria-hidden="true">
+            <span class="pixel-moon">
+              <span class="pixel-moon-eye pixel-moon-eye-one"></span>
+              <span class="pixel-moon-eye pixel-moon-eye-two"></span>
+              <span class="pixel-moon-smile"></span>
+            </span>
+            <span class="pixel-moon-cloud pixel-moon-cloud-one"></span>
+            <span class="pixel-moon-cloud pixel-moon-cloud-two"></span>
+          </div>
+          <div class="screensaver-dragon-scene" aria-hidden="true">
+            <span class="pixel-dragon">
+              <span class="pixel-dragon-wing pixel-dragon-wing-one"></span>
+              <span class="pixel-dragon-wing pixel-dragon-wing-two"></span>
+              <span class="pixel-dragon-eye"></span>
+              <span class="pixel-dragon-snout"></span>
+            </span>
+            <span class="pixel-shield"></span>
+            <span class="pixel-heart pixel-heart-one"></span>
+            <span class="pixel-heart pixel-heart-two"></span>
+          </div>
+          <div class="pixel-hero" aria-hidden="true">
+            <span class="pixel-hero-shadow"></span>
+            <span class="pixel-hero-cape"></span>
+            <span class="pixel-hero-body"></span>
+            <span class="pixel-hero-head"></span>
+            <span class="pixel-hero-hair"></span>
+            <span class="pixel-hero-eye pixel-hero-eye-one"></span>
+            <span class="pixel-hero-eye pixel-hero-eye-two"></span>
+            <span class="pixel-hero-arm"></span>
+            <span class="pixel-hero-leg pixel-hero-leg-one"></span>
+            <span class="pixel-hero-leg pixel-hero-leg-two"></span>
+          </div>
+          <div class="screensaver-pixel-message">
+            <span class="screensaver-message-patrol">Helten er på patrulje!</span>
+            <span class="screensaver-message-treasure">Skatten er fundet!</span>
+            <span class="screensaver-message-rocket">Helten flyver mod stjernerne!</span>
+            <span class="screensaver-message-camp">Heltehygge ved lejrbålet!</span>
+            <span class="screensaver-message-rainbow">Regnbuen viser vej!</span>
+            <span class="screensaver-message-moon">Sov godt, lille helt!</span>
+            <span class="screensaver-message-dragon">En ven er reddet!</span>
+          </div>
+        </div>
+        <button id="screensaver-wake" class="screensaver-wake" type="button">Tryk for at vågne</button>
+      </div>
+
       <button id="mute-toggle" type="button" class="mute-toggle-btn" aria-label="Slå lyd fra" title="Lyd til/fra">
       </button>
 
@@ -344,6 +445,8 @@ export function createMainView(rootElement) {
     choreUnlimitedCapInput: rootElement.querySelector('#chore-unlimited-cap-input'),
     collabInbox: rootElement.querySelector('#collab-inbox'),
     mascotOverlay: rootElement.querySelector('#mascot-overlay'),
+    screensaverOverlay: rootElement.querySelector('#screensaver-overlay'),
+    screensaverWake: rootElement.querySelector('#screensaver-wake'),
     muteToggle: rootElement.querySelector('#mute-toggle'),
     statusText: rootElement.querySelector('#status-text'),
     moneySliderGroup: rootElement.querySelector('#money-slider-group'),

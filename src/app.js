@@ -27,6 +27,8 @@ import { unlockAudio, toggleMute, isMuted, playSound } from './shared/soundManag
 import { renderIcon } from './shared/iconRegistry.js';
 import { renderChecklistParentPanel, renderChecklistFamilyView } from './ui/checklistView.js';
 import { renderRouletteView } from './ui/rouletteView.js';
+import { createScreensaverView } from './ui/screensaverView.js';
+import { createScreensaverService } from './services/screensaverService.js';
 import { authErrorMessage, resolveInitialAuthPage, startAuthFlow } from './modules/authFlow.js';
 import { createAppState } from './state/appState.js';
 import { renderRefreshStatus } from './ui/refreshView.js';
@@ -309,6 +311,13 @@ async function init() {
   let editingChoreId = null;
   let editDraft = null;
   let latestChoreState = null;
+  const screensaverView = createScreensaverView(viewRefs.screensaverOverlay);
+  const screensaverService = createScreensaverService({
+    onActivate: scene => screensaverView.show(scene),
+    onDismiss: () => screensaverView.hide()
+  });
+
+  cleanupTasks.push(() => screensaverService.dispose());
 
   function clearEditState() {
     editingChoreId = null;
@@ -346,6 +355,7 @@ async function init() {
     }
 
     const isKidRole = activeRole !== 'parent';
+    screensaverService.setEnabled(isKidRole);
     document.documentElement.classList.remove('kid-no-scroll');
     document.body.classList.remove('kid-no-scroll');
 
@@ -478,6 +488,20 @@ async function init() {
   seedStarterChecklists(checklistService);
   persistActiveRole();
   refresh();
+
+  const activityEvents = ['pointerdown', 'keydown', 'touchstart', 'input', 'click'];
+  const onActivity = () => screensaverService.reset();
+  const activityOptions = { capture: true, passive: true };
+  activityEvents.forEach(eventName => {
+    document.addEventListener(eventName, onActivity, activityOptions);
+  });
+  window.addEventListener('scroll', onActivity, activityOptions);
+  cleanupTasks.push(() => {
+    activityEvents.forEach(eventName => {
+      document.removeEventListener(eventName, onActivity, activityOptions);
+    });
+    window.removeEventListener('scroll', onActivity, activityOptions);
+  });
 
   if (isSupabaseConfigured()) {
     lastSyncStateSnapshot = createSyncStateSnapshot(storageService.getSyncState());
