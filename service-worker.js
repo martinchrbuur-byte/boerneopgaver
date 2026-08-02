@@ -1,4 +1,4 @@
-const CACHE_NAME = 'opgavehelte-app-shell-v3';
+const CACHE_NAME = 'opgavehelte-app-shell-v4';
 const APP_SHELL = [
   './',
   './index.html',
@@ -99,20 +99,18 @@ async function networkFirstNavigation(request) {
   }
 }
 
-async function staleWhileRevalidate(request) {
+async function networkFirstAsset(request) {
   const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(request);
 
-  const networkPromise = fetch(request)
-    .then(async response => {
-      if (isSuccessful(response)) {
-        await cache.put(request, response.clone());
-      }
-      return response;
-    })
-    .catch(() => null);
-
-  return cached || networkPromise || Response.error();
+  try {
+    const response = await fetch(request);
+    if (isSuccessful(response)) {
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    return (await cache.match(request)) || Response.error();
+  }
 }
 
 self.addEventListener('install', event => {
@@ -141,6 +139,6 @@ self.addEventListener('fetch', event => {
   }
 
   if (isStaticAssetRequest(request, url)) {
-    event.respondWith(staleWhileRevalidate(request));
+    event.respondWith(networkFirstAsset(request));
   }
 });
