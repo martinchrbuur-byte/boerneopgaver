@@ -1,6 +1,7 @@
 import { SCREENSAVER_SCENES } from '../shared/screensaverScenes.js';
 
 export const SCREENSAVER_TIMEOUT_MS = 60_000;
+export const SCREENSAVER_ROTATION_MS = 90_000;
 export { SCREENSAVER_SCENES };
 
 function defaultScenePicker(scenes) {
@@ -9,6 +10,7 @@ function defaultScenePicker(scenes) {
 
 export function createScreensaverService({
   timeoutMs = SCREENSAVER_TIMEOUT_MS,
+  rotationMs = SCREENSAVER_ROTATION_MS,
   scenes = SCREENSAVER_SCENES,
   onActivate = () => {},
   onDismiss = () => {},
@@ -19,9 +21,13 @@ export function createScreensaverService({
   if (!Number.isFinite(timeoutMs) || timeoutMs < 0) {
     throw new Error('Screensaver timeout must be a non-negative number.');
   }
+  if (!Number.isFinite(rotationMs) || rotationMs < 0) {
+    throw new Error('Screensaver rotation interval must be a non-negative number.');
+  }
 
   const availableScenes = Array.isArray(scenes) && scenes.length > 0 ? [...scenes] : ['hero-patrol'];
   let timeoutId = null;
+  let rotationTimeoutId = null;
   let enabled = false;
   let active = false;
   let disposed = false;
@@ -33,6 +39,32 @@ export function createScreensaverService({
     }
   }
 
+  function clearRotationTimer() {
+    if (rotationTimeoutId !== null) {
+      clearTimeoutFn(rotationTimeoutId);
+      rotationTimeoutId = null;
+    }
+  }
+
+  function rotate() {
+    if (disposed || !enabled || !active) {
+      return;
+    }
+
+    onActivate(pickScene(availableScenes));
+    scheduleRotation();
+  }
+
+  function scheduleRotation() {
+    clearRotationTimer();
+    if (disposed || !enabled || !active) {
+      return;
+    }
+
+    rotationTimeoutId = setTimeoutFn(rotate, rotationMs);
+    rotationTimeoutId?.unref?.();
+  }
+
   function activate() {
     if (disposed || !enabled || active) {
       return;
@@ -41,6 +73,7 @@ export function createScreensaverService({
     active = true;
     timeoutId = null;
     onActivate(pickScene(availableScenes));
+    scheduleRotation();
   }
 
   function schedule() {
@@ -59,6 +92,7 @@ export function createScreensaverService({
     }
 
     active = false;
+    clearRotationTimer();
     onDismiss();
     return true;
   }

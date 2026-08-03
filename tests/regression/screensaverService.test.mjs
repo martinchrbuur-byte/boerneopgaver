@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   createScreensaverService,
   SCREENSAVER_SCENES,
+  SCREENSAVER_ROTATION_MS,
   SCREENSAVER_TIMEOUT_MS
 } from '../../src/services/screensaverService.js';
 
@@ -65,6 +66,29 @@ test('screensaver waits exactly one minute before activating', () => {
   assert.equal(activations.length, 1);
   assert.ok(SCREENSAVER_SCENES.includes(activations[0]));
   assert.equal(service.isActive(), true);
+});
+
+test('active screensaver rotates scenes every 90 seconds', () => {
+  const scheduler = createFakeScheduler();
+  const activations = [];
+  const scenes = ['hero-patrol', 'treasure-hunt'];
+  let sceneIndex = 0;
+  const service = createScreensaverService({
+    scenes,
+    pickScene: () => scenes[sceneIndex++ % scenes.length],
+    onActivate: scene => activations.push(scene),
+    setTimeoutFn: scheduler.setTimeout,
+    clearTimeoutFn: scheduler.clearTimeout
+  });
+
+  service.setEnabled(true);
+  scheduler.fireNext();
+  assert.deepEqual(activations, ['hero-patrol']);
+  assert.equal(scheduler.delays.at(-1), SCREENSAVER_ROTATION_MS);
+
+  scheduler.fireNext();
+  assert.deepEqual(activations, ['hero-patrol', 'treasure-hunt']);
+  assert.equal(scheduler.delays.at(-1), SCREENSAVER_ROTATION_MS);
 });
 
 test('activity resets the timer and dismisses an active screensaver', () => {
