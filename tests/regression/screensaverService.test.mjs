@@ -36,15 +36,13 @@ function createFakeScheduler() {
   };
 }
 
-test('screensaver registry contains seven cute hero scenes', () => {
+test('screensaver registry contains the five illustrated adventure scenes', () => {
   assert.deepEqual(SCREENSAVER_SCENES, [
-    'hero-patrol',
-    'treasure-hunt',
-    'rocket-launch',
-    'helper-camp',
-    'rainbow-bridge',
-    'moon-dream',
-    'dragon-rescue'
+    'cave-quest',
+    'wizard-dragon',
+    'slime-forest',
+    'monster-friend',
+    'dragon-boat'
   ]);
 });
 

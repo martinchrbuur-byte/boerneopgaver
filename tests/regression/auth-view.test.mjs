@@ -93,6 +93,29 @@ test('main view renders hidden account controls for authenticated mode', () => {
   }
 });
 
+test('main view renders the five illustrated screensaver scenes', () => {
+  const env = setupDom();
+
+  try {
+    const refs = createMainView(env.root);
+    const sceneNames = [
+      'scene-cave-quest',
+      'scene-wizard-dragon',
+      'scene-slime-forest',
+      'scene-monster-friend',
+      'scene-dragon-boat'
+    ];
+
+    assert.equal(refs.screensaverOverlay.querySelectorAll('.scene-art').length, 5);
+    sceneNames.forEach(sceneName => {
+      assert.ok(refs.screensaverOverlay.querySelector(`.${sceneName}`));
+    });
+    assert.equal(refs.screensaverOverlay.querySelectorAll('.screensaver-pixel-message > span').length, 5);
+  } finally {
+    env.restore();
+  }
+});
+
 test('main view stacks recent completions below chores and marks period tab as parent-only', () => {
   const env = setupDom();
 

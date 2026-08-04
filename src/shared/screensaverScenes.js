@@ -1,9 +1,7 @@
 export const SCREENSAVER_SCENES = [
-  'hero-patrol',
-  'treasure-hunt',
-  'rocket-launch',
-  'helper-camp',
-  'rainbow-bridge',
-  'moon-dream',
-  'dragon-rescue'
+  'cave-quest',
+  'wizard-dragon',
+  'slime-forest',
+  'monster-friend',
+  'dragon-boat'
 ];

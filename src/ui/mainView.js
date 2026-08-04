@@ -289,93 +289,282 @@ export function createMainView(rootElement) {
         hidden
       >
         <div class="screensaver-scene" aria-hidden="true">
-          <div class="screensaver-sky">
-            <span class="pixel-star pixel-star-one"></span>
-            <span class="pixel-star pixel-star-two"></span>
-            <span class="pixel-star pixel-star-three"></span>
-            <span class="pixel-cloud pixel-cloud-one"></span>
-            <span class="pixel-cloud pixel-cloud-two"></span>
+          <div class="scene-art scene-cave-quest">
+            <svg class="scene-canvas" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-label="Ridderen finder en grøn drage og en skat i en hule">
+              <defs>
+                <linearGradient id="cave-background" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#171a38" />
+                  <stop offset="0.62" stop-color="#49305b" />
+                  <stop offset="0.63" stop-color="#8a564b" />
+                  <stop offset="1" stop-color="#e1a05b" />
+                </linearGradient>
+                <linearGradient id="cave-crystal" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#f0c4ff" />
+                  <stop offset="0.5" stop-color="#a761dc" />
+                  <stop offset="1" stop-color="#5e73ce" />
+                </linearGradient>
+                <linearGradient id="cave-dragon" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#b2ee36" />
+                  <stop offset="1" stop-color="#4abf39" />
+                </linearGradient>
+                <filter id="cave-glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="8" result="blur" />
+                  <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                </filter>
+              </defs>
+              <rect width="1200" height="700" fill="url(#cave-background)" />
+              <path class="svg-cave-ceiling" d="M0 0H1200V155L1140 132 1085 190 1015 140 940 215 865 145 790 198 715 124 650 180 570 115 505 175 425 126 350 204 275 146 195 190 110 120 0 175Z" fill="#262043" />
+              <path d="M0 540C160 492 300 520 440 492S720 478 860 515s240 12 340-25V700H0Z" fill="#b77450" opacity=".75" />
+              <path d="M0 610C190 575 350 620 515 590s340-25 500 5 100 10 185-6V700H0Z" fill="#e1a05b" />
+              <g class="svg-cave-crystal" filter="url(#cave-glow)">
+                <path d="M116 548 148 370 190 548Z" fill="url(#cave-crystal)" stroke="#27234a" stroke-width="10" />
+                <path d="M170 550 200 416 234 550Z" fill="#6db8ed" stroke="#27234a" stroke-width="10" />
+                <path d="M1040 540 1070 355 1115 540Z" fill="url(#cave-crystal)" stroke="#27234a" stroke-width="10" />
+              </g>
+              <g class="svg-cave-bat" fill="#17152e">
+                <path d="M510 206 542 226 558 205 573 226 608 208 588 252 558 239 528 252Z" />
+                <path d="M790 280 816 294 828 276 842 294 870 280 851 317 828 308 804 318Z" opacity=".7" />
+              </g>
+              <g class="svg-chest" transform="translate(875 475)">
+                <path d="M0 48Q78 0 156 48V116H0Z" fill="#f3b741" stroke="#4b2b3b" stroke-width="12" />
+                <rect y="48" width="156" height="78" rx="8" fill="#cf7538" stroke="#4b2b3b" stroke-width="12" />
+                <rect x="68" y="75" width="22" height="31" rx="4" fill="#ffef9d" stroke="#4b2b3b" stroke-width="7" />
+                <circle class="svg-chest-spark" cx="30" cy="18" r="9" fill="#fff3a8" />
+                <circle class="svg-chest-spark" cx="126" cy="6" r="7" fill="#fff3a8" />
+              </g>
+              <g class="svg-knight" transform="translate(205 280)">
+                <g class="svg-knight-motion">
+                  <ellipse class="svg-shadow" cx="85" cy="360" rx="92" ry="18" />
+                  <path d="M32 160 6 208 30 332 95 300 120 176Z" fill="#e44355" stroke="#252448" stroke-width="11" />
+                  <rect x="43" y="150" width="82" height="130" rx="14" fill="#a9c9db" stroke="#252448" stroke-width="11" />
+                  <path d="M43 197H125M72 155V276M98 155V276" fill="none" stroke="#6a8ba8" stroke-width="10" />
+                  <rect x="38" y="111" width="96" height="57" rx="20" fill="#dcebf1" stroke="#252448" stroke-width="11" />
+                  <path d="M42 142H132M64 112V166M91 112V166M116 112V166" fill="none" stroke="#7897ae" stroke-width="9" />
+                  <path d="M75 99 92 61 113 101Z" fill="#ef4553" stroke="#252448" stroke-width="9" />
+                  <circle cx="68" cy="195" r="8" fill="#252448" /><circle cx="102" cy="195" r="8" fill="#252448" />
+                  <path d="M118 193 172 164" fill="none" stroke="#ffd18b" stroke-width="25" stroke-linecap="round" />
+                  <path d="M165 170 224 66" fill="none" stroke="#f8fbff" stroke-width="13" stroke-linecap="round" />
+                  <path d="M149 193 183 205" fill="none" stroke="#b97a35" stroke-width="13" stroke-linecap="round" />
+                  <path d="M16 205 2 275 57 302 76 241Z" fill="#ef8d3b" stroke="#252448" stroke-width="11" />
+                  <path d="M58 280 51 350M105 278 119 350" fill="none" stroke="#252448" stroke-width="25" stroke-linecap="round" />
+                </g>
+              </g>
+              <g class="svg-dragon svg-dragon-green" transform="translate(590 300)">
+                <g class="svg-dragon-motion">
+                  <ellipse class="svg-shadow" cx="153" cy="270" rx="128" ry="17" />
+                  <path d="M75 194C20 206 4 252 52 259L120 235" fill="none" stroke="#2d7441" stroke-width="35" stroke-linecap="round" />
+                  <ellipse cx="153" cy="174" rx="119" ry="72" fill="url(#cave-dragon)" stroke="#252448" stroke-width="12" />
+                  <path class="svg-dragon-wing svg-wing-left" d="M90 129 48 30 124 79 162 20 181 137Z" fill="#9be734" stroke="#252448" stroke-width="12" />
+                  <path class="svg-dragon-wing svg-wing-right" d="M160 130 196 28 226 88 274 55 246 159Z" fill="#87d72e" stroke="#252448" stroke-width="12" />
+                  <circle cx="245" cy="139" r="58" fill="#76cf2d" stroke="#252448" stroke-width="12" />
+                  <path d="M268 142 329 161 273 179Z" fill="#4aa93a" stroke="#252448" stroke-width="10" />
+                  <path d="M214 91 227 50 248 94M255 90 278 59 279 106" fill="#ffe173" stroke="#252448" stroke-width="9" />
+                  <circle cx="247" cy="130" r="10" fill="#252448" /><circle cx="249" cy="126" r="3" fill="#fff" />
+                  <circle cx="294" cy="174" r="14" fill="#f5899b" opacity=".8" />
+                  <path d="M88 222 82 265M177 230 181 268" fill="none" stroke="#288e3b" stroke-width="25" stroke-linecap="round" />
+                  <path d="M117 165 121 195M208 166 212 195" fill="none" stroke="#d6f36f" stroke-width="15" stroke-linecap="round" opacity=".85" />
+                </g>
+              </g>
+            </svg>
           </div>
-          <div class="screensaver-hills"></div>
-          <div class="screensaver-ground">
-            <span class="pixel-bush pixel-bush-one"></span>
-            <span class="pixel-bush pixel-bush-two"></span>
-            <span class="pixel-flower pixel-flower-one"></span>
-            <span class="pixel-flower pixel-flower-two"></span>
+
+          <div class="scene-art scene-wizard-dragon">
+            <svg class="scene-canvas" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-label="En troldmand møder en rød drage under en blå himmel">
+              <defs>
+                <linearGradient id="wizard-background" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#28aee9" /><stop offset=".65" stop-color="#c5f4ef" /><stop offset=".66" stop-color="#6bbb4b" /><stop offset="1" stop-color="#f3c94c" />
+                </linearGradient>
+                <linearGradient id="wizard-dragon" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#ff4b2f" /><stop offset="1" stop-color="#e72730" />
+                </linearGradient>
+                <radialGradient id="wizard-fireball"><stop offset="0" stop-color="#fff8a4" /><stop offset=".5" stop-color="#ffe022" /><stop offset="1" stop-color="#ff5337" /></radialGradient>
+              </defs>
+              <rect width="1200" height="700" fill="url(#wizard-background)" />
+              <g class="svg-cloud svg-cloud-left" fill="#fff" opacity=".9"><path d="M70 145h195c0-39-27-60-62-60-18-40-82-38-98 5-41-7-65 22-65 55Z" /></g>
+              <g class="svg-cloud svg-cloud-right" fill="#fff" opacity=".82"><path d="M780 120h180c0-32-27-52-56-48-25-35-75-22-83 15-29-3-49 14-49 33Z" /></g>
+              <path d="M0 490 180 280 310 490 470 235 670 490 825 290 1035 490 1200 275V700H0Z" fill="#7aa4cf" opacity=".8" />
+              <path d="M0 555 175 410 310 555 470 360 655 555 830 405 1030 555 1200 390V700H0Z" fill="#3b8dbd" opacity=".64" />
+              <g class="svg-castle" transform="translate(83 265)">
+                <path d="M0 220V50H55V0H112V50H170V220Z" fill="#f4dd9b" stroke="#3d3868" stroke-width="11" />
+                <path d="M8 50V0H55V50M112 50V0H170V50" fill="#8066a9" stroke="#3d3868" stroke-width="11" />
+                <path d="M72 220V148Q85 120 98 148V220Z" fill="#76506d" stroke="#3d3868" stroke-width="9" />
+                <rect x="26" y="100" width="22" height="35" fill="#77cce2" stroke="#3d3868" stroke-width="7" /><rect x="127" y="100" width="22" height="35" fill="#77cce2" stroke="#3d3868" stroke-width="7" />
+              </g>
+              <path d="M0 592Q200 545 395 585T790 580 1200 558V700H0Z" fill="#f4c84e" />
+              <g class="svg-wizard" transform="translate(245 300)">
+                <g class="svg-wizard-motion">
+                  <ellipse class="svg-shadow" cx="94" cy="316" rx="95" ry="17" />
+                  <path d="M32 170 13 315H177L152 170Z" fill="#6f4eaf" stroke="#302650" stroke-width="12" />
+                  <path d="M61 176 107 201 145 177" fill="none" stroke="#a182d7" stroke-width="15" />
+                  <circle cx="92" cy="141" r="49" fill="#ffd18c" stroke="#302650" stroke-width="11" />
+                  <path d="M26 119 70 24 172 118Z" fill="#6545a4" stroke="#302650" stroke-width="12" />
+                  <path d="M33 107Q98 83 165 108L173 132Q92 113 25 132Z" fill="#f4c449" stroke="#302650" stroke-width="9" />
+                  <circle cx="78" cy="145" r="7" fill="#302650" /><circle cx="110" cy="145" r="7" fill="#302650" />
+                  <path d="M133 181 194 158" stroke="#ffd18c" stroke-width="24" stroke-linecap="round" />
+                  <path d="M173 310 215 91" stroke="#8c522e" stroke-width="12" stroke-linecap="round" />
+                  <circle class="svg-staff-orb" cx="215" cy="79" r="22" fill="#ffe030" stroke="#302650" stroke-width="9" />
+                </g>
+              </g>
+              <g class="svg-fireball" transform="translate(560 300)"><circle r="36" fill="url(#wizard-fireball)" stroke="#ef342e" stroke-width="12" /><path d="M-55 14-88 28M50-4l34-20M-30-47-43-72" stroke="#ffdc39" stroke-width="14" stroke-linecap="round" /></g>
+              <g class="svg-dragon svg-dragon-red" transform="translate(675 135)">
+                <g class="svg-dragon-motion">
+                  <path d="M75 197C18 215 15 255 64 263L127 232" fill="none" stroke="#a92c34" stroke-width="34" stroke-linecap="round" />
+                  <ellipse cx="164" cy="172" rx="126" ry="76" fill="url(#wizard-dragon)" stroke="#252448" stroke-width="12" />
+                  <path class="svg-dragon-wing svg-wing-left" d="M88 130 44 26 128 78 169 17 183 144Z" fill="#f58b31" stroke="#252448" stroke-width="12" />
+                  <path class="svg-dragon-wing svg-wing-right" d="M172 131 218 32 244 91 298 58 254 164Z" fill="#f58b31" stroke="#252448" stroke-width="12" />
+                  <circle cx="260" cy="139" r="60" fill="#f03d2d" stroke="#252448" stroke-width="12" />
+                  <path d="M281 146 340 165 281 184Z" fill="#c72e31" stroke="#252448" stroke-width="10" />
+                  <path d="M230 90 244 47 266 94M272 90 296 58 296 106" fill="#ffd34b" stroke="#252448" stroke-width="9" />
+                  <circle cx="262" cy="131" r="10" fill="#252448" /><circle cx="265" cy="127" r="3" fill="#fff" />
+                  <circle cx="309" cy="177" r="14" fill="#ff8990" opacity=".8" />
+                  <path d="M103 225 100 264M192 229 196 267" stroke="#ad2936" stroke-width="25" stroke-linecap="round" />
+                  <path class="svg-flame" d="M337 169Q390 141 370 181 394 175 352 210Z" fill="#ffe033" stroke="#ef342e" stroke-width="8" />
+                </g>
+              </g>
+            </svg>
           </div>
-          <div class="screensaver-treasure" aria-hidden="true">
-            <span class="pixel-chest">
-              <span class="pixel-chest-lid"></span>
-              <span class="pixel-chest-lock"></span>
-            </span>
-            <span class="pixel-coin pixel-coin-one"></span>
-            <span class="pixel-coin pixel-coin-two"></span>
-            <span class="pixel-coin pixel-coin-three"></span>
+
+          <div class="scene-art scene-slime-forest">
+            <svg class="scene-canvas" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-label="En bueskytte sigter på en blå slime i en grøn skov">
+              <defs>
+                <linearGradient id="slime-background" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#43bce9" /><stop offset=".62" stop-color="#c5f4ee" /><stop offset=".63" stop-color="#7bca49" /><stop offset="1" stop-color="#c7e54c" /></linearGradient>
+                <linearGradient id="slime-body" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5de1f2" /><stop offset=".55" stop-color="#18aee2" /><stop offset="1" stop-color="#177aca" /></linearGradient>
+              </defs>
+              <rect width="1200" height="700" fill="url(#slime-background)" />
+              <g class="svg-forest-tree svg-tree-left"><rect x="118" y="220" width="64" height="320" rx="18" fill="#87502d" stroke="#2d4b4d" stroke-width="11" /><path d="M20 290Q130 112 279 286L231 370H65Z" fill="#67be36" stroke="#2d4b4d" stroke-width="12" /><path d="M48 233Q126 112 221 230" fill="none" stroke="#91d743" stroke-width="32" stroke-linecap="round" /></g>
+              <g class="svg-forest-tree svg-tree-right"><rect x="1012" y="226" width="64" height="310" rx="18" fill="#87502d" stroke="#2d4b4d" stroke-width="11" /><path d="M913 294Q1021 104 1177 286L1125 370H955Z" fill="#5aac37" stroke="#2d4b4d" stroke-width="12" /><path d="M941 233Q1020 112 1119 230" fill="none" stroke="#8bd443" stroke-width="32" stroke-linecap="round" /></g>
+              <path d="M0 540Q180 436 355 510T705 488 1200 450V700H0Z" fill="#4aa95b" />
+              <path d="M0 600Q170 530 337 585T704 564 1200 520V700H0Z" fill="#a9d94b" />
+              <g class="svg-archer" transform="translate(190 300)">
+                <g class="svg-archer-motion">
+                  <ellipse class="svg-shadow" cx="108" cy="318" rx="95" ry="16" />
+                  <path d="M44 174 30 318H171L157 174Z" fill="#549d45" stroke="#2d3155" stroke-width="12" />
+                  <path d="M55 205 106 231 146 204" fill="none" stroke="#7dc35b" stroke-width="14" />
+                  <path d="M76 177 126 177 154 125 45 125Z" fill="#e59b35" stroke="#2d3155" stroke-width="11" />
+                  <ellipse cx="102" cy="133" rx="47" ry="42" fill="#ffd18c" stroke="#2d3155" stroke-width="10" />
+                  <path d="M35 112Q104 72 177 112L175 139Q98 118 34 140Z" fill="#f3bd38" stroke="#2d3155" stroke-width="11" />
+                  <path d="M78 76 109 29 141 79" fill="#f3bd38" stroke="#2d3155" stroke-width="10" />
+                  <circle cx="92" cy="140" r="7" fill="#2d3155" /><circle cx="124" cy="140" r="7" fill="#2d3155" />
+                  <path d="M48 191 9 229M152 193 222 167" stroke="#ffd18c" stroke-width="22" stroke-linecap="round" />
+                  <path d="M184 110Q245 187 184 263" fill="none" stroke="#9a542c" stroke-width="14" />
+                  <path d="M184 110Q184 187 184 263" fill="none" stroke="#fff3bc" stroke-width="6" />
+                  <path class="svg-arrow" d="M121 189 273 155M273 155 246 144M273 155 253 174" fill="none" stroke="#fff3bc" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M66 305 61 355M124 305 137 355" stroke="#2d3155" stroke-width="24" stroke-linecap="round" />
+                </g>
+              </g>
+              <g class="svg-slime" transform="translate(700 350)">
+                <g class="svg-slime-motion">
+                  <ellipse class="svg-shadow" cx="126" cy="242" rx="140" ry="18" />
+                  <path d="M0 210Q0 65 126 49T252 210Q246 246 126 249T0 210Z" fill="url(#slime-body)" stroke="#24335e" stroke-width="12" />
+                  <path d="M23 113Q61 62 112 66" fill="none" stroke="#b7f8ff" stroke-width="17" stroke-linecap="round" opacity=".6" />
+                  <ellipse cx="85" cy="159" rx="13" ry="18" fill="#24335e" /><ellipse cx="167" cy="159" rx="13" ry="18" fill="#24335e" />
+                  <ellipse cx="54" cy="203" rx="24" ry="11" fill="#f08fa5" opacity=".82" /><ellipse cx="198" cy="203" rx="24" ry="11" fill="#f08fa5" opacity=".82" />
+                  <path d="M61 42 77 0 117 34 137 0 168 35 202 6 192 62Z" fill="#ffd83f" stroke="#24335e" stroke-width="11" />
+                  <path class="svg-slime-glint" d="M222 89 232 109M233 99 213 99" stroke="#fff" stroke-width="7" stroke-linecap="round" />
+                </g>
+              </g>
+            </svg>
           </div>
-          <div class="screensaver-rocket-scene" aria-hidden="true">
-            <span class="pixel-rocket">
-              <span class="pixel-rocket-window"></span>
-              <span class="pixel-rocket-fin pixel-rocket-fin-one"></span>
-              <span class="pixel-rocket-fin pixel-rocket-fin-two"></span>
-              <span class="pixel-rocket-flame"></span>
-            </span>
-            <span class="pixel-smoke pixel-smoke-one"></span>
-            <span class="pixel-smoke pixel-smoke-two"></span>
-            <span class="pixel-smoke pixel-smoke-three"></span>
+
+          <div class="scene-art scene-monster-friend">
+            <svg class="scene-canvas" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-label="Et barn bliver venner med et lilla monster på en blomstermark">
+              <defs>
+                <linearGradient id="friend-background" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4bbbe7" /><stop offset=".64" stop-color="#c9f3ef" /><stop offset=".65" stop-color="#7bc652" /><stop offset="1" stop-color="#d6ea59" /></linearGradient>
+                <linearGradient id="friend-monster" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a36ed0" /><stop offset="1" stop-color="#7048ae" /></linearGradient>
+              </defs>
+              <rect width="1200" height="700" fill="url(#friend-background)" />
+              <g class="svg-cloud svg-cloud-left" fill="#fff" opacity=".86"><path d="M95 137h183c0-35-26-56-56-52-23-39-80-24-85 14-27-5-49 14-42 38Z" /></g>
+              <g class="svg-cloud svg-cloud-right" fill="#fff" opacity=".76"><path d="M857 185h166c0-31-22-48-48-45-20-34-69-22-76 12-26-4-45 13-42 33Z" /></g>
+              <path d="M0 535Q180 423 365 507T724 484 1200 447V700H0Z" fill="#55b953" />
+              <path d="M0 604Q171 529 340 588T698 565 1200 520V700H0Z" fill="#b2dc4b" />
+              <g class="svg-flower svg-flower-one" transform="translate(125 532)"><path d="M14 0v74" stroke="#3d9d4a" stroke-width="10" /><circle cx="14" cy="0" r="17" fill="#ffec70" /><circle cx="-7" cy="-3" r="14" fill="#f36a92" /><circle cx="35" cy="-3" r="14" fill="#f36a92" /></g>
+              <g class="svg-flower svg-flower-two" transform="translate(1080 520)"><path d="M14 0v74" stroke="#3d9d4a" stroke-width="10" /><circle cx="14" cy="0" r="17" fill="#ffec70" /><circle cx="-7" cy="-3" r="14" fill="#f36a92" /><circle cx="35" cy="-3" r="14" fill="#f36a92" /></g>
+              <g class="svg-girl" transform="translate(245 290)">
+                <g class="svg-girl-motion">
+                  <ellipse class="svg-shadow" cx="105" cy="328" rx="94" ry="16" />
+                  <path d="M38 183 23 328H186L168 183Z" fill="#ee4e7d" stroke="#2d2d57" stroke-width="12" />
+                  <path d="M68 191 113 216 153 191" fill="none" stroke="#ff7d99" stroke-width="16" />
+                  <path d="M53 157Q25 111 74 73 117 40 164 76 203 111 172 161L157 210H56Z" fill="#f4b93a" stroke="#2d2d57" stroke-width="12" />
+                  <ellipse cx="109" cy="139" rx="47" ry="43" fill="#ffd18c" stroke="#2d2d57" stroke-width="10" />
+                  <circle cx="94" cy="145" r="7" fill="#2d2d57" /><circle cx="126" cy="145" r="7" fill="#2d2d57" />
+                  <path d="M53 205 9 238M163 204 218 170" stroke="#ffd18c" stroke-width="22" stroke-linecap="round" />
+                  <path d="M73 314 68 365M139 314 152 365" stroke="#2d2d57" stroke-width="24" stroke-linecap="round" />
+                </g>
+              </g>
+              <g class="svg-monster" transform="translate(660 290)">
+                <g class="svg-monster-motion">
+                  <ellipse class="svg-shadow" cx="143" cy="335" rx="146" ry="18" />
+                  <path d="M14 197Q13 81 143 74T273 197V291Q264 338 143 340T14 291Z" fill="url(#friend-monster)" stroke="#302450" stroke-width="12" />
+                  <path d="M60 83 70 12 115 71M174 72 224 12 224 93" fill="#f7d474" stroke="#302450" stroke-width="12" stroke-linejoin="round" />
+                  <path d="M18 226 0 272 49 297M268 226 287 272 240 298" fill="none" stroke="#8050b8" stroke-width="34" stroke-linecap="round" />
+                  <ellipse cx="98" cy="193" rx="15" ry="20" fill="#302450" /><ellipse cx="189" cy="193" rx="15" ry="20" fill="#302450" />
+                  <ellipse cx="144" cy="250" rx="31" ry="12" fill="#ef82a2" opacity=".9" />
+                  <path class="svg-monster-tuft" d="M86 314Q143 349 201 314" fill="none" stroke="#bd8ce1" stroke-width="12" stroke-linecap="round" />
+                </g>
+              </g>
+              <g class="svg-hearts" fill="#f04979" stroke="#7a3c74" stroke-width="6"><path d="M539 225C514 194 459 224 478 269L539 328 600 269C619 224 564 194 539 225Z" /><path d="M646 145C628 123 589 145 603 178L646 220 689 178C703 145 664 123 646 145Z" opacity=".82" /></g>
+            </svg>
           </div>
-          <div class="screensaver-camp" aria-hidden="true">
-            <span class="pixel-tent"><span class="pixel-tent-door"></span></span>
-            <span class="pixel-campfire"><span class="pixel-fire-flame"></span></span>
-            <span class="pixel-helper pixel-helper-one"></span>
-            <span class="pixel-helper pixel-helper-two"></span>
-            <span class="pixel-helper pixel-helper-three"></span>
+
+          <div class="scene-art scene-dragon-boat">
+            <svg class="scene-canvas" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-label="En ridder sejler med en orange drage på havet">
+              <defs>
+                <linearGradient id="boat-background" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#40b9e9" /><stop offset=".58" stop-color="#d0f4ef" /><stop offset=".59" stop-color="#39b5da" /><stop offset="1" stop-color="#147aa9" /></linearGradient>
+                <linearGradient id="boat-dragon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a2e" /><stop offset="1" stop-color="#ed5725" /></linearGradient>
+              </defs>
+              <rect width="1200" height="700" fill="url(#boat-background)" />
+              <g class="svg-cloud svg-cloud-left" fill="#fff" opacity=".86"><path d="M110 150h190c0-37-28-56-58-52-19-39-82-30-88 12-31-4-53 17-44 40Z" /></g>
+              <g class="svg-cloud svg-cloud-right" fill="#fff" opacity=".76"><path d="M862 122h164c0-29-23-48-48-44-20-32-66-21-74 13-25-4-45 12-42 31Z" /></g>
+              <path d="M0 430 177 264 326 430 503 247 667 430 854 267 1035 430 1200 232V520H0Z" fill="#4e91c1" opacity=".8" />
+              <path d="M0 498 200 356 334 498 518 345 683 498 864 365 1046 498 1200 332V550H0Z" fill="#277da9" opacity=".7" />
+              <path class="svg-water-line svg-water-one" d="M0 574Q122 548 250 574T500 574 750 574 1000 574 1200 574" fill="none" stroke="#b7eff3" stroke-width="12" opacity=".9" />
+              <path class="svg-water-line svg-water-two" d="M0 650Q122 624 250 650T500 650 750 650 1000 650 1200 650" fill="none" stroke="#6bd5e6" stroke-width="12" opacity=".7" />
+              <g class="svg-boat" transform="translate(310 410)">
+                <g class="svg-boat-motion">
+                  <path d="M0 110H574L523 221Q489 259 428 265H135Q70 254 42 216Z" fill="#9a502f" stroke="#3a2b52" stroke-width="13" />
+                  <path d="M39 136H535" stroke="#e19245" stroke-width="15" />
+                  <path d="M308 132V-151" stroke="#81502f" stroke-width="15" />
+                  <path d="M308-140 527-85V116L308 82Z" fill="#fff2b6" stroke="#3a2b52" stroke-width="12" />
+                  <path d="M351-130 351 91M410-112 410 101M470-96 470 109" stroke="#e5bf66" stroke-width="12" opacity=".7" />
+                  <rect x="134" y="167" width="65" height="48" rx="8" fill="#f5bd42" stroke="#3a2b52" stroke-width="10" />
+                  <path d="M91 115 43 50M103 115 55 50" stroke="#5f392d" stroke-width="13" stroke-linecap="round" />
+                </g>
+              </g>
+              <g class="svg-knight svg-knight-boat" transform="translate(425 300)">
+                <g class="svg-knight-motion">
+                  <ellipse class="svg-shadow" cx="81" cy="280" rx="84" ry="14" />
+                  <path d="M28 117 8 172 30 254 86 230 105 128Z" fill="#e44355" stroke="#252448" stroke-width="10" />
+                  <rect x="39" y="112" width="77" height="103" rx="13" fill="#a9c9db" stroke="#252448" stroke-width="10" />
+                  <path d="M39 149H116M64 116V210M91 116V210" fill="none" stroke="#6a8ba8" stroke-width="8" />
+                  <rect x="35" y="78" width="88" height="48" rx="18" fill="#dcebf1" stroke="#252448" stroke-width="10" />
+                  <path d="M38 104H121M59 80V124M84 80V124M107 80V124" fill="none" stroke="#7897ae" stroke-width="8" />
+                  <path d="M67 220 60 271M103 218 116 271" stroke="#252448" stroke-width="22" stroke-linecap="round" />
+                  <path d="M110 144 159 121" stroke="#ffd18b" stroke-width="20" stroke-linecap="round" /><path d="M155 125 202 42" stroke="#f8fbff" stroke-width="11" stroke-linecap="round" />
+                  <path d="M5 145 0 202 45 224 61 176Z" fill="#ef8d3b" stroke="#252448" stroke-width="10" />
+                </g>
+              </g>
+              <g class="svg-dragon svg-dragon-orange" transform="translate(750 300)">
+                <g class="svg-dragon-motion">
+                  <path d="M72 193C21 207 11 245 56 254L116 231" fill="none" stroke="#c54a27" stroke-width="31" stroke-linecap="round" />
+                  <ellipse cx="147" cy="174" rx="111" ry="67" fill="url(#boat-dragon)" stroke="#252448" stroke-width="11" />
+                  <path class="svg-dragon-wing svg-wing-left" d="M85 127 43 32 122 77 158 22 177 136Z" fill="#ffc33f" stroke="#252448" stroke-width="11" />
+                  <path class="svg-dragon-wing svg-wing-right" d="M151 127 188 28 221 84 263 55 237 151Z" fill="#ffc33f" stroke="#252448" stroke-width="11" />
+                  <circle cx="231" cy="138" r="53" fill="#f47a22" stroke="#252448" stroke-width="11" />
+                  <path d="M249 147 302 162 250 181Z" fill="#cf4b25" stroke="#252448" stroke-width="9" />
+                  <path d="M205 91 218 50 239 93M244 90 265 59 266 104" fill="#ffe176" stroke="#252448" stroke-width="8" />
+                  <circle cx="232" cy="130" r="9" fill="#252448" /><circle cx="235" cy="126" r="3" fill="#fff" /><circle cx="274" cy="171" r="12" fill="#f68187" opacity=".85" />
+                  <path d="M92 219 88 254M169 223 172 257" stroke="#c04823" stroke-width="23" stroke-linecap="round" />
+                </g>
+              </g>
+            </svg>
           </div>
-          <div class="screensaver-rainbow" aria-hidden="true">
-            <span class="pixel-rainbow"></span>
-            <span class="pixel-bridge"></span>
-            <span class="pixel-rainbow-cloud pixel-rainbow-cloud-one"></span>
-            <span class="pixel-rainbow-cloud pixel-rainbow-cloud-two"></span>
-          </div>
-          <div class="screensaver-moon" aria-hidden="true">
-            <span class="pixel-moon">
-              <span class="pixel-moon-eye pixel-moon-eye-one"></span>
-              <span class="pixel-moon-eye pixel-moon-eye-two"></span>
-              <span class="pixel-moon-smile"></span>
-            </span>
-            <span class="pixel-moon-cloud pixel-moon-cloud-one"></span>
-            <span class="pixel-moon-cloud pixel-moon-cloud-two"></span>
-          </div>
-          <div class="screensaver-dragon-scene" aria-hidden="true">
-            <span class="pixel-dragon">
-              <span class="pixel-dragon-wing pixel-dragon-wing-one"></span>
-              <span class="pixel-dragon-wing pixel-dragon-wing-two"></span>
-              <span class="pixel-dragon-eye"></span>
-              <span class="pixel-dragon-snout"></span>
-            </span>
-            <span class="pixel-shield"></span>
-            <span class="pixel-heart pixel-heart-one"></span>
-            <span class="pixel-heart pixel-heart-two"></span>
-          </div>
-          <div class="pixel-hero" aria-hidden="true">
-            <span class="pixel-hero-shadow"></span>
-            <span class="pixel-hero-cape"></span>
-            <span class="pixel-hero-body"></span>
-            <span class="pixel-hero-head"></span>
-            <span class="pixel-hero-hair"></span>
-            <span class="pixel-hero-eye pixel-hero-eye-one"></span>
-            <span class="pixel-hero-eye pixel-hero-eye-two"></span>
-            <span class="pixel-hero-arm"></span>
-            <span class="pixel-hero-leg pixel-hero-leg-one"></span>
-            <span class="pixel-hero-leg pixel-hero-leg-two"></span>
-          </div>
+
           <div class="screensaver-pixel-message">
-            <span class="screensaver-message-patrol">Helten er på patrulje!</span>
-            <span class="screensaver-message-treasure">Skatten er fundet!</span>
-            <span class="screensaver-message-rocket">Helten flyver mod stjernerne!</span>
-            <span class="screensaver-message-camp">Heltehygge ved lejrbålet!</span>
-            <span class="screensaver-message-rainbow">Regnbuen viser vej!</span>
-            <span class="screensaver-message-moon">Sov godt, lille helt!</span>
-            <span class="screensaver-message-dragon">En ven er reddet!</span>
+            <span class="screensaver-message-cave">Skatten venter i hulen!</span>
+            <span class="screensaver-message-wizard">Magi og drager på eventyr!</span>
+            <span class="screensaver-message-slime">Sigt efter stjernerne!</span>
+            <span class="screensaver-message-monster">Venner gør hjertet stort!</span>
+            <span class="screensaver-message-boat">Sejl med dragevennen!</span>
           </div>
         </div>
         <button id="screensaver-wake" class="screensaver-wake" type="button">Tryk for at vågne</button>
