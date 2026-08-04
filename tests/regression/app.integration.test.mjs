@@ -10,13 +10,23 @@ function submit(window, form) {
   form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
 }
 
-async function withBootstrappedApp(run) {
+function enterParentPin(window, value = '2107') {
+  const form = document.querySelector('#parent-pin-form');
+  const input = document.querySelector('#parent-pin-input');
+  assert.ok(form);
+  assert.ok(input);
+  input.value = value;
+  submit(window, form);
+}
+
+async function withBootstrappedApp(run, { unlockInitialParent = true } = {}) {
   const dom = new JSDOM(
     `<!doctype html><html><body><main id="app"></main></body></html>`,
     { url: 'http://localhost' }
   );
 
   const { window } = dom;
+
   const previousWindow = globalThis.window;
   const previousDocument = globalThis.document;
   const previousLocalStorage = globalThis.localStorage;
@@ -32,6 +42,11 @@ async function withBootstrappedApp(run) {
     appModuleUrl.searchParams.set('t', `${Date.now()}_${Math.random()}`);
     await import(appModuleUrl.href);
     document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
+
+    const parentPinDialog = document.querySelector('#parent-pin-dialog');
+    if (parentPinDialog && !parentPinDialog.hidden && unlockInitialParent) {
+      enterParentPin(window);
+    }
 
     const roleSwitch = document.querySelector('#role-switch');
     const modeSwitch = document.querySelector('#mode-switch');
@@ -59,6 +74,9 @@ async function withBootstrappedApp(run) {
     const feedbackTitleInput = document.querySelector('#feedback-title-input');
     const feedbackMessageInput = document.querySelector('#feedback-message-input');
     const feedbackHistory = document.querySelector('#feedback-history');
+    const parentPinInput = document.querySelector('#parent-pin-input');
+    const parentPinError = document.querySelector('#parent-pin-error');
+    const parentLockButton = document.querySelector('#parent-lock-button');
 
     assert.ok(roleSwitch);
     assert.ok(modeSwitch);
@@ -116,6 +134,11 @@ async function withBootstrappedApp(run) {
       feedbackTitleInput,
       feedbackMessageInput,
       feedbackHistory,
+      parentPinDialog,
+      parentPinInput,
+      parentPinError,
+      parentLockButton,
+      enterParentPin: value => enterParentPin(window, value),
     });
   } finally {
     dom.window.close();
@@ -126,8 +149,23 @@ async function withBootstrappedApp(run) {
   }
 }
 
+test('locking parent mode returns to a child and requires PIN again', async () => {
+  await withBootstrappedApp(async ({ window, roleSwitch, parentLockButton, enterParentPin, kidDashboard }) => {
+    assert.equal(parentLockButton.hidden, false);
+
+    click(window, parentLockButton);
+    assert.equal(kidDashboard.hidden, false);
+
+    click(window, roleSwitch.querySelector('button[data-role="parent"]'));
+    assert.equal(document.querySelector('#parent-pin-dialog').hidden, false);
+    enterParentPin();
+    assert.equal(document.querySelector('#parent-pin-dialog').hidden, true);
+    assert.equal(kidDashboard.hidden, true);
+  });
+});
+
 test('screensaver stays hidden during normal app use and role switching', async () => {
-  await withBootstrappedApp(async ({ window, roleSwitch, screensaverOverlay }) => {
+  await withBootstrappedApp(async ({ window, roleSwitch, screensaverOverlay, enterParentPin }) => {
     const andreaButton = roleSwitch.querySelector('button[data-role="Andrea"]');
     const parentButton = roleSwitch.querySelector('button[data-role="parent"]');
     assert.ok(andreaButton);
@@ -140,10 +178,32 @@ test('screensaver stays hidden during normal app use and role switching', async 
     assert.equal(screensaverOverlay.hidden, true);
 
     click(window, parentButton);
+    enterParentPin('2106');
+    assert.equal(document.querySelector('#parent-pin-dialog').hidden, false);
+    enterParentPin();
     assert.equal(screensaverOverlay.hidden, true);
   });
 });
 
+
+test('parent mode starts locked and requires the exact PIN', async () => {
+  await withBootstrappedApp(async ({
+    parentPinDialog,
+    kidDashboard,
+    enterParentPin
+  }) => {
+    assert.equal(parentPinDialog.hidden, false);
+    assert.equal(kidDashboard.hidden, false);
+
+    enterParentPin('2106');
+    assert.equal(parentPinDialog.hidden, false);
+    assert.equal(document.querySelector('#parent-pin-error').textContent, 'PIN-koden er forkert.');
+
+    enterParentPin();
+    assert.equal(parentPinDialog.hidden, true);
+    assert.equal(kidDashboard.hidden, true);
+  }, { unlockInitialParent: false });
+});
 test('application bootstraps and supports parent/kid end-to-end flow', async () => {
   await withBootstrappedApp(async ({
     window,

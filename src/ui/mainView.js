@@ -85,6 +85,7 @@ export function createMainView(rootElement) {
             ${renderIconText('kidAndrea', 'Andrea')}
           </button>
         </div>
+        <button id="parent-lock-button" type="button" class="button button-secondary parent-lock-button">Lås forældrevisning</button>
       </section>
 
       <section id="app-status-card" class="card app-status-card app-top-card" aria-label="Status">
@@ -273,6 +274,40 @@ export function createMainView(rootElement) {
           <h2 class="section-title">${renderIconText('tabHistory', 'Periode-historik')}</h2>
           <div id="period-history"></div>
         </section>
+      </div>
+
+      <div
+        id="parent-pin-dialog"
+        class="parent-pin-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="parent-pin-title"
+        aria-describedby="parent-pin-description"
+        hidden
+      >
+        <div class="parent-pin-dialog-content">
+          <h2 id="parent-pin-title" class="section-title">Forældrevisning</h2>
+          <p id="parent-pin-description" class="chore-meta">Indtast PIN-koden for at åbne forældrekontrollerne.</p>
+          <form id="parent-pin-form" class="parent-pin-form" novalidate>
+            <label class="assign-label" for="parent-pin-input">Forældre-PIN</label>
+            <input
+              id="parent-pin-input"
+              class="input parent-pin-input"
+              name="parentPin"
+              type="password"
+              inputmode="numeric"
+              autocomplete="off"
+              maxlength="4"
+              pattern="[0-9]{4}"
+              required
+            />
+            <p id="parent-pin-error" class="parent-pin-error" role="alert" aria-live="assertive" hidden></p>
+            <div class="parent-pin-actions">
+              <button id="parent-pin-cancel" class="button button-secondary" type="button">Annuller</button>
+              <button class="button button-primary" type="submit">Åbn forældrevisning</button>
+            </div>
+          </form>
+        </div>
       </div>
 
       <div id="mascot-overlay" class="mascot-overlay" hidden>
@@ -629,6 +664,12 @@ export function createMainView(rootElement) {
     periodLengthSave: rootElement.querySelector('#period-length-save'),
     closePeriodBtn: rootElement.querySelector('#close-period-btn'),
     periodHistory: rootElement.querySelector('#period-history'),
+    parentPinDialog: rootElement.querySelector('#parent-pin-dialog'),
+    parentPinForm: rootElement.querySelector('#parent-pin-form'),
+    parentPinInput: rootElement.querySelector('#parent-pin-input'),
+    parentPinError: rootElement.querySelector('#parent-pin-error'),
+    parentPinCancel: rootElement.querySelector('#parent-pin-cancel'),
+    parentLockButton: rootElement.querySelector('#parent-lock-button'),
     tabParentOnlyBtns: rootElement.querySelectorAll('.tab-parent-only'),
     choreMaxInput: rootElement.querySelector('#chore-max-input'),
     choreUnlimitedCapInput: rootElement.querySelector('#chore-unlimited-cap-input'),

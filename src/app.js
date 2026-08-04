@@ -11,6 +11,7 @@ import { createPeriodService } from './services/periodService.js';
 import { createFeedbackService } from './services/feedbackService.js';
 import { createChecklistService } from './services/checklistService.js';
 import { createStorageService, KIDS } from './services/storageService.js';
+import { createParentAccessService } from './services/parentAccessService.js';
 import {
   getCurrentSession,
   initializeSupabaseData,
@@ -215,6 +216,7 @@ async function init() {
   const periodService = createPeriodService({ storageService });
   const feedbackService = createFeedbackService({ storageService });
   const checklistService = createChecklistService({ storageService });
+  const parentAccessService = createParentAccessService();
   const appState = createAppState();
   const orphanedRecordService = createOrphanedRecordService();
   let lastRemoteSnapshotKey = null;
@@ -307,7 +309,9 @@ async function init() {
   const rouletteService = createRouletteService({ storageService, choreService });
   periodService.ensureActivePeriod();
   const storedRole = storageService.loadData().ui.activeRole;
-  let activeRole = resolveInitialRole(storedRole, appConfig.defaultRole);
+  const initialRole = resolveInitialRole(storedRole, appConfig.defaultRole);
+  const shouldRequestInitialParentPin = initialRole === 'parent';
+  let activeRole = shouldRequestInitialParentPin ? KIDS[0] : initialRole;
   let editingChoreId = null;
   let editDraft = null;
   let latestChoreState = null;
@@ -334,6 +338,147 @@ async function init() {
       assignedTo: Array.isArray(chore.assignedTo) ? [...chore.assignedTo] : []
     };
   }
+
+  let pendingParentPinRequest = null;
+  let parentPinTrigger = null;
+
+  function clearParentPinError() {
+    if (!viewRefs.parentPinError) {
+      return;
+    }
+
+    viewRefs.parentPinError.textContent = '';
+    viewRefs.parentPinError.hidden = true;
+  }
+
+  function finishParentPinRequest(granted) {
+    const request = pendingParentPinRequest;
+    pendingParentPinRequest = null;
+
+    if (viewRefs.parentPinDialog) {
+      viewRefs.parentPinDialog.hidden = true;
+    }
+    if (viewRefs.parentPinForm) {
+      viewRefs.parentPinForm.reset();
+    }
+    clearParentPinError();
+
+    if (granted) {
+      request?.onGranted?.();
+    } else if (parentPinTrigger?.isConnected) {
+      parentPinTrigger.focus();
+    }
+
+    const trigger = parentPinTrigger;
+    parentPinTrigger = null;
+    request?.resolve(Boolean(granted));
+    return trigger;
+  }
+
+  function requestParentAccess(trigger = null, onGranted = () => {}) {
+    if (parentAccessService.isUnlocked()) {
+      onGranted();
+      return Promise.resolve(true);
+    }
+
+    if (pendingParentPinRequest) {
+      return pendingParentPinRequest.promise;
+    }
+
+    parentPinTrigger = trigger;
+    if (viewRefs.parentPinDialog) {
+      viewRefs.parentPinDialog.hidden = false;
+    }
+    clearParentPinError();
+    if (viewRefs.parentPinInput) {
+      viewRefs.parentPinInput.value = '';
+      viewRefs.parentPinInput.focus();
+    }
+
+    let resolveRequest;
+    const promise = new Promise(resolve => {
+      resolveRequest = resolve;
+    });
+    pendingParentPinRequest = { onGranted, promise, resolve: resolveRequest };
+    return promise;
+  }
+
+  function activateParentRole(message = 'Skiftet til forældrevisning.') {
+    activeRole = 'parent';
+    appState.activeMode = 'chores';
+    appState.activeTab = 'opgaver';
+    persistActiveRole();
+    refresh(message);
+  }
+
+  function switchToKidRole(nextRole, message = '') {
+    if (!isRole(nextRole) || nextRole === 'parent') {
+      return;
+    }
+
+    parentAccessService.lock();
+    activeRole = nextRole;
+    persistActiveRole();
+    appState.activeMode = 'chores';
+    appState.activeTab = 'opgaver';
+    appState.kidChorePage = 1;
+    clearEditState();
+    showRoleSwitchWalk(viewRefs.mascotOverlay, activeRole);
+    refresh(message || `Skiftet til ${activeRole}s visning.`);
+  }
+
+  const onParentPinKeyDown = event => {
+    if (!viewRefs.parentPinDialog || viewRefs.parentPinDialog.hidden) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      finishParentPinRequest(false);
+      return;
+    }
+
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    const focusableElements = [...viewRefs.parentPinDialog.querySelectorAll(
+      'button:not([disabled]), input:not([disabled])'
+    )];
+    if (focusableElements.length === 0) {
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  };
+
+  document.addEventListener('keydown', onParentPinKeyDown);
+  cleanupTasks.push(() => document.removeEventListener('keydown', onParentPinKeyDown));
+
+  viewRefs.parentPinForm?.addEventListener('submit', event => {
+    event.preventDefault();
+    const pin = String(viewRefs.parentPinInput?.value || '');
+    if (!parentAccessService.verifyPin(pin)) {
+      if (viewRefs.parentPinError) {
+        viewRefs.parentPinError.textContent = 'PIN-koden er forkert.';
+        viewRefs.parentPinError.hidden = false;
+      }
+      viewRefs.parentPinInput?.select();
+      return;
+    }
+
+    finishParentPinRequest(true);
+  });
+
+  viewRefs.parentPinCancel?.addEventListener('click', () => finishParentPinRequest(false));
 
   function persistActiveRole() {
     if (!appConfig.persistRoleSelection) {
@@ -380,6 +525,10 @@ async function init() {
     }
 
     latestChoreState = choreState;
+
+    if (viewRefs.parentLockButton) {
+      viewRefs.parentLockButton.hidden = activeRole !== 'parent';
+    }
 
     const periodUi = {
       activePeriod,
@@ -488,6 +637,10 @@ async function init() {
   seedStarterChecklists(checklistService);
   persistActiveRole();
   refresh();
+
+  if (shouldRequestInitialParentPin) {
+    requestParentAccess(null, () => activateParentRole());
+  }
 
   const activityEvents = ['pointerdown', 'keydown', 'touchstart', 'input', 'click'];
   const onActivity = () => screensaverService.reset();
@@ -668,32 +821,17 @@ async function init() {
       return;
     }
 
-    activeRole = nextRole;
-    persistActiveRole();
-    if (activeRole !== 'parent') {
-      appState.activeMode = 'chores';
-      appState.activeTab = 'opgaver';
-      appState.kidChorePage = 1;
+    if (nextRole === 'parent') {
+      requestParentAccess(button, () => activateParentRole());
+      return;
     }
-    if (activeRole !== 'parent' && (appState.activeTab === 'historik' || appState.activeTab === 'periode' || appState.activeTab === 'feedback')) {
-      appState.activeTab = 'opgaver';
-    }
-    if (activeRole !== 'parent') {
-      clearEditState();
-      showRoleSwitchWalk(viewRefs.mascotOverlay, activeRole);
-    }
-    const message = activeRole === 'parent' ? 'Skiftet til forældrevisning.' : `Skiftet til ${activeRole}s visning.`;
-    refresh(message);
+
+    switchToKidRole(nextRole);
   });
 
   if (viewRefs.kidParentExit) {
     viewRefs.kidParentExit.addEventListener('click', () => {
-      activeRole = 'parent';
-      appState.activeMode = 'chores';
-      appState.activeTab = 'opgaver';
-      appState.kidChorePage = 1;
-      persistActiveRole();
-      refresh('Skiftet til forældrevisning.');
+      requestParentAccess(viewRefs.kidParentExit, () => activateParentRole());
     });
   }
 
@@ -705,16 +843,14 @@ async function init() {
         return;
       }
 
-      activeRole = nextRole;
-      appState.activeMode = 'chores';
-      appState.activeTab = 'opgaver';
-      appState.kidChorePage = 1;
-      clearEditState();
-      persistActiveRole();
-      showRoleSwitchWalk(viewRefs.mascotOverlay, activeRole);
-      refresh(`Skiftet til ${activeRole}s visning.`);
+      switchToKidRole(nextRole);
     });
   }
+
+  viewRefs.parentLockButton?.addEventListener('click', () => {
+    parentAccessService.lock();
+    switchToKidRole(KIDS[0], 'Forældrevisning er låst.');
+  });
 
   if (viewRefs.modeSwitch) {
     viewRefs.modeSwitch.addEventListener('click', (event) => {
