@@ -11,10 +11,11 @@ export const EIGHT_BIT_HERO_QUEST_SCENE = 'eight-bit-hero-quest';
 export const QUEST_DURATION_MS = 60_000;
 export const QUEST_WIDTH = 320;
 export const QUEST_HEIGHT = 180;
+export const QUEST_VISUAL_STYLE = '32-bit pixel adventure';
 
 /** The entire narrative is editable here instead of being scattered across draw calls. */
 export const QUEST_BEATS = Object.freeze([
-  { id: 'title', start: 0, end: 5_000, camera: 'title', text: '8-BIT HERO QUEST!', effects: ['titlePulse'] },
+  { id: 'title', start: 0, end: 5_000, camera: 'title', text: '32-BIT HERO QUEST!', effects: ['titlePulse'] },
   { id: 'village-beacon', start: 5_000, end: 12_000, camera: 'village', text: 'THE CRYSTAL OF DAWN HAS BEEN STOLEN!', effects: ['beaconGlow'] },
   { id: 'forest-journey', start: 12_000, end: 20_000, camera: 'scroll', text: '', effects: ['bushSlash', 'targetArrow'] },
   { id: 'goblin-battle', start: 20_000, end: 30_000, camera: 'battle', text: 'K.O!', effects: ['slash', 'arrowVolley', 'screenShake', 'highFive'] },
@@ -25,10 +26,11 @@ export const QUEST_BEATS = Object.freeze([
 ]);
 
 const COLORS = Object.freeze({
-  ink: '#111428', navy: '#1b2865', blue: '#2576d4', sky: '#57c3e8', white: '#fff9df',
-  red: '#e73832', darkRed: '#a91f2d', orange: '#f47d22', yellow: '#ffe13f', gold: '#f5af25',
-  green: '#58a942', lightGreen: '#a8d544', skin: '#ffd195', blonde: '#f7c93a', grey: '#9ea6ad',
-  brown: '#86502d', purple: '#7647a9', cave: '#472947'
+  ink: '#18182d', navy: '#213b83', blue: '#2d77d0', blueLight: '#66b7f1', sky: '#56bde8', white: '#fff7d2',
+  red: '#e83c31', redLight: '#ff7750', darkRed: '#8d2638', orange: '#f47628', yellow: '#ffe15a', gold: '#f1ad2e',
+  green: '#4fa549', greenDark: '#256d43', lightGreen: '#a9d655', skin: '#ffc98a', skinLight: '#ffe3af',
+  blonde: '#f6c53b', blondeLight: '#ffe96b', hairRed: '#d93227', hairRedLight: '#ff6b37', grey: '#9aa9c2',
+  silverLight: '#e8f4ff', brown: '#86502d', brownLight: '#bf7540', purple: '#7647a9', cave: '#472947', crystal: '#bd70ef'
 });
 
 const FONT = Object.freeze({
@@ -95,101 +97,187 @@ function drawStars(ctx, time, dark = false) {
   }
 }
 
+function drawCloud(ctx, x, y, width) {
+  fill(ctx, COLORS.white, x, y + 7, width, 8);
+  fill(ctx, COLORS.white, x + 7, y + 3, width - 14, 14);
+  fill(ctx, '#d8f1fa', x + 4, y + 15, width - 8, 4);
+}
+
+function drawLandscape(ctx, time) {
+  fill(ctx, COLORS.sky, 0, 0, QUEST_WIDTH, QUEST_HEIGHT);
+  drawCloud(ctx, -10 + (Math.floor(time / 160) % 16), 18, 49);
+  drawCloud(ctx, 205 - (Math.floor(time / 240) % 18), 35, 61);
+  fill(ctx, '#8fb2e1', 0, 79, 80, 42);
+  fill(ctx, '#5c89c8', 26, 57, 86, 64);
+  fill(ctx, '#8fb2e1', 99, 73, 93, 48);
+  fill(ctx, '#507db8', 184, 58, 104, 63);
+  fill(ctx, '#8fb2e1', 267, 79, 53, 42);
+  fill(ctx, '#edf7f2', 52, 67, 19, 9);
+  fill(ctx, '#edf7f2', 221, 68, 20, 10);
+}
+
 function drawGround(ctx, color = COLORS.green) {
-  fill(ctx, color, 0, 127, QUEST_WIDTH, 53);
-  fill(ctx, COLORS.lightGreen, 0, 148, QUEST_WIDTH, 32);
-  for (let x = 0; x < QUEST_WIDTH; x += 17) fill(ctx, COLORS.ink, x, 158 + (x % 3), 10, 2);
+  fill(ctx, COLORS.greenDark, 0, 120, QUEST_WIDTH, 60);
+  fill(ctx, color, 0, 128, QUEST_WIDTH, 52);
+  fill(ctx, COLORS.lightGreen, 0, 151, QUEST_WIDTH, 29);
+  for (let x = 0; x < QUEST_WIDTH; x += 17) {
+    fill(ctx, COLORS.greenDark, x, 151 + (x % 4), 12, 3);
+    fill(ctx, COLORS.white, x + 7, 140 + (x % 3), 2, 2);
+  }
 }
 
 function drawBoy(ctx, x, y, { sword = false, attack = false, handsUp = false, frame = 0 } = {}) {
-  const bob = frame % 2;
-  fill(ctx, COLORS.ink, x + 7, y + 23 + bob, 15, 22);
-  fill(ctx, COLORS.red, x + 9, y + 23 + bob, 11, 17);
-  fill(ctx, COLORS.ink, x + 8, y + 8 + bob, 13, 16);
-  fill(ctx, COLORS.red, x + 9, y + 3 + bob, 12, 9);
-  fill(ctx, COLORS.skin, x + 11, y + 11 + bob, 8, 8);
-  fill(ctx, COLORS.ink, x + 12, y + 14 + bob, 2, 2);
-  fill(ctx, COLORS.ink, x + 17, y + 14 + bob, 2, 2);
-  const armY = handsUp ? y + 16 : y + 27;
-  fill(ctx, COLORS.skin, x + 3, armY, 7, 4);
-  fill(ctx, COLORS.skin, x + 20, handsUp ? y + 12 : y + 27, 7, 4);
-  fill(ctx, COLORS.ink, x + 9, y + 42 + bob, 4, 6);
-  fill(ctx, COLORS.ink, x + 17, y + 42 + bob, 4, 6);
+  const bob = frame % 2 ? 1 : 0;
+  const swordOffset = attack ? 14 : 0;
+  fill(ctx, COLORS.darkRed, x + 2, y + 27 + bob, 27, 39);
+  fill(ctx, COLORS.red, x + 5, y + 28 + bob, 21, 33);
+  fill(ctx, COLORS.ink, x + 10, y + 48 + bob, 9, 20);
+  fill(ctx, COLORS.grey, x + 11, y + 49 + bob, 7, 14);
+  fill(ctx, COLORS.ink, x + 20, y + 48 + bob, 9, 20);
+  fill(ctx, COLORS.grey, x + 21, y + 49 + bob, 7, 14);
+  fill(ctx, COLORS.ink, x + 7, y + 62 + bob, 14, 7);
+  fill(ctx, COLORS.brown, x + 9, y + 62 + bob, 11, 5);
+  fill(ctx, COLORS.ink, x + 19, y + 62 + bob, 15, 7);
+  fill(ctx, COLORS.brown, x + 21, y + 62 + bob, 12, 5);
+  fill(ctx, COLORS.ink, x + 6, y + 25 + bob, 27, 28);
+  fill(ctx, COLORS.blue, x + 9, y + 27 + bob, 21, 22);
+  fill(ctx, COLORS.blueLight, x + 12, y + 29 + bob, 5, 16);
+  fill(ctx, COLORS.ink, x + 8, y + 44 + bob, 23, 6);
+  fill(ctx, COLORS.gold, x + 10, y + 45 + bob, 19, 3);
+  fill(ctx, COLORS.ink, x + 16, y + 43 + bob, 7, 8);
+  fill(ctx, COLORS.yellow, x + 18, y + 45 + bob, 3, 4);
+  fill(ctx, COLORS.ink, x + 3, y + 27 + bob, 10, 12);
+  fill(ctx, COLORS.grey, x + 5, y + 28 + bob, 8, 8);
+  fill(ctx, COLORS.silverLight, x + 6, y + 29 + bob, 5, 3);
+  fill(ctx, COLORS.ink, x + 27, y + 27 + bob, 10, 12);
+  fill(ctx, COLORS.grey, x + 27, y + 28 + bob, 8, 8);
+  fill(ctx, COLORS.silverLight, x + 28, y + 29 + bob, 5, 3);
+  fill(ctx, COLORS.ink, x + 8, y + 5 + bob, 23, 25);
+  fill(ctx, COLORS.hairRed, x + 9, y + 2 + bob, 20, 14);
+  fill(ctx, COLORS.hairRedLight, x + 13, y + 1 + bob, 5, 8);
+  fill(ctx, COLORS.hairRedLight, x + 23, y + 4 + bob, 5, 5);
+  fill(ctx, COLORS.skin, x + 12, y + 13 + bob, 15, 13);
+  fill(ctx, COLORS.skinLight, x + 15, y + 14 + bob, 9, 5);
+  fill(ctx, COLORS.navy, x + 15, y + 18 + bob, 3, 3);
+  fill(ctx, COLORS.navy, x + 22, y + 18 + bob, 3, 3);
+  fill(ctx, COLORS.white, x + 16, y + 18 + bob, 1, 1);
+  const armY = handsUp ? y + 17 : y + 34;
+  fill(ctx, COLORS.ink, x, armY, 10, 7);
+  fill(ctx, COLORS.brown, x + 2, armY + 1, 7, 5);
+  fill(ctx, COLORS.ink, x + 30, handsUp ? y + 12 : y + 34, 10, 7);
+  fill(ctx, COLORS.brown, x + 31, (handsUp ? y + 12 : y + 34) + 1, 7, 5);
   if (sword) {
-    const offset = attack ? 11 : 0;
-    fill(ctx, COLORS.ink, x + 25 + offset, y + 5, 3, 26);
-    fill(ctx, COLORS.white, x + 26 + offset, y + 5, 1, 20);
-    fill(ctx, COLORS.gold, x + 22 + offset, y + 22, 9, 3);
+    fill(ctx, COLORS.ink, x + 33 + swordOffset, y + 2, 5, 36);
+    fill(ctx, COLORS.silverLight, x + 34 + swordOffset, y + 3, 3, 29);
+    fill(ctx, COLORS.blueLight, x + 35 + swordOffset, y + 4, 1, 25);
+    fill(ctx, COLORS.gold, x + 28 + swordOffset, y + 27, 16, 5);
+    fill(ctx, COLORS.brown, x + 33 + swordOffset, y + 32, 5, 9);
   }
 }
 
 function drawGirl(ctx, x, y, { bow = false, firing = false, handsUp = false, frame = 0 } = {}) {
-  const bob = frame % 2;
-  fill(ctx, COLORS.ink, x + 7, y + 23 + bob, 16, 22);
-  fill(ctx, COLORS.purple, x + 9, y + 23 + bob, 12, 17);
-  fill(ctx, COLORS.blonde, x + 7, y + 4 + bob, 16, 18);
-  fill(ctx, COLORS.ink, x + 10, y + 10 + bob, 11, 13);
-  fill(ctx, COLORS.skin, x + 12, y + 12 + bob, 7, 7);
-  fill(ctx, COLORS.ink, x + 13, y + 15 + bob, 2, 2);
-  fill(ctx, COLORS.ink, x + 17, y + 15 + bob, 2, 2);
-  fill(ctx, COLORS.skin, x + 3, handsUp ? y + 12 : y + 27, 8, 4);
-  fill(ctx, COLORS.skin, x + 21, handsUp ? y + 15 : y + 27, 8, 4);
-  fill(ctx, COLORS.ink, x + 10, y + 42 + bob, 4, 6);
-  fill(ctx, COLORS.ink, x + 18, y + 42 + bob, 4, 6);
+  const bob = frame % 2 ? 1 : 0;
+  fill(ctx, COLORS.blonde, x + 24, y + 6 + bob, 13, 31);
+  fill(ctx, COLORS.blondeLight, x + 26, y + 7 + bob, 8, 25);
+  fill(ctx, COLORS.ink, x + 10, y + 47 + bob, 9, 20);
+  fill(ctx, COLORS.greenDark, x + 12, y + 49 + bob, 6, 14);
+  fill(ctx, COLORS.ink, x + 22, y + 47 + bob, 9, 20);
+  fill(ctx, COLORS.greenDark, x + 23, y + 49 + bob, 6, 14);
+  fill(ctx, COLORS.ink, x + 7, y + 62 + bob, 14, 7);
+  fill(ctx, COLORS.brown, x + 9, y + 62 + bob, 11, 5);
+  fill(ctx, COLORS.ink, x + 20, y + 62 + bob, 15, 7);
+  fill(ctx, COLORS.brown, x + 22, y + 62 + bob, 12, 5);
+  fill(ctx, COLORS.ink, x + 6, y + 27 + bob, 28, 27);
+  fill(ctx, COLORS.greenDark, x + 9, y + 29 + bob, 22, 21);
+  fill(ctx, COLORS.green, x + 11, y + 31 + bob, 18, 16);
+  fill(ctx, COLORS.lightGreen, x + 15, y + 31 + bob, 5, 15);
+  fill(ctx, COLORS.ink, x + 8, y + 45 + bob, 24, 5);
+  fill(ctx, COLORS.brown, x + 10, y + 46 + bob, 19, 2);
+  fill(ctx, COLORS.ink, x + 8, y + 6 + bob, 23, 25);
+  fill(ctx, COLORS.blonde, x + 9, y + 3 + bob, 20, 16);
+  fill(ctx, COLORS.blondeLight, x + 12, y + 4 + bob, 13, 6);
+  fill(ctx, COLORS.skin, x + 12, y + 14 + bob, 15, 13);
+  fill(ctx, COLORS.skinLight, x + 16, y + 15 + bob, 8, 4);
+  fill(ctx, COLORS.greenDark, x + 15, y + 19 + bob, 3, 3);
+  fill(ctx, COLORS.greenDark, x + 22, y + 19 + bob, 3, 3);
+  fill(ctx, COLORS.white, x + 16, y + 19 + bob, 1, 1);
+  fill(ctx, COLORS.green, x + 5, y + 24 + bob, 29, 6);
+  const armY = handsUp ? y + 16 : y + 34;
+  fill(ctx, COLORS.ink, x, armY, 10, 7);
+  fill(ctx, COLORS.brown, x + 2, armY + 1, 7, 5);
+  fill(ctx, COLORS.ink, x + 30, handsUp ? y + 13 : y + 34, 10, 7);
+  fill(ctx, COLORS.brown, x + 31, (handsUp ? y + 13 : y + 34) + 1, 7, 5);
   if (bow) {
-    fill(ctx, COLORS.brown, x + 28, y + 12, 2, 22);
-    fill(ctx, COLORS.yellow, x + 29, y + 14, 1, 17);
+    fill(ctx, COLORS.ink, x + 37, y + 13, 4, 32);
+    fill(ctx, COLORS.brown, x + 38, y + 14, 2, 29);
+    fill(ctx, COLORS.gold, x + 39, y + 17, 1, 24);
     if (firing) {
-      fill(ctx, COLORS.ink, x + 30, y + 22, 29, 2);
-      fill(ctx, COLORS.white, x + 31, y + 21, 25, 1);
+      fill(ctx, COLORS.ink, x + 40, y + 28, 35, 3);
+      fill(ctx, COLORS.silverLight, x + 42, y + 28, 29, 1);
+      fill(ctx, COLORS.white, x + 69, y + 26, 4, 5);
     }
   }
 }
 
 function drawGoblin(ctx, x, y, knockedOut = false, frame = 0) {
-  const fall = knockedOut ? 18 : 0;
-  fill(ctx, COLORS.ink, x + 4, y + 17 + fall, 25, 17);
-  fill(ctx, COLORS.green, x + 6, y + 18 + fall, 21, 13);
-  fill(ctx, COLORS.ink, x + 7, y + 4 + fall, 18, 16);
-  fill(ctx, COLORS.lightGreen, x + 9, y + 6 + fall, 14, 11);
-  fill(ctx, COLORS.ink, x + 10, y + 10 + fall, 3, 3);
-  fill(ctx, COLORS.ink, x + 19, y + 10 + fall, 3, 3);
-  fill(ctx, COLORS.ink, x + 7, y + 31 + fall, 5, 8);
-  fill(ctx, COLORS.ink, x + 21, y + 31 + fall, 5, 8);
-  if (knockedOut) drawOutlinedText(ctx, 'K.O!', x + 16, y - 5 + (frame % 2), 3, COLORS.yellow);
+  const fall = knockedOut ? 23 : 0;
+  fill(ctx, COLORS.ink, x + 5, y + 28 + fall, 36, 22);
+  fill(ctx, COLORS.greenDark, x + 8, y + 30 + fall, 30, 17);
+  fill(ctx, COLORS.ink, x + 8, y + 9 + fall, 29, 25);
+  fill(ctx, COLORS.lightGreen, x + 11, y + 11 + fall, 23, 18);
+  fill(ctx, COLORS.green, x + 14, y + 12 + fall, 16, 5);
+  fill(ctx, COLORS.ink, x + 14, y + 19 + fall, 4, 4);
+  fill(ctx, COLORS.ink, x + 27, y + 19 + fall, 4, 4);
+  fill(ctx, COLORS.yellow, x + 15, y + 19 + fall, 2, 2);
+  fill(ctx, COLORS.yellow, x + 28, y + 19 + fall, 2, 2);
+  fill(ctx, COLORS.ink, x + 10, y + 46 + fall, 9, 10);
+  fill(ctx, COLORS.ink, x + 28, y + 46 + fall, 9, 10);
+  if (knockedOut) drawOutlinedText(ctx, 'K.O!', x + 22, y - 7 + (frame % 2), 3, COLORS.yellow);
 }
 
 function drawDragon(ctx, x, y, { fire = false, defeated = false, frame = 0 } = {}) {
-  const fall = defeated ? 33 : 0;
-  fill(ctx, COLORS.ink, x + 10, y + 25 + fall, 76, 26);
-  fill(ctx, COLORS.red, x + 13, y + 26 + fall, 70, 21);
-  fill(ctx, COLORS.darkRed, x + 12, y + 6 + fall, 26, 29);
-  fill(ctx, COLORS.red, x + 15, y + 9 + fall, 20, 22);
-  fill(ctx, COLORS.ink, x + 68, y + 14 + fall, 32, 25);
-  fill(ctx, COLORS.red, x + 71, y + 16 + fall, 26, 19);
-  fill(ctx, COLORS.yellow, x + 74, y + 7 + fall, 6, 9);
-  fill(ctx, COLORS.yellow, x + 86, y + 6 + fall, 6, 9);
-  fill(ctx, COLORS.ink, x + 82, y + 21 + fall, 4, 4);
-  const wingOffset = frame % 2 ? 4 : 0;
-  fill(ctx, COLORS.ink, x + 20, y - 4 + fall - wingOffset, 23, 31 + wingOffset);
-  fill(ctx, COLORS.red, x + 23, y - 1 + fall - wingOffset, 17, 25 + wingOffset);
-  fill(ctx, COLORS.ink, x + 47, y - 7 + fall + wingOffset, 24, 34 - wingOffset);
-  fill(ctx, COLORS.red, x + 50, y - 4 + fall + wingOffset, 18, 28 - wingOffset);
+  const fall = defeated ? 37 : 0;
+  const wingOffset = frame % 2 ? 6 : 0;
+  fill(ctx, COLORS.ink, x + 15, y + 36 + fall, 86, 31);
+  fill(ctx, COLORS.darkRed, x + 19, y + 39 + fall, 78, 24);
+  fill(ctx, COLORS.red, x + 23, y + 40 + fall, 62, 11);
+  fill(ctx, COLORS.redLight, x + 25, y + 42 + fall, 22, 4);
+  fill(ctx, COLORS.ink, x + 14, y + 11 + fall, 29, 35);
+  fill(ctx, COLORS.darkRed, x + 17, y + 14 + fall, 23, 28);
+  fill(ctx, COLORS.red, x + 20, y + 17 + fall, 16, 19);
+  fill(ctx, COLORS.ink, x + 77, y + 20 + fall, 39, 30);
+  fill(ctx, COLORS.red, x + 80, y + 23 + fall, 33, 24);
+  fill(ctx, COLORS.redLight, x + 83, y + 26 + fall, 15, 5);
+  fill(ctx, COLORS.yellow, x + 85, y + 13 + fall, 7, 11);
+  fill(ctx, COLORS.yellow, x + 100, y + 12 + fall, 7, 11);
+  fill(ctx, COLORS.ink, x + 94, y + 29 + fall, 5, 5);
+  fill(ctx, COLORS.white, x + 95, y + 29 + fall, 2, 2);
+  fill(ctx, COLORS.ink, x + 23, y - 5 + fall - wingOffset, 29, 48 + wingOffset);
+  fill(ctx, COLORS.red, x + 27, y - 1 + fall - wingOffset, 21, 39 + wingOffset);
+  fill(ctx, COLORS.orange, x + 31, y + 4 + fall - wingOffset, 12, 25 + wingOffset);
+  fill(ctx, COLORS.ink, x + 52, y - 9 + fall + wingOffset, 31, 52 - wingOffset);
+  fill(ctx, COLORS.red, x + 56, y - 5 + fall + wingOffset, 23, 43 - wingOffset);
+  fill(ctx, COLORS.orange, x + 61, y + 1 + fall + wingOffset, 12, 23 - wingOffset);
   if (fire && !defeated) {
-    fill(ctx, COLORS.orange, x + 99, y + 23, 39, 11);
-    fill(ctx, COLORS.yellow, x + 101, y + 25, 24, 6);
+    fill(ctx, COLORS.darkRed, x + 113, y + 31, 53, 17);
+    fill(ctx, COLORS.orange, x + 116, y + 33, 47, 13);
+    fill(ctx, COLORS.yellow, x + 119, y + 36, 29, 7);
+    fill(ctx, COLORS.white, x + 122, y + 38, 13, 3);
   }
 }
 
 function drawTree(ctx, x, groundY, offset = 0) {
-  fill(ctx, COLORS.brown, x + 10, groundY - 51, 10, 51);
-  fill(ctx, COLORS.ink, x - 5, groundY - 84 + offset, 40, 38);
-  fill(ctx, COLORS.green, x - 2, groundY - 81 + offset, 34, 32);
-  fill(ctx, COLORS.lightGreen, x + 5, groundY - 76 + offset, 18, 7);
+  fill(ctx, COLORS.ink, x + 13, groundY - 58, 13, 58);
+  fill(ctx, COLORS.brown, x + 16, groundY - 56, 7, 56);
+  fill(ctx, COLORS.brownLight, x + 17, groundY - 54, 3, 42);
+  fill(ctx, COLORS.ink, x - 9, groundY - 95 + offset, 57, 46);
+  fill(ctx, COLORS.greenDark, x - 6, groundY - 92 + offset, 51, 40);
+  fill(ctx, COLORS.green, x - 1, groundY - 88 + offset, 39, 30);
+  fill(ctx, COLORS.lightGreen, x + 5, groundY - 85 + offset, 24, 8);
 }
 
 function drawVillage(ctx, time) {
-  fill(ctx, COLORS.sky, 0, 0, QUEST_WIDTH, QUEST_HEIGHT);
+  drawLandscape(ctx, time);
   drawGround(ctx);
   [24, 110, 228].forEach((x, index) => {
     fill(ctx, COLORS.ink, x, 77, 48, 49);
@@ -205,7 +293,7 @@ function drawVillage(ctx, time) {
 }
 
 function drawForest(ctx, time) {
-  fill(ctx, COLORS.sky, 0, 0, QUEST_WIDTH, QUEST_HEIGHT);
+  drawLandscape(ctx, time);
   drawGround(ctx, '#4eaa4d');
   const scroll = -Math.floor((time % 8_000) / 42) % 60;
   for (let x = scroll - 25; x < QUEST_WIDTH + 30; x += 60) drawTree(ctx, x, 131, (Math.floor(time / 300) + x) % 3);
@@ -217,13 +305,22 @@ function drawForest(ctx, time) {
 
 function drawCave(ctx, time) {
   fill(ctx, COLORS.cave, 0, 0, QUEST_WIDTH, QUEST_HEIGHT);
-  fill(ctx, COLORS.navy, 0, 0, QUEST_WIDTH, 100);
-  for (let x = 0; x < QUEST_WIDTH; x += 26) fill(ctx, COLORS.ink, x, 0, 14, 21 + (x % 4) * 6);
-  fill(ctx, COLORS.darkRed, 0, 126, QUEST_WIDTH, 54);
-  fill(ctx, COLORS.orange, 0, 150, QUEST_WIDTH, 30);
+  fill(ctx, '#30245b', 0, 0, QUEST_WIDTH, 105);
+  for (let x = 0; x < QUEST_WIDTH; x += 26) {
+    fill(ctx, COLORS.ink, x, 0, 15, 23 + (x % 4) * 6);
+    fill(ctx, '#3e326d', x + 15, 0, 11, 16 + (x % 3) * 8);
+  }
+  fill(ctx, COLORS.darkRed, 0, 122, QUEST_WIDTH, 58);
+  fill(ctx, COLORS.orange, 0, 151, QUEST_WIDTH, 29);
+  fill(ctx, COLORS.ink, 26, 87, 12, 38);
+  fill(ctx, COLORS.crystal, 29, 94, 7, 24);
+  fill(ctx, COLORS.silverLight, 31, 96, 2, 15);
+  fill(ctx, COLORS.ink, 276, 82, 13, 43);
+  fill(ctx, COLORS.crystal, 279, 89, 7, 28);
   const glow = Math.floor(time / 180) % 2;
-  fill(ctx, glow ? COLORS.red : COLORS.darkRed, 244, 31, 28, 64);
-  fill(ctx, COLORS.yellow, 253, 42, 10, 42);
+  fill(ctx, glow ? COLORS.red : COLORS.darkRed, 244, 31, 32, 69);
+  fill(ctx, COLORS.orange, 251, 40, 18, 51);
+  fill(ctx, COLORS.yellow, 256, 47, 8, 37);
 }
 
 function drawChest(ctx, x, y, open = false) {
@@ -239,8 +336,8 @@ function drawChest(ctx, x, y, open = false) {
 function drawCrystal(ctx, x, y, time) {
   const float = Math.floor(time / 220) % 2 ? -2 : 0;
   fill(ctx, COLORS.ink, x - 7, y + float, 15, 23);
-  fill(ctx, '#a761dc', x - 4, y + 3 + float, 9, 17);
-  fill(ctx, COLORS.white, x - 1, y + 5 + float, 3, 12);
+  fill(ctx, COLORS.crystal, x - 4, y + 3 + float, 9, 17);
+  fill(ctx, '#e9b8ff', x - 1, y + 5 + float, 3, 12);
   for (let index = 0; index < 7; index += 1) {
     const angle = (index * 47 + Math.floor(time / 90) * 7) * Math.PI / 180;
     fill(ctx, COLORS.yellow, x + Math.cos(angle) * 20, y + 10 + Math.sin(angle) * 16, 2, 2);
@@ -249,12 +346,12 @@ function drawCrystal(ctx, x, y, time) {
 
 function drawTitle(ctx, time) {
   drawStars(ctx, time, true);
-  const pulse = pixelStep((time % 900) / 900, 3);
-  drawOutlinedText(ctx, '8-BIT', 160, 31 - pulse, 7, COLORS.yellow);
-  drawOutlinedText(ctx, 'HERO QUEST!', 160, 71 + pulse, 5, COLORS.red);
-  drawBoy(ctx, 69, 110, { sword: true, handsUp: true, frame: Math.floor(time / 240) });
-  drawGirl(ctx, 216, 110, { bow: true, handsUp: true, frame: Math.floor(time / 240) });
-  drawDragon(ctx, 119, 95, { fire: true, frame: Math.floor(time / 220) });
+  const pulse = pixelStep((time % 900) / 900, 3) * 2;
+  drawOutlinedText(ctx, '32-BIT', 160, 27 - pulse, 7, COLORS.yellow);
+  drawOutlinedText(ctx, 'HERO QUEST!', 160, 65 + pulse, 5, COLORS.redLight);
+  drawDragon(ctx, 117, 91, { fire: true, frame: Math.floor(time / 220) });
+  drawBoy(ctx, 55, 107, { sword: true, handsUp: true, frame: Math.floor(time / 240) });
+  drawGirl(ctx, 219, 107, { bow: true, handsUp: true, frame: Math.floor(time / 240) });
 }
 
 function drawForestJourney(ctx, time) {

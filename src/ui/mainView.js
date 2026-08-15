@@ -330,7 +330,7 @@ export function createMainView(rootElement) {
               class="eight-bit-hero-quest-canvas"
               width="320"
               height="180"
-              aria-label="8-Bit Hero Quest: to helte finder Morgengryets krystal og besejrer en drage"
+              aria-label="32-bit Hero Quest: to helte finder Morgengryets krystal og besejrer en drage"
             ></canvas>
           </div>
           <div class="scene-art scene-kid-heroes-comic">

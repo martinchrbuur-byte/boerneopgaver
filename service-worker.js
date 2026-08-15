@@ -1,4 +1,4 @@
-const CACHE_NAME = 'opgavehelte-app-shell-v8';
+const CACHE_NAME = 'opgavehelte-app-shell-v9';
 const APP_SHELL = [
   './',
   './index.html',

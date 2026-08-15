@@ -5,6 +5,7 @@ import {
   QUEST_BEATS,
   QUEST_DURATION_MS,
   QUEST_HEIGHT,
+  QUEST_VISUAL_STYLE,
   QUEST_WIDTH,
   createEightBitHeroQuestRenderer,
   drawEightBitHeroQuest,
@@ -26,6 +27,7 @@ function createContext() {
 }
 
 test('quest timeline covers the requested sixty-second story and loops to title', () => {
+  assert.equal(QUEST_VISUAL_STYLE, '32-bit pixel adventure');
   assert.deepEqual(QUEST_BEATS.map(beat => beat.id), [
     'title', 'village-beacon', 'forest-journey', 'goblin-battle',
     'dragon-warning', 'dragon-battle', 'treasure', 'ending'
