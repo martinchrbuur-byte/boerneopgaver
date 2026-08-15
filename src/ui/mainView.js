@@ -324,6 +324,15 @@ export function createMainView(rootElement) {
         hidden
       >
         <div class="screensaver-scene" aria-hidden="true">
+          <div class="scene-art scene-kid-heroes-comic">
+            <canvas
+              id="kid-heroes-comic-canvas"
+              class="kid-heroes-comic-canvas"
+              width="320"
+              height="450"
+              aria-label="Kid Heroes: et retro pixel-eventyr med en drage, to helte og en skat"
+            ></canvas>
+          </div>
           <div class="scene-art scene-cave-quest">
             <svg class="scene-canvas" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-label="Ridderen finder en grøn drage og en skat i en hule">
               <defs>

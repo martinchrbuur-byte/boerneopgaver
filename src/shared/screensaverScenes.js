@@ -3,5 +3,6 @@ export const SCREENSAVER_SCENES = [
   'wizard-dragon',
   'slime-forest',
   'monster-friend',
-  'dragon-boat'
+  'dragon-boat',
+  'kid-heroes-comic'
 ];

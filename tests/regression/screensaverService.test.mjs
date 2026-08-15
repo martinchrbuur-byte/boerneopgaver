@@ -36,13 +36,14 @@ function createFakeScheduler() {
   };
 }
 
-test('screensaver registry contains the five illustrated adventure scenes', () => {
+test('screensaver registry contains the illustrated adventure scenes and comic', () => {
   assert.deepEqual(SCREENSAVER_SCENES, [
     'cave-quest',
     'wizard-dragon',
     'slime-forest',
     'monster-friend',
-    'dragon-boat'
+    'dragon-boat',
+    'kid-heroes-comic'
   ]);
 });
 

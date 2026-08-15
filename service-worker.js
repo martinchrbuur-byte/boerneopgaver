@@ -1,4 +1,4 @@
-const CACHE_NAME = 'opgavehelte-app-shell-v6';
+const CACHE_NAME = 'opgavehelte-app-shell-v7';
 const APP_SHELL = [
   './',
   './index.html',
@@ -32,6 +32,7 @@ const APP_SHELL = [
   './src/shared/htmlSanitizer.js',
   './src/shared/iconRegistry.js',
   './src/shared/id.js',
+  './src/shared/kidHeroesComic.js',
   './src/shared/rouletteModel.js',
   './src/shared/sectionDiff.js',
   './src/shared/screensaverScenes.js',
