@@ -1,5 +1,4 @@
 import {
-  easeOutCubic,
   getBeatProgress,
   getTimelineBeat,
   loopTime,
