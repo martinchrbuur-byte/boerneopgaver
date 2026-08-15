@@ -71,6 +71,7 @@ async function withBootstrappedApp(run, { unlockInitialParent = true } = {}) {
     const screensaverOverlay = document.querySelector('#screensaver-overlay');
     const screensaverWake = document.querySelector('#screensaver-wake');
     const kidHeroesComicCanvas = document.querySelector('#kid-heroes-comic-canvas');
+    const eightBitHeroQuestCanvas = document.querySelector('#eight-bit-hero-quest-canvas');
     const feedbackForm = document.querySelector('#feedback-form');
     const feedbackTitleInput = document.querySelector('#feedback-title-input');
     const feedbackMessageInput = document.querySelector('#feedback-message-input');
@@ -102,6 +103,7 @@ async function withBootstrappedApp(run, { unlockInitialParent = true } = {}) {
     assert.ok(screensaverOverlay);
     assert.ok(screensaverWake);
     assert.ok(kidHeroesComicCanvas);
+    assert.ok(eightBitHeroQuestCanvas);
     assert.equal(screensaverOverlay.hidden, true);
     assert.ok(feedbackForm);
     assert.ok(feedbackTitleInput);

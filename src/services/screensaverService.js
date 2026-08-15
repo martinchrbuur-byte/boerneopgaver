@@ -4,10 +4,6 @@ export const SCREENSAVER_TIMEOUT_MS = 60_000;
 export const SCREENSAVER_ROTATION_MS = 90_000;
 export { SCREENSAVER_SCENES };
 
-function defaultScenePicker(scenes) {
-  return scenes[Math.floor(Math.random() * scenes.length)] ?? scenes[0];
-}
-
 export function createScreensaverService({
   timeoutMs = SCREENSAVER_TIMEOUT_MS,
   rotationMs = SCREENSAVER_ROTATION_MS,
@@ -16,7 +12,7 @@ export function createScreensaverService({
   onDismiss = () => {},
   setTimeoutFn = globalThis.setTimeout,
   clearTimeoutFn = globalThis.clearTimeout,
-  pickScene = defaultScenePicker
+  pickScene = null
 } = {}) {
   if (!Number.isFinite(timeoutMs) || timeoutMs < 0) {
     throw new Error('Screensaver timeout must be a non-negative number.');
@@ -31,6 +27,18 @@ export function createScreensaverService({
   let enabled = false;
   let active = false;
   let disposed = false;
+  let nextSceneIndex = 0;
+
+  function chooseScene() {
+    if (typeof pickScene === 'function') return pickScene(availableScenes);
+    const scene = availableScenes[nextSceneIndex] ?? availableScenes[0];
+    nextSceneIndex = (nextSceneIndex + 1) % availableScenes.length;
+    return scene;
+  }
+
+  function resetSceneOrder() {
+    nextSceneIndex = 0;
+  }
 
   function clearTimer() {
     if (timeoutId !== null) {
@@ -51,7 +59,7 @@ export function createScreensaverService({
       return;
     }
 
-    onActivate(pickScene(availableScenes));
+    onActivate(chooseScene());
     scheduleRotation();
   }
 
@@ -72,7 +80,7 @@ export function createScreensaverService({
 
     active = true;
     timeoutId = null;
-    onActivate(pickScene(availableScenes));
+    onActivate(chooseScene());
     scheduleRotation();
   }
 
@@ -105,6 +113,7 @@ export function createScreensaverService({
     if (active) {
       dismiss();
     }
+    resetSceneOrder();
     schedule();
   }
 
@@ -118,6 +127,7 @@ export function createScreensaverService({
     if (!enabled) {
       clearTimer();
       dismiss();
+      resetSceneOrder();
       return;
     }
 

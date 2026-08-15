@@ -1,4 +1,4 @@
-const CACHE_NAME = 'opgavehelte-app-shell-v7';
+const CACHE_NAME = 'opgavehelte-app-shell-v8';
 const APP_SHELL = [
   './',
   './index.html',
@@ -28,12 +28,14 @@ const APP_SHELL = [
   './src/shared/emojiMappingService.js',
   './src/shared/emojiMoodRegistry.js',
   './src/shared/emojiRegistry.js',
+  './src/shared/eightBitHeroQuest.js',
   './src/shared/helperCast.js',
   './src/shared/htmlSanitizer.js',
   './src/shared/iconRegistry.js',
   './src/shared/id.js',
   './src/shared/kidHeroesComic.js',
   './src/shared/rouletteModel.js',
+  './src/shared/sceneTimeline.js',
   './src/shared/sectionDiff.js',
   './src/shared/screensaverScenes.js',
   './src/shared/soundManager.js',

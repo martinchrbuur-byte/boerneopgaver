@@ -4749,20 +4749,24 @@ label[for] {
 }
 
 /* ─── Kid Heroes comic screensaver ───────────────────────────── */
+.scene-eight-bit-hero-quest,
 .scene-kid-heroes-comic {
   align-items: center;
   justify-content: center;
   background: #080b18;
 }
 
+.screensaver-overlay[data-scene='eight-bit-hero-quest'] .scene-eight-bit-hero-quest,
 .screensaver-overlay[data-scene='kid-heroes-comic'] .scene-kid-heroes-comic {
   display: flex;
 }
 
+.screensaver-overlay[data-scene='eight-bit-hero-quest'] .screensaver-pixel-message,
 .screensaver-overlay[data-scene='kid-heroes-comic'] .screensaver-pixel-message {
   display: none;
 }
 
+.eight-bit-hero-quest-canvas,
 .kid-heroes-comic-canvas {
   display: block;
   width: auto;
@@ -4776,6 +4780,7 @@ label[for] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .eight-bit-hero-quest-canvas,
   .kid-heroes-comic-canvas {
     image-rendering: pixelated;
   }

@@ -93,7 +93,7 @@ test('main view renders hidden account controls for authenticated mode', () => {
   }
 });
 
-test('main view renders the illustrated screensaver scenes and comic canvas', () => {
+test('main view renders the illustrated screensaver scenes and both pixel canvases', () => {
   const env = setupDom();
 
   try {
@@ -106,12 +106,14 @@ test('main view renders the illustrated screensaver scenes and comic canvas', ()
       'scene-dragon-boat'
     ];
 
-    assert.equal(refs.screensaverOverlay.querySelectorAll('.scene-art').length, 6);
+    assert.equal(refs.screensaverOverlay.querySelectorAll('.scene-art').length, 7);
     sceneNames.forEach(sceneName => {
       assert.ok(refs.screensaverOverlay.querySelector(`.${sceneName}`));
     });
     assert.ok(refs.screensaverOverlay.querySelector('.scene-kid-heroes-comic'));
     assert.ok(refs.screensaverOverlay.querySelector('#kid-heroes-comic-canvas'));
+    assert.ok(refs.screensaverOverlay.querySelector('.scene-eight-bit-hero-quest'));
+    assert.ok(refs.screensaverOverlay.querySelector('#eight-bit-hero-quest-canvas'));
     assert.equal(refs.screensaverOverlay.querySelectorAll('.screensaver-pixel-message > span').length, 5);
   } finally {
     env.restore();

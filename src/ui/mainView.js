@@ -324,6 +324,15 @@ export function createMainView(rootElement) {
         hidden
       >
         <div class="screensaver-scene" aria-hidden="true">
+          <div class="scene-art scene-eight-bit-hero-quest">
+            <canvas
+              id="eight-bit-hero-quest-canvas"
+              class="eight-bit-hero-quest-canvas"
+              width="320"
+              height="180"
+              aria-label="8-Bit Hero Quest: to helte finder Morgengryets krystal og besejrer en drage"
+            ></canvas>
+          </div>
           <div class="scene-art scene-kid-heroes-comic">
             <canvas
               id="kid-heroes-comic-canvas"

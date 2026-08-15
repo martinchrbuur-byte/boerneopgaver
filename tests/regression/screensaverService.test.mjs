@@ -36,8 +36,9 @@ function createFakeScheduler() {
   };
 }
 
-test('screensaver registry starts with the comic and contains all adventure scenes', () => {
+test('screensaver registry starts with the sixty-second quest and contains all adventure scenes', () => {
   assert.deepEqual(SCREENSAVER_SCENES, [
+    'eight-bit-hero-quest',
     'kid-heroes-comic',
     'cave-quest',
     'wizard-dragon',
@@ -63,18 +64,16 @@ test('screensaver waits exactly one minute before activating', () => {
 
   scheduler.fireNext();
   assert.equal(activations.length, 1);
-  assert.ok(SCREENSAVER_SCENES.includes(activations[0]));
+  assert.equal(activations[0], 'eight-bit-hero-quest');
   assert.equal(service.isActive(), true);
 });
 
-test('active screensaver rotates scenes every 90 seconds', () => {
+test('active screensaver rotates scenes in registry order every 90 seconds', () => {
   const scheduler = createFakeScheduler();
   const activations = [];
   const scenes = ['hero-patrol', 'treasure-hunt'];
-  let sceneIndex = 0;
   const service = createScreensaverService({
     scenes,
-    pickScene: () => scenes[sceneIndex++ % scenes.length],
     onActivate: scene => activations.push(scene),
     setTimeoutFn: scheduler.setTimeout,
     clearTimeoutFn: scheduler.clearTimeout
@@ -88,6 +87,9 @@ test('active screensaver rotates scenes every 90 seconds', () => {
   scheduler.fireNext();
   assert.deepEqual(activations, ['hero-patrol', 'treasure-hunt']);
   assert.equal(scheduler.delays.at(-1), SCREENSAVER_ROTATION_MS);
+
+  scheduler.fireNext();
+  assert.deepEqual(activations, ['hero-patrol', 'treasure-hunt', 'hero-patrol']);
 });
 
 test('activity resets the timer and dismisses an active screensaver', () => {
