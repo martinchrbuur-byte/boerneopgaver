@@ -4822,14 +4822,16 @@ label[for] {
 
 /* ─── Kid Heroes comic screensaver ───────────────────────────── */
 .scene-eight-bit-hero-quest,
-.scene-kid-heroes-comic {
+.scene-kid-heroes-comic,
+.scene-tiny-heroes-adventure {
   align-items: center;
   justify-content: center;
   background: #080b18;
 }
 
 .screensaver-overlay[data-scene='eight-bit-hero-quest'] .scene-eight-bit-hero-quest,
-.screensaver-overlay[data-scene='kid-heroes-comic'] .scene-kid-heroes-comic {
+.screensaver-overlay[data-scene='kid-heroes-comic'] .scene-kid-heroes-comic,
+.screensaver-overlay[data-scene='tiny-heroes-adventure'] .scene-tiny-heroes-adventure {
   display: flex;
 }
 
@@ -4839,7 +4841,8 @@ label[for] {
 }
 
 .eight-bit-hero-quest-canvas,
-.kid-heroes-comic-canvas {
+.kid-heroes-comic-canvas,
+.tiny-heroes-adventure-canvas {
   display: block;
   width: auto;
   max-width: 100%;
@@ -4853,7 +4856,8 @@ label[for] {
 
 @media (prefers-reduced-motion: reduce) {
   .eight-bit-hero-quest-canvas,
-  .kid-heroes-comic-canvas {
+  .kid-heroes-comic-canvas,
+  .tiny-heroes-adventure-canvas {
     image-rendering: pixelated;
   }
 }

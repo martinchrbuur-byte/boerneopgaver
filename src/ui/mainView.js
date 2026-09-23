@@ -324,7 +324,16 @@ export function createMainView(rootElement) {
         hidden
       >
         <div class="screensaver-scene" aria-hidden="true">
-          <div class="scene-art scene-eight-bit-hero-quest">
+        <div class="scene-art scene-tiny-heroes-adventure">
+          <canvas
+            id="tiny-heroes-adventure-canvas"
+            class="tiny-heroes-adventure-canvas"
+            width="320"
+            height="180"
+            aria-label="Tiny Heroes: to små helte på et venligt eventyr i en magisk skov"
+          ></canvas>
+        </div>
+        <div class="scene-art scene-eight-bit-hero-quest">
             <canvas
               id="eight-bit-hero-quest-canvas"
               class="eight-bit-hero-quest-canvas"
