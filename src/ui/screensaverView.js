@@ -82,7 +82,7 @@ export function createScreensaverView(overlay, {
     show,
     isVisible: () => !overlay.hidden,
     isComicRunning: () => comicRenderer?.isRunning?.() ?? false,
-    isQuestRunning: () => questRenderer?.isRunning?.() ?? false
-    ,isTinyHeroesRunning: () => tinyHeroesRenderer?.isRunning?.() ?? false
+    isQuestRunning: () => questRenderer?.isRunning?.() ?? false,
+    isTinyHeroesRunning: () => tinyHeroesRenderer?.isRunning?.() ?? false
   };
 }
