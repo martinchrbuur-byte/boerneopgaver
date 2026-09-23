@@ -39,6 +39,7 @@ function createFakeScheduler() {
 test('screensaver registry starts with the sixty-second quest and contains all adventure scenes', () => {
   assert.deepEqual(SCREENSAVER_SCENES, [
     'eight-bit-hero-quest',
+    'tiny-heroes-adventure',
     'kid-heroes-comic',
     'cave-quest',
     'wizard-dragon',
