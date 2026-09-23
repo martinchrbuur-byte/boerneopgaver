@@ -1468,8 +1468,80 @@ label[for] {
     padding: 0.75rem;
   }
 
+  .card {
+    padding: 0.85rem;
+  }
+
+  .app-header-row {
+    align-items: stretch;
+  }
+
+  .app-brand {
+    align-items: flex-start;
+  }
+
+  .app-subtitle {
+    font-size: 0.92rem;
+  }
+
+  .account-section {
+    width: 100%;
+  }
+
+  .account-section .button {
+    flex: 1 1 8rem;
+  }
+
+  .role-switch,
+  .app-tab-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 0.15rem;
+    scrollbar-width: thin;
+  }
+
+  .role-switch > .button,
+  .app-tab-nav > .tab-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .form-row-max {
+    align-items: stretch;
+  }
+
+  .form-row-max .input-narrow {
+    width: 100%;
+  }
+
+  .slider-wrapper {
+    flex-wrap: wrap;
+  }
+
+  .slider-wrapper .progress-slider {
+    min-width: 0;
+  }
+
+  .slider-label {
+    width: 100%;
+    text-align: right;
+  }
+
+  .roulette-heading {
+    flex-direction: column;
+  }
+
+  .roulette-open {
+    width: 100%;
+  }
+
+  .roulette-targets {
+    flex-wrap: wrap;
   }
 
   .earnings-grid,
