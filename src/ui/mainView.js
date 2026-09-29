@@ -663,6 +663,7 @@ export function createMainView(rootElement) {
             <span class="screensaver-message-slime">Sigt efter stjernerne!</span>
             <span class="screensaver-message-monster">Venner gør hjertet stort!</span>
             <span class="screensaver-message-boat">Sejl med dragevennen!</span>
+            <span class="screensaver-message-space-rescue">En stjerne er reddet!</span>
           </div>
         </div>
         <button id="screensaver-wake" class="screensaver-wake" type="button">Tryk for at vågne</button>

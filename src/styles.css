@@ -4272,7 +4272,8 @@ label[for] {
 .screensaver-message-wizard,
 .screensaver-message-slime,
 .screensaver-message-monster,
-.screensaver-message-boat {
+.screensaver-message-boat,
+.screensaver-message-space-rescue {
   display: none;
 }
 
@@ -4280,7 +4281,8 @@ label[for] {
 .screensaver-overlay[data-scene='wizard-dragon'] .screensaver-message-wizard,
 .screensaver-overlay[data-scene='slime-forest'] .screensaver-message-slime,
 .screensaver-overlay[data-scene='monster-friend'] .screensaver-message-monster,
-.screensaver-overlay[data-scene='dragon-boat'] .screensaver-message-boat {
+.screensaver-overlay[data-scene='dragon-boat'] .screensaver-message-boat,
+.screensaver-overlay[data-scene='space-rescue'] .screensaver-message-space-rescue {
   display: inline;
 }
 
@@ -4531,6 +4533,7 @@ label[for] {
   animation: svgCloudDrift 28s linear infinite;
 }
 
+.scene-canvas .svg-sparkle { animation: svgSparkle 1.8s ease-in-out infinite; }
 .scene-canvas .svg-cloud-right { animation-delay: -13s; animation-duration: 34s; }
 .scene-canvas .svg-cave-crystal { animation: svgCrystalPulse 3.2s ease-in-out infinite alternate; }
 .scene-canvas .svg-cave-bat { animation: svgBatLoop 5s ease-in-out infinite; }

@@ -117,7 +117,7 @@ test('main view renders the illustrated screensaver scenes and pixel canvases', 
     assert.ok(refs.screensaverOverlay.querySelector('#eight-bit-hero-quest-canvas'));
     assert.ok(refs.screensaverOverlay.querySelector('.scene-tiny-heroes-adventure'));
     assert.ok(refs.screensaverOverlay.querySelector('#tiny-heroes-adventure-canvas'));
-    assert.equal(refs.screensaverOverlay.querySelectorAll('.screensaver-pixel-message > span').length, 5);
+    assert.equal(refs.screensaverOverlay.querySelectorAll('.screensaver-pixel-message > span').length, 6);
   } finally {
     env.restore();
   }
