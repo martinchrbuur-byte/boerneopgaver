@@ -3556,6 +3556,10 @@ label[for] {
   background: linear-gradient(#4fc1ed 0%, #c9f2ee 58%, #42bde1 58%, #197fb3 100%);
 }
 
+.screensaver-overlay[data-scene='space-rescue'] .screensaver-scene {
+  background: linear-gradient(#17143f, #493a83);
+}
+
 .scene-backdrop,
 .scene-art {
   position: absolute;
@@ -3577,7 +3581,8 @@ label[for] {
 .screensaver-overlay[data-scene='wizard-dragon'] .scene-wizard-dragon,
 .screensaver-overlay[data-scene='slime-forest'] .scene-slime-forest,
 .screensaver-overlay[data-scene='monster-friend'] .scene-monster-friend,
-.screensaver-overlay[data-scene='dragon-boat'] .scene-dragon-boat {
+.screensaver-overlay[data-scene='dragon-boat'] .scene-dragon-boat,
+.screensaver-overlay[data-scene='space-rescue'] .scene-space-rescue {
   display: block;
 }
 
@@ -4775,6 +4780,7 @@ label[for] {
 @media (prefers-reduced-motion: reduce) {
   .scene-art,
   .scene-canvas .svg-cloud,
+  .scene-canvas .svg-sparkle,
   .scene-canvas .svg-cave-crystal,
   .scene-canvas .svg-cave-bat,
   .scene-canvas .svg-chest,

@@ -103,10 +103,11 @@ test('main view renders the illustrated screensaver scenes and pixel canvases', 
       'scene-wizard-dragon',
       'scene-slime-forest',
       'scene-monster-friend',
-      'scene-dragon-boat'
+      'scene-dragon-boat',
+      'scene-space-rescue'
     ];
 
-    assert.equal(refs.screensaverOverlay.querySelectorAll('.scene-art').length, 8);
+    assert.equal(refs.screensaverOverlay.querySelectorAll('.scene-art').length, 9);
     sceneNames.forEach(sceneName => {
       assert.ok(refs.screensaverOverlay.querySelector(`.${sceneName}`));
     });
