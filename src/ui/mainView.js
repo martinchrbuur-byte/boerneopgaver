@@ -621,12 +621,49 @@ export function createMainView(rootElement) {
             </svg>
           </div>
 
+          <div class="scene-art scene-space-rescue">
+            <svg class="scene-canvas" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-label="En kappeklædt helt redder en lille stjerne i rummet">
+              <defs>
+                <linearGradient id="space-rescue-sky" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#17143f" />
+                  <stop offset="1" stop-color="#493a83" />
+                </linearGradient>
+                <radialGradient id="space-rescue-planet">
+                  <stop offset="0" stop-color="#ffd978" />
+                  <stop offset="1" stop-color="#ed7a67" />
+                </radialGradient>
+              </defs>
+              <rect width="1200" height="700" fill="url(#space-rescue-sky)" />
+              <circle cx="970" cy="170" r="92" fill="url(#space-rescue-planet)" />
+              <path d="M862 178Q970 112 1078 178" fill="none" stroke="#ffcf75" stroke-width="16" opacity=".75" />
+              <g fill="#fff4b3">
+                <circle cx="140" cy="125" r="7" /><circle cx="352" cy="245" r="5" />
+                <circle cx="660" cy="115" r="6" /><circle cx="1090" cy="355" r="5" />
+                <circle cx="811" cy="292" r="8" />
+              </g>
+              <path d="M0 590 125 486 250 590 385 450 535 590 700 470 848 590 1015 448 1200 580V700H0Z" fill="#292853" />
+              <path d="M0 635 165 535 305 635 500 520 675 635 855 530 1035 635 1150 555 1200 580V700H0Z" fill="#1b1d45" />
+              <g class="svg-knight-motion" transform="translate(410 260)">
+                <path d="M105 235 16 360Q104 335 184 369L153 230Z" fill="#ef4a64" stroke="#17143f" stroke-width="13" />
+                <rect x="75" y="166" width="112" height="132" rx="28" fill="#36b8dd" stroke="#17143f" stroke-width="14" />
+                <circle cx="132" cy="125" r="65" fill="#ffd18b" stroke="#17143f" stroke-width="13" />
+                <path d="M76 115Q90 37 154 54Q202 62 204 126L184 106 112 107Z" fill="#f4f3ff" stroke="#17143f" stroke-width="13" />
+                <path d="M97 125 133 139M154 139 178 127" fill="none" stroke="#17143f" stroke-width="9" stroke-linecap="round" />
+                <path d="M184 207 269 144" stroke="#ffd18b" stroke-width="28" stroke-linecap="round" />
+                <path d="M248 150 320 80" stroke="#fff8ce" stroke-width="13" stroke-linecap="round" />
+                <path d="M88 287 76 355M164 287 185 350" stroke="#17143f" stroke-width="27" stroke-linecap="round" />
+              </g>
+              <path class="svg-sparkle" d="M813 322 828 355 862 366 828 377 813 410 802 377 770 366 802 355Z" fill="#fff4a8" stroke="#fff" stroke-width="5" />
+            </svg>
+          </div>
+
           <div class="screensaver-pixel-message">
             <span class="screensaver-message-cave">Skatten venter i hulen!</span>
             <span class="screensaver-message-wizard">Magi og drager på eventyr!</span>
             <span class="screensaver-message-slime">Sigt efter stjernerne!</span>
             <span class="screensaver-message-monster">Venner gør hjertet stort!</span>
             <span class="screensaver-message-boat">Sejl med dragevennen!</span>
+            <span class="screensaver-message-space-rescue">En stjerne er reddet!</span>
           </div>
         </div>
         <button id="screensaver-wake" class="screensaver-wake" type="button">Tryk for at vågne</button>
