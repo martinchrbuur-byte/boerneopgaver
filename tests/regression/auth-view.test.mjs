@@ -104,10 +104,11 @@ test('main view renders the illustrated screensaver scenes and pixel canvases', 
       'scene-slime-forest',
       'scene-monster-friend',
       'scene-dragon-boat',
-      'scene-space-rescue'
+      'scene-space-rescue',
+      'scene-cloud-castle'
     ];
 
-    assert.equal(refs.screensaverOverlay.querySelectorAll('.scene-art').length, 9);
+    assert.equal(refs.screensaverOverlay.querySelectorAll('.scene-art').length, 10);
     sceneNames.forEach(sceneName => {
       assert.ok(refs.screensaverOverlay.querySelector(`.${sceneName}`));
     });
@@ -117,7 +118,7 @@ test('main view renders the illustrated screensaver scenes and pixel canvases', 
     assert.ok(refs.screensaverOverlay.querySelector('#eight-bit-hero-quest-canvas'));
     assert.ok(refs.screensaverOverlay.querySelector('.scene-tiny-heroes-adventure'));
     assert.ok(refs.screensaverOverlay.querySelector('#tiny-heroes-adventure-canvas'));
-    assert.equal(refs.screensaverOverlay.querySelectorAll('.screensaver-pixel-message > span').length, 6);
+    assert.equal(refs.screensaverOverlay.querySelectorAll('.screensaver-pixel-message > span').length, 7);
   } finally {
     env.restore();
   }
