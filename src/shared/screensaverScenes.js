@@ -7,5 +7,6 @@ export const SCREENSAVER_SCENES = [
   'slime-forest',
   'monster-friend',
   'dragon-boat',
-  'space-rescue'
+  'space-rescue',
+  'coral-reef-rescue'
 ];

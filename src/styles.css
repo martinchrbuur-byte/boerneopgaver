@@ -3560,6 +3560,10 @@ label[for] {
   background: linear-gradient(#17143f, #493a83);
 }
 
+.screensaver-overlay[data-scene='coral-reef-rescue'] .screensaver-scene {
+  background: linear-gradient(#20b9d1, #155b9d);
+}
+
 .scene-backdrop,
 .scene-art {
   position: absolute;
@@ -3582,7 +3586,8 @@ label[for] {
 .screensaver-overlay[data-scene='slime-forest'] .scene-slime-forest,
 .screensaver-overlay[data-scene='monster-friend'] .scene-monster-friend,
 .screensaver-overlay[data-scene='dragon-boat'] .scene-dragon-boat,
-.screensaver-overlay[data-scene='space-rescue'] .scene-space-rescue {
+.screensaver-overlay[data-scene='space-rescue'] .scene-space-rescue,
+.screensaver-overlay[data-scene='coral-reef-rescue'] .scene-coral-reef-rescue {
   display: block;
 }
 
@@ -4273,7 +4278,8 @@ label[for] {
 .screensaver-message-slime,
 .screensaver-message-monster,
 .screensaver-message-boat,
-.screensaver-message-space-rescue {
+.screensaver-message-space-rescue,
+.screensaver-message-coral-reef {
   display: none;
 }
 
@@ -4282,7 +4288,8 @@ label[for] {
 .screensaver-overlay[data-scene='slime-forest'] .screensaver-message-slime,
 .screensaver-overlay[data-scene='monster-friend'] .screensaver-message-monster,
 .screensaver-overlay[data-scene='dragon-boat'] .screensaver-message-boat,
-.screensaver-overlay[data-scene='space-rescue'] .screensaver-message-space-rescue {
+.screensaver-overlay[data-scene='space-rescue'] .screensaver-message-space-rescue,
+.screensaver-overlay[data-scene='coral-reef-rescue'] .screensaver-message-coral-reef {
   display: inline;
 }
 

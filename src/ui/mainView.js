@@ -657,6 +657,55 @@ export function createMainView(rootElement) {
             </svg>
           </div>
 
+          <div class="scene-art scene-coral-reef-rescue">
+            <svg class="scene-canvas" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-label="En ung undervandshelt hjælper en lille havskildpadde hjem gennem et farverigt koralrev">
+              <defs>
+                <linearGradient id="coral-reef-sea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#20b9d1" />
+                  <stop offset="1" stop-color="#155b9d" />
+                </linearGradient>
+                <radialGradient id="coral-reef-light">
+                  <stop offset="0" stop-color="#d5fff1" stop-opacity=".85" />
+                  <stop offset="1" stop-color="#d5fff1" stop-opacity="0" />
+                </radialGradient>
+              </defs>
+              <rect width="1200" height="700" fill="url(#coral-reef-sea)" />
+              <ellipse cx="600" cy="0" rx="480" ry="300" fill="url(#coral-reef-light)" />
+              <path d="M0 535Q180 495 360 535T720 525 1200 535V700H0Z" fill="#164b79" />
+              <path d="M0 602Q190 560 390 603T800 592 1200 606V700H0Z" fill="#103b69" />
+              <g fill="#eafff6" opacity=".8">
+                <circle cx="170" cy="160" r="8" /><circle cx="303" cy="292" r="5" />
+                <circle cx="985" cy="138" r="7" /><circle cx="1065" cy="314" r="5" />
+                <circle cx="756" cy="210" r="6" />
+              </g>
+              <g fill="none" stroke-linecap="round" stroke-width="24">
+                <path d="M105 652V542m0 32-48-46m48 64 48-64" stroke="#ff817e" />
+                <path d="M1090 660V525m0 36-49-48m49 66 44-58" stroke="#ffc65d" />
+                <path d="M942 659V578m0 23-38-38m38 52 38-42" stroke="#b174e8" />
+              </g>
+              <g class="svg-knight-motion" transform="translate(330 300)">
+                <path d="M70 164 30 314 179 314 146 164Z" fill="#f35c76" stroke="#153c6b" stroke-width="12" />
+                <rect x="64" y="146" width="93" height="135" rx="24" fill="#ffb64f" stroke="#153c6b" stroke-width="12" />
+                <circle cx="110" cy="112" r="60" fill="#ffd29c" stroke="#153c6b" stroke-width="12" />
+                <path d="M52 99Q62 39 115 45Q168 48 170 103L154 86 73 88Z" fill="#fff0b3" stroke="#153c6b" stroke-width="11" />
+                <rect x="68" y="103" width="84" height="31" rx="14" fill="#63e5e3" stroke="#153c6b" stroke-width="9" />
+                <path d="M110 101V135M69 118H151" stroke="#153c6b" stroke-width="7" />
+                <path d="M143 203 226 240" stroke="#ffd29c" stroke-width="24" stroke-linecap="round" />
+                <path d="M61 278 50 342M137 280 153 342" stroke="#153c6b" stroke-width="25" stroke-linecap="round" />
+                <path d="M41 338 5 350 57 365M147 340 177 353 135 366" fill="#4ed5e1" stroke="#153c6b" stroke-width="9" stroke-linejoin="round" />
+              </g>
+              <g class="svg-dragon-motion" transform="translate(735 370)">
+                <ellipse cx="110" cy="136" rx="88" ry="61" fill="#65d59c" stroke="#153c6b" stroke-width="11" />
+                <path d="M45 113Q1 67 18 42Q80 49 102 87M166 119Q205 75 230 93Q222 147 174 158" fill="#8de7a6" stroke="#153c6b" stroke-width="10" />
+                <circle cx="192" cy="94" r="42" fill="#79dfa2" stroke="#153c6b" stroke-width="10" />
+                <circle cx="205" cy="84" r="7" fill="#153c6b" />
+                <path d="M218 111Q238 120 249 108" fill="none" stroke="#153c6b" stroke-width="7" stroke-linecap="round" />
+                <path d="M70 174 56 204M144 177 159 203" stroke="#378d79" stroke-width="16" stroke-linecap="round" />
+              </g>
+              <path class="svg-sparkle" d="M676 280 689 310 720 322 689 334 676 365 664 334 633 322 664 310Z" fill="#fff4a8" stroke="#fff" stroke-width="5" />
+            </svg>
+          </div>
+
           <div class="screensaver-pixel-message">
             <span class="screensaver-message-cave">Skatten venter i hulen!</span>
             <span class="screensaver-message-wizard">Magi og drager på eventyr!</span>
@@ -664,6 +713,7 @@ export function createMainView(rootElement) {
             <span class="screensaver-message-monster">Venner gør hjertet stort!</span>
             <span class="screensaver-message-boat">Sejl med dragevennen!</span>
             <span class="screensaver-message-space-rescue">En stjerne er reddet!</span>
+            <span class="screensaver-message-coral-reef">Sammen redder vi havet!</span>
           </div>
         </div>
         <button id="screensaver-wake" class="screensaver-wake" type="button">Tryk for at vågne</button>

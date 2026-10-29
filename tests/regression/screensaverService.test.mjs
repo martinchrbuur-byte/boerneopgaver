@@ -46,7 +46,8 @@ test('screensaver registry starts with the sixty-second quest and contains all a
     'slime-forest',
     'monster-friend',
     'dragon-boat',
-    'space-rescue'
+    'space-rescue',
+    'coral-reef-rescue'
   ]);
 });
 
