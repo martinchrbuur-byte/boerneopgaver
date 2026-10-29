@@ -657,6 +657,52 @@ export function createMainView(rootElement) {
             </svg>
           </div>
 
+          <div class="scene-art scene-cloud-castle">
+            <svg class="scene-canvas" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-label="To skyhelte flyver sammen med en venlig drage mod et slot på skyerne">
+              <defs>
+                <linearGradient id="cloud-castle-sky" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#6b8ee8" />
+                  <stop offset=".58" stop-color="#c5b9f4" />
+                  <stop offset="1" stop-color="#ffe4ad" />
+                </linearGradient>
+              </defs>
+              <rect width="1200" height="700" fill="url(#cloud-castle-sky)" />
+              <circle cx="990" cy="145" r="68" fill="#fff1a8" opacity=".92" />
+              <g class="svg-cloud" fill="#fff" opacity=".78">
+                <ellipse cx="170" cy="205" rx="112" ry="28" />
+                <ellipse cx="810" cy="265" rx="145" ry="34" />
+              </g>
+              <path d="M0 560Q160 495 320 560T640 548T960 552T1200 520V700H0Z" fill="#a5a8e8" opacity=".68" />
+              <g class="svg-castle">
+                <path d="M540 420V270H660V420M500 285V220H550V285M650 285V220H700V285M574 270V205H626V270" fill="#ffd778" stroke="#554c9c" stroke-width="14" />
+                <path d="M480 420H720V466H480Z" fill="#f3a965" stroke="#554c9c" stroke-width="14" />
+                <path d="M598 466V378Q600 332 642 378V466Z" fill="#6554a7" />
+                <path d="M514 245 525 215 536 245M664 245 675 215 686 245M584 230 600 190 616 230" fill="#ee7293" stroke="#554c9c" stroke-width="9" />
+                <path d="M553 328H577V357H553ZM663 328H687V357H663Z" fill="#fff2b3" />
+              </g>
+              <path d="M0 568Q140 523 270 568T530 558" fill="none" stroke="#fff" stroke-width="34" stroke-linecap="round" opacity=".86" />
+              <path d="M660 558Q815 515 960 562T1200 550" fill="none" stroke="#fff" stroke-width="42" stroke-linecap="round" opacity=".92" />
+              <g class="svg-knight-motion" transform="translate(270 310)">
+                <path d="M83 165 27 255Q91 235 151 260L131 165Z" fill="#e94f72" stroke="#414078" stroke-width="10" />
+                <rect x="65" y="115" width="82" height="100" rx="22" fill="#36b8dd" stroke="#414078" stroke-width="11" />
+                <circle cx="106" cy="82" r="48" fill="#ffd18b" stroke="#414078" stroke-width="10" />
+                <path d="M58 76Q67 17 111 27Q157 34 160 83L139 67 83 68Z" fill="#f5f4ff" stroke="#414078" stroke-width="10" />
+                <path d="M139 145 185 102" stroke="#ffd18b" stroke-width="20" stroke-linecap="round" />
+                <path d="M180 110 214 55" stroke="#fff7bf" stroke-width="9" stroke-linecap="round" />
+              </g>
+              <g class="svg-dragon-motion" transform="translate(745 330)">
+                <path d="M45 145Q5 175 35 196L82 175" fill="none" stroke="#398b73" stroke-width="19" stroke-linecap="round" />
+                <ellipse cx="112" cy="133" rx="75" ry="47" fill="#67c991" stroke="#414078" stroke-width="10" />
+                <path class="svg-wing-left" d="M68 104 42 39 100 74 126 36 142 111Z" fill="#8de0ad" stroke="#414078" stroke-width="9" />
+                <circle cx="174" cy="111" r="39" fill="#79dba0" stroke="#414078" stroke-width="10" />
+                <path d="M150 76 156 49 174 76M180 75 198 52 199 87" fill="#ffe080" stroke="#414078" stroke-width="7" />
+                <circle cx="183" cy="106" r="5" fill="#252448" />
+                <path d="M184 128Q198 138 211 125" fill="none" stroke="#414078" stroke-width="5" stroke-linecap="round" />
+              </g>
+              <path class="svg-sparkle" d="M850 204 862 230 890 240 862 250 850 278 840 250 812 240 840 230Z" fill="#fff4a8" stroke="#fff" stroke-width="4" />
+            </svg>
+          </div>
+
           <div class="screensaver-pixel-message">
             <span class="screensaver-message-cave">Skatten venter i hulen!</span>
             <span class="screensaver-message-wizard">Magi og drager på eventyr!</span>
@@ -664,6 +710,7 @@ export function createMainView(rootElement) {
             <span class="screensaver-message-monster">Venner gør hjertet stort!</span>
             <span class="screensaver-message-boat">Sejl med dragevennen!</span>
             <span class="screensaver-message-space-rescue">En stjerne er reddet!</span>
+            <span class="screensaver-message-cloud-castle">Sammen når vi skyhøjt!</span>
           </div>
         </div>
         <button id="screensaver-wake" class="screensaver-wake" type="button">Tryk for at vågne</button>
