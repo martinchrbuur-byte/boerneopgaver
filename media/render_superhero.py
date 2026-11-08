@@ -32,7 +32,6 @@ KG = (TX + 138, 572)             # kitten on ground
 def bp(t):
     u = t - 14.6
     return (CX + 22 + 14 * u + 18 * math.sin(1.1 * u), 455 - 120 * u)
-def child_hand(t): return (CX + 16, 590 - 48)
 
 HERO_KF = [
     (0, X(0, 260), 330), (4, X(4, 500), 250), (8, X(8, 420), 300), (10, X(10, 380), 270),
@@ -167,7 +166,7 @@ def child(c, x, base, t, happy, bounce):
     y = base - bounce
     c.rect(x - 11, y - 52, x + 11, y - 12, (255, 120, 160), 8)
     c.rect(x - 9, y - 14, x - 2, y, (80, 100, 190), 3); c.rect(x + 2, y - 14, x + 9, y, (80, 100, 190), 3)
-    hx, hy = child_hand(t)[0], y - 48
+    hx, hy = x + 16, y - 48
     if happy: c.line([(x + 8, y - 46), (x + 22, y - 72 - bounce * 0.2)], (255, 120, 160), 6)
     else: c.line([(x + 8, y - 46), (hx, hy)], (255, 120, 160), 6)
     c.ell(x, y - 66, 17, 17, SKIN)
@@ -191,13 +190,13 @@ def duck(c, x, y, s, t, ph):
     for lx in (-4, 4):
         c.line([(x + lx * s, y - 3 * s), (x + lx * s + math.sin(t * 6 + ph + lx) * 2 * s, y)], (255, 140, 50), 2 * s)
 
-def tree(c, x, sx_t):
-    c.rect(x - 14, 300, x + 14, 585, (150, 100, 70), 6)
-    c.line([(x + 8, 420), (x + 110, 400)], (150, 100, 70), 12)
+def tree(c, x, cyv):
+    c.rect(x - 14, 300 + cyv, x + 14, 585 + cyv, (150, 100, 70), 6)
+    c.line([(x + 8, 420 + cyv), (x + 110, 400 + cyv)], (150, 100, 70), 12)
     for dx, dy, r in ((-60, 330, 70), (60, 320, 75), (0, 260, 85), (-20, 350, 60), (50, 350, 55), (-85, 290, 50)):
-        c.ell(x + dx, dy, r, r, (118, 190, 100))
+        c.ell(x + dx, dy + cyv, r, r, (118, 190, 100))
     for dx, dy, r in ((-30, 270, 55), (40, 300, 45), (0, 330, 40)):
-        c.ell(x + dx, dy, r, r, (150, 212, 112))
+        c.ell(x + dx, dy + cyv, r, r, (150, 212, 112))
 
 def building(c, b, f, base, cx, cyv, t, dusk, tint, lit_glow=None):
     x = b['x'] - cx * f; y = base + cyv * f
@@ -278,7 +277,7 @@ def frame(i):
     tx = TX - cx
     kp = (BR[0] - cx, BR[1] + cyv)
     if -250 < tx < W + 250:
-        tree(c, tx, tx)
+        tree(c, tx, cyv)
         if t < 12.3: kp = (BR[0] - cx, BR[1] + cyv)
         else: kp = None
     # child
@@ -328,7 +327,7 @@ def frame(i):
             ch = (chx + 22, 455 + cyv - bounce)
             bpos = (lerp(hand[0], ch[0], u), lerp(hand[1] - 90, ch[1], u)) if t < 18.9 else ch
     if t < 14.6 or 16.5 <= t < 18.9 or t >= 18.9:
-        anchor = (chx + 16, 590 + cyv - 48 - (bounce if happy else 0)) if (t < 14.6 or t >= 18.3) else None
+        anchor = (chx + 22, 590 + cyv - 72 - 1.2 * bounce) if happy else (chx + 16, 590 + cyv - 48)
         if t >= 18.3 or t < 14.6:
             c.line([(bpos[0], bpos[1] + 30), (anchor[0], anchor[1])], (255, 255, 255), 1.5)
         else:
