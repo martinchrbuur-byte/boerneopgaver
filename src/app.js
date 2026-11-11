@@ -91,6 +91,10 @@ function calculateDaysLeft(endDate) {
   return Math.max(0, Math.ceil(diffMs / (24 * 60 * 60 * 1000)));
 }
 
+function getLocalDateString(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -494,6 +498,15 @@ async function init() {
     }));
   }
 
+  function isChecklistDateCurrent(date) {
+    if (date === getLocalDateString()) {
+      return true;
+    }
+
+    refresh();
+    return false;
+  }
+
   function refresh(message = '') {
     if (isAppDisposed || !root?.isConnected || typeof document === 'undefined') {
       return;
@@ -507,8 +520,7 @@ async function init() {
     const activePeriod = periodService.getActivePeriod();
     const activePeriodId = activePeriod?.id ?? null;
     const choreState = choreService.getState({ activePeriodId });
-    const now = new Date();
-    const checklistDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const checklistDate = getLocalDateString();
     if (!checklistService.getChecklist(checklistDate).state.checklist) {
       checklistService.carryForwardChecklist(checklistDate, { actorRole: 'parent' });
     }
@@ -584,22 +596,27 @@ async function init() {
     if (activeRole === 'parent') {
       renderChecklistParentPanel(viewRefs.checklistPanel, checklistState.checklist, {
         onCreate: () => {
+          if (!isChecklistDateCurrent(checklistDate)) return;
           const result = checklistService.createChecklist(checklistDate, [], {}, { actorRole: activeRole });
           refresh(result.message);
         },
         onAddItem: title => {
+          if (!isChecklistDateCurrent(checklistDate)) return;
           const result = checklistService.addItem(checklistDate, { title }, { actorRole: activeRole });
           refresh(result.message);
         },
         onDeleteItem: itemId => {
+          if (!isChecklistDateCurrent(checklistDate)) return;
           const result = checklistService.removeItem(checklistDate, itemId, { actorRole: activeRole });
           refresh(result.message);
         },
         onUpdateItem: (itemId, patch) => {
+          if (!isChecklistDateCurrent(checklistDate)) return;
           const result = checklistService.updateItem(checklistDate, itemId, patch, { actorRole: activeRole });
           refresh(result.message);
         },
         onReorder: orderedItemIds => {
+          if (!isChecklistDateCurrent(checklistDate)) return;
           const result = checklistService.reorderItems(checklistDate, orderedItemIds, { actorRole: activeRole });
           refresh(result.message);
         }
@@ -607,6 +624,7 @@ async function init() {
     } else {
       renderChecklistFamilyView(viewRefs.checklistPanel, checklistState.checklist, activeRole, {
         onToggle: itemId => {
+          if (!isChecklistDateCurrent(checklistDate)) return;
           const result = checklistService.toggleComplete(checklistDate, itemId, activeRole, activeRole);
           if (result.ok && result.state.checklist?.items.every(item => item.completedAt)) {
             showCinematicCelebration(viewRefs.mascotOverlay, activeRole);
@@ -638,6 +656,34 @@ async function init() {
   seedStarterChecklists(checklistService);
   persistActiveRole();
   refresh();
+
+  let checklistDateTimeoutId;
+  function scheduleChecklistDateRefresh() {
+    window.clearTimeout(checklistDateTimeoutId);
+    const now = new Date();
+    const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    checklistDateTimeoutId = window.setTimeout(() => {
+      refresh();
+      scheduleChecklistDateRefresh();
+    }, nextMidnight.getTime() - now.getTime() + 50);
+  }
+
+  const onChecklistResume = () => {
+    if (document.visibilityState === 'hidden') {
+      return;
+    }
+
+    refresh();
+    scheduleChecklistDateRefresh();
+  };
+  scheduleChecklistDateRefresh();
+  document.addEventListener('visibilitychange', onChecklistResume);
+  window.addEventListener('pageshow', onChecklistResume);
+  cleanupTasks.push(() => {
+    window.clearTimeout(checklistDateTimeoutId);
+    document.removeEventListener('visibilitychange', onChecklistResume);
+    window.removeEventListener('pageshow', onChecklistResume);
+  });
 
   if (shouldRequestInitialParentPin) {
     requestParentAccess(null, () => activateParentRole());
