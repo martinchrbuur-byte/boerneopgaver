@@ -507,9 +507,10 @@ async function init() {
     const activePeriod = periodService.getActivePeriod();
     const activePeriodId = activePeriod?.id ?? null;
     const choreState = choreService.getState({ activePeriodId });
-    const checklistDate = new Date().toISOString().slice(0, 10);
-    if (activeRole === 'parent' && !checklistService.getChecklist(checklistDate).state.checklist) {
-      checklistService.carryForwardChecklist(checklistDate, { actorRole: activeRole });
+    const now = new Date();
+    const checklistDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    if (!checklistService.getChecklist(checklistDate).state.checklist) {
+      checklistService.carryForwardChecklist(checklistDate, { actorRole: 'parent' });
     }
     const checklistState = checklistService.getChecklist(checklistDate).state;
 
