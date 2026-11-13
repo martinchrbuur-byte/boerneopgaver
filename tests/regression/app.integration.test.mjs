@@ -208,6 +208,20 @@ test('parent mode starts locked and requires the exact PIN', async () => {
     assert.equal(kidDashboard.hidden, true);
   }, { unlockInitialParent: false });
 });
+
+test('resuming on the same local date preserves an unsaved checklist title', async () => {
+  await withBootstrappedApp(async ({ window }) => {
+    click(window, document.querySelector('[data-checklist-action="create"]'));
+    const titleInput = document.querySelector('#checklist-item-title');
+    assert.ok(titleInput);
+    titleInput.value = 'Unsaved checklist item';
+
+    document.dispatchEvent(new window.Event('visibilitychange'));
+
+    assert.equal(document.querySelector('#checklist-item-title').value, 'Unsaved checklist item');
+  });
+});
+
 test('application bootstraps and supports parent/kid end-to-end flow', async () => {
   await withBootstrappedApp(async ({
     window,

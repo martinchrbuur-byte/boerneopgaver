@@ -81,6 +81,7 @@ export function reconcileCloudSnapshot({
   const hasUnsyncedLocalChanges = blockedSections.size > 0;
 
   const remoteShape = toRemoteStorageShape(supabaseData);
+  const hasRemoteData = hasMeaningfulLocalData(remoteShape);
   if (supabaseData.checklistsAvailable === false) {
     remoteShape.checklists = localData.checklists || [];
   }
@@ -89,8 +90,6 @@ export function reconcileCloudSnapshot({
     const localChecklist = (localData.checklists || []).find(item => item.dateIso === remoteChecklist.dateIso);
     return mergeChecklists(localChecklist, remoteChecklist);
   });
-  const hasRemoteData = hasMeaningfulLocalData(remoteShape);
-
   if (!hasRemoteData) {
     if (hasMeaningfulLocalData(localData)) {
       return { action: 'claim-local', hasRemoteData: false, nextData: null };

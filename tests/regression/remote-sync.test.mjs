@@ -87,6 +87,39 @@ test('reconcileCloudSnapshot preserves local checklists when the remote table is
   assert.equal(result.nextData.checklists[0].items[0].title, checklist.items[0].title);
 });
 
+test('reconcileCloudSnapshot claims local data when cloud is empty and checklist table is unavailable', () => {
+  const result = reconcileCloudSnapshot({
+    localData: {
+      chores: [{ id: 'local-chore' }],
+      records: [{ id: 'local-record' }],
+      ui: { activeRole: 'parent' },
+      feedback: [],
+      checklists: [{
+        dateIso: '2026-11-12',
+        items: [{ id: 'item-1', title: 'Pack school bag', completedAt: null }]
+      }],
+      periods: [{ id: 'local-period' }],
+      settings: { periodLengthDays: 7 }
+    },
+    syncState: { queueLength: 0, deadLetterCount: 0, failureCount: 0 },
+    supabaseData: {
+      chores: [],
+      records: [],
+      ui: { activeRole: 'parent' },
+      feedback: [],
+      checklists: [],
+      checklistsAvailable: false,
+      periods: [],
+      settings: { periodLengthDays: 7 },
+      userId: 'user-1'
+    }
+  });
+
+  assert.equal(result.action, 'claim-local');
+  assert.equal(result.hasRemoteData, false);
+  assert.equal(result.nextData, null);
+});
+
 test('reconcileCloudSnapshot claims local data when remote is empty', () => {
   const result = reconcileCloudSnapshot({
     localData: {

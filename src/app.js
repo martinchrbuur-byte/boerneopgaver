@@ -225,6 +225,7 @@ async function init() {
   const orphanedRecordService = createOrphanedRecordService();
   let lastRemoteSnapshotKey = null;
   let lastSyncStateSnapshot = null;
+  let lastChecklistDate = null;
 
   cleanupTasks.push(() => {
     if (typeof document === 'undefined') {
@@ -521,6 +522,7 @@ async function init() {
     const activePeriodId = activePeriod?.id ?? null;
     const choreState = choreService.getState({ activePeriodId });
     const checklistDate = getLocalDateString();
+    lastChecklistDate = checklistDate;
     if (!checklistService.getChecklist(checklistDate).state.checklist) {
       checklistService.carryForwardChecklist(checklistDate, { actorRole: 'parent' });
     }
@@ -673,7 +675,9 @@ async function init() {
       return;
     }
 
-    refresh();
+    if (getLocalDateString() !== lastChecklistDate) {
+      refresh();
+    }
     scheduleChecklistDateRefresh();
   };
   scheduleChecklistDateRefresh();

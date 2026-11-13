@@ -46,6 +46,21 @@ test('new day carries checklist items forward without checkmarks', () => {
   assert.notEqual(item.id, service.getChecklist(date).state.checklist.items[0].id);
 });
 
+test('checklist rollover uses stable item IDs across devices', () => {
+  const firstDevice = build();
+  firstDevice.service.createChecklist(date, [{ id: 'shared-item', title: 'Feed cat' }], {}, { actorRole: 'parent' });
+  const secondDevice = build();
+  secondDevice.storageService.saveData(firstDevice.storageService.loadData());
+
+  const nextDate = '2026-01-02';
+  const firstCarry = firstDevice.service.carryForwardChecklist(nextDate, { actorRole: 'parent' });
+  const secondCarry = secondDevice.service.carryForwardChecklist(nextDate, { actorRole: 'parent' });
+  const merged = mergeChecklists(firstCarry.state.checklist, secondCarry.state.checklist);
+
+  assert.equal(firstCarry.state.checklist.items[0].id, secondCarry.state.checklist.items[0].id);
+  assert.equal(merged.items.length, 1);
+});
+
 test('kid toggles assigned item and undo is offline-persisted', () => {
   const { service, storageService } = build();
   service.createChecklist(date, [{ id: 'a', title: 'Feed cat', assignedTo: ['Andrea'] }], {}, { actorRole: 'parent' });
