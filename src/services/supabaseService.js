@@ -339,6 +339,7 @@ export async function initializeSupabaseData() {
       }
       : { periodLengthDays: 7, updatedAt: null },
     checklists,
+    checklistsAvailable: schemaCapabilities.checklistsTable,
     userId
   };
 }

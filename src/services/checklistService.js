@@ -80,7 +80,7 @@ export function createChecklistService({ storageService, nowProvider = nowIsoTim
     if (!previous) return asResult(false, '', state(dateIso));
     const items = previous.items.map(item => ({
       ...item,
-      id: createEntityId('checklist-item'),
+      id: `checklist-item-${dateIso}-${item.id}`,
       completedAt: null,
       completedBy: null
     }));
