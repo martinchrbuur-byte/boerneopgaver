@@ -67,6 +67,7 @@ export function toRemoteStorageShape(supabaseData) {
 export function createRemoteSnapshotKey(supabaseData) {
   return JSON.stringify({
     remoteShape: toRemoteStorageShape(supabaseData),
+    checklistsAvailable: supabaseData.checklistsAvailable !== false,
     userId: supabaseData.userId
   });
 }
@@ -80,6 +81,9 @@ export function reconcileCloudSnapshot({
   const hasUnsyncedLocalChanges = blockedSections.size > 0;
 
   const remoteShape = toRemoteStorageShape(supabaseData);
+  if (supabaseData.checklistsAvailable === false) {
+    remoteShape.checklists = localData.checklists || [];
+  }
   remoteShape.roulette = mergeRouletteSnapshots(localData.roulette, remoteShape.roulette);
   remoteShape.checklists = (remoteShape.checklists || []).map(remoteChecklist => {
     const localChecklist = (localData.checklists || []).find(item => item.dateIso === remoteChecklist.dateIso);
