@@ -110,7 +110,7 @@ export const SPRITES = {
     'y..y..y..y',
     'yy.yy.yy.y',
     'yyyyyyyyyy',
-    'yRyyBwyyRy',
+    'yRyyPwyyRy',
     'yyyyyyyyyy',
     'kkkkkkkkkk'
   ],
