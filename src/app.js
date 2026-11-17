@@ -26,6 +26,7 @@ import { createMainView } from './ui/mainView.js';
 import { renderFeedback, renderState, showCoinToWallet, showMascot, showRoleSwitchWalk, showCinematicCelebration, showHelperByTrigger, initChoreTrails } from './ui/choreView.js';
 import { unlockAudio, toggleMute, isMuted, playSound } from './shared/soundManager.js';
 import { renderIcon } from './shared/iconRegistry.js';
+import { playTickHeroAnimation } from './ui/tickHeroAnimations.js';
 import { renderChecklistParentPanel, renderChecklistFamilyView } from './ui/checklistView.js';
 import { renderRouletteView } from './ui/rouletteView.js';
 import { createScreensaverView } from './ui/screensaverView.js';
@@ -625,9 +626,12 @@ async function init() {
       });
     } else {
       renderChecklistFamilyView(viewRefs.checklistPanel, checklistState.checklist, activeRole, {
-        onToggle: itemId => {
+        onToggle: (itemId, anchor) => {
           if (!isChecklistDateCurrent(checklistDate)) return;
           const result = checklistService.toggleComplete(checklistDate, itemId, activeRole, activeRole);
+          if (result.ok && result.state.checklist?.items.find(item => item.id === itemId)?.completedAt) {
+            playTickHeroAnimation(anchor);
+          }
           if (result.ok && result.state.checklist?.items.every(item => item.completedAt)) {
             showCinematicCelebration(viewRefs.mascotOverlay, activeRole);
           }
