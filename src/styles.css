@@ -4870,3 +4870,48 @@ label[for] {
     image-rendering: pixelated;
   }
 }
+
+/* ─── 8-bit hero animations played when a checklist box is ticked ─── */
+.tick-hero-fx{position:fixed;inset:0;z-index:9999;pointer-events:none;overflow:hidden;--y:50vh;image-rendering:pixelated}
+.tick-hero-fx .px{display:block;image-rendering:pixelated;filter:drop-shadow(3px 3px 0 rgba(43,33,64,.35))}
+.tick-hero-fx>*{position:absolute;top:var(--y)}
+.tick-hero-fx .fx-cross-r,.tick-hero-fx .fx-cross-l{display:flex;align-items:center;gap:4px;left:0;animation:fx-across-r 1.4s steps(18) forwards}
+.tick-hero-fx .fx-cross-l{left:auto;right:0;flex-direction:row-reverse;animation-name:fx-across-l}
+.tick-hero-fx .fx-fast{animation-duration:.9s}
+.tick-hero-fx .fx-ground{animation-duration:1.6s}
+.tick-hero-fx .fx-fly{display:block;transform:rotate(90deg)}
+.tick-hero-fx .fx-fly.fx-flip{transform:rotate(-90deg)}
+.tick-hero-fx .fx-cross-l>.fx-fly{margin-right:8px}
+.tick-hero-fx .fx-line{position:absolute;left:-40px;top:calc(50% + var(--o));width:36px;height:5px;background:#fff;box-shadow:0 0 0 3px #2b2140;opacity:.8}
+.tick-hero-fx .fx-cross-l .fx-line{left:auto;right:-40px}
+.tick-hero-fx .fx-bob,.tick-hero-fx .fx-run{animation:fx-bob .3s steps(2) infinite}
+.tick-hero-fx .fx-flame{animation:fx-blink .2s steps(2) infinite}
+.tick-hero-fx .fx-flame-front{order:2}
+.tick-hero-fx .fx-cross-r>.fx-flame:not(.fx-flame-front){order:-1;transform:scaleX(-1)}
+.tick-hero-fx .fx-spin{animation:fx-spin .6s steps(8) infinite}
+.tick-hero-fx .fx-smoke{opacity:.7}
+.tick-hero-fx .fx-center{left:50%;top:var(--y);transform:translate(-50%,-50%)}
+.tick-hero-fx .fx-above{position:absolute;left:50%;top:-50px;margin-left:-24px}
+.tick-hero-fx .fx-blink{animation:fx-blink .25s steps(2) infinite}
+.tick-hero-fx .fx-flash{inset:0;top:0;background:#fff;animation:fx-flash .5s steps(4) forwards}
+.tick-hero-fx .fx-pop{animation:fx-pop 1.2s steps(8) forwards}
+.tick-hero-fx .fx-jump{left:0;animation:fx-jump 1.3s steps(16) forwards}
+.tick-hero-fx .fx-rise{left:50%;margin-left:-45px;animation:fx-rise 1.4s steps(14) forwards}
+.tick-hero-fx .fx-drop{left:50%;margin-left:-45px;animation:fx-drop 1.3s steps(16) forwards}
+.tick-hero-fx .fx-comet{left:0;animation:fx-comet 1.1s steps(14) forwards}
+.tick-hero-fx .fx-star-drop{left:var(--x);top:-40px;animation:fx-star-fall 1.3s steps(14) var(--d) forwards;opacity:0}
+.tick-hero-fx .fx-label{left:50%;top:calc(var(--y) - 80px);transform:translateX(-50%);font:900 1.6rem/1 "Courier New",monospace;letter-spacing:.1em;color:#ffd93d;text-shadow:3px 0 #2b2140,-3px 0 #2b2140,0 3px #2b2140,0 -3px #2b2140,3px 3px #2b2140,-3px -3px #2b2140,3px -3px #2b2140,-3px 3px #2b2140;animation:fx-label 1.3s steps(8) forwards}
+@keyframes fx-across-r{from{transform:translateX(-200px)}to{transform:translateX(calc(100vw + 40px))}}
+@keyframes fx-across-l{from{transform:translateX(200px)}to{transform:translateX(calc(-100vw - 40px))}}
+@keyframes fx-bob{50%{transform:translateY(-8px)}}
+@keyframes fx-blink{50%{opacity:0}}
+@keyframes fx-spin{to{transform:rotate(360deg)}}
+@keyframes fx-flash{from{opacity:.8}to{opacity:0}}
+@keyframes fx-pop{0%{transform:translate(-50%,-50%) scale(0)}25%{transform:translate(-50%,-50%) scale(1.3)}40%{transform:translate(-50%,-50%) scale(1)}85%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(1.1);opacity:0}}
+@keyframes fx-jump{0%{transform:translate(8vw,0)}50%{transform:translate(48vw,-160px)}100%{transform:translate(90vw,0);opacity:1}}
+@keyframes fx-rise{0%{transform:translateY(80px);opacity:0}20%{opacity:1}70%{transform:translateY(-70px);opacity:1}100%{transform:translateY(-90px);opacity:0}}
+@keyframes fx-drop{0%{transform:translateY(-300px)}50%{transform:translateY(-10px)}65%{transform:translateY(-40px)}80%{transform:translateY(-10px)}100%{transform:translateY(-10px);opacity:0}}
+@keyframes fx-comet{from{transform:translate(-150px,-200px)}to{transform:translate(calc(100vw + 50px),160px)}}
+@keyframes fx-star-fall{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(calc(var(--y) + 120px)) rotate(0)}}
+@keyframes fx-label{0%{opacity:0;transform:translateX(-50%) translateY(20px)}30%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-20px)}}
+@media (prefers-reduced-motion: reduce){.tick-hero-fx{display:none}}

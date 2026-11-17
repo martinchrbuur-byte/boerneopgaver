@@ -88,7 +88,7 @@ export function renderChecklistFamilyView(element, checklist, actorRole, { onTog
     return `<li class="checklist-item checklist-family-item${item.completedAt ? ' checklist-item-complete' : ''}"><button type="button" class="checklist-toggle checklist-family-toggle" data-checklist-item-id="${escape(item.id)}" ${allowed ? '' : 'disabled'} aria-pressed="${Boolean(item.completedAt)}"><span class="checklist-family-item-label">${marker(item.title, item.id)}<span>${escape(item.title)}</span></span><span class="checklist-check-circle${item.completedAt ? ' checklist-check-circle-complete' : ''}" aria-hidden="true">${item.completedAt ? renderIcon('check') : ''}</span></button>${item.description ? `<p class="chore-meta checklist-family-description">${escape(item.description)}</p>` : ''}</li>`;
   }).join('')}</ul>`;
   element.insertAdjacentHTML('beforeend', `<div class="checklist-progress" role="progressbar" aria-label="Checklist-fremskridt" aria-valuemin="0" aria-valuemax="${totalItems}" aria-valuenow="${completedItems}"><span style="width: ${completionPercent}%"></span></div><p class="checklist-progress-label">${completedItems} af ${totalItems} færdige</p>`);
-  element.querySelectorAll('[data-checklist-item-id]').forEach(button => button.addEventListener('click', () => onToggle?.(button.dataset.checklistItemId)));
+  element.querySelectorAll('[data-checklist-item-id]').forEach(button => button.addEventListener('click', () => onToggle?.(button.dataset.checklistItemId, button)));
 }
 
 export function bindChecklistPanel(element, handlers = {}) {
